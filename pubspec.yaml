@@ -19,6 +19,14 @@ dependencies:
   http: ^1.5.0
   image_picker: ^1.2.0
   flutter_dotenv: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: 'launcher_icon'
+  ios: true
+  image_path: 'assets/images/logo_scan_epaa.png'
+  adaptive_icon_background: 'assets/images/logo_scan_epaa.png'
+  adaptive_icon_foreground: 'assets/images/logo_scan_epaa.png'
 
 dev_dependencies:
   flutter_test:
