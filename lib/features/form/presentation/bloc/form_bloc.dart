@@ -25,7 +25,7 @@ class FormBloc extends Bloc<FormEvent, FormState> {
           ),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            "previewsReading": event.previewsReading,
+            "previewsReading": event.previousReading,
             "currentReading": event.currentReading,
             "rentalIncomeCode": event.rentalIncomeCode,
             "novelty": event.novelty,

@@ -9,7 +9,7 @@ abstract class FormEvent extends Equatable {
 
 class SubmitFormEvent extends FormEvent {
   final int readingId;
-  final double previewsReading;
+  final double previousReading;
   final double currentReading;
   final int rentalIncomeCode;
   final String novelty;
@@ -18,11 +18,12 @@ class SubmitFormEvent extends FormEvent {
   final int sector;
   final int account;
   final String connectionId;
+  final double averageConsumption;
 
   const SubmitFormEvent({
     required this.readingId,
     required this.currentReading,
-    required this.previewsReading,
+    required this.previousReading,
     required this.rentalIncomeCode,
     required this.novelty,
     required this.incomeCode,
@@ -30,6 +31,7 @@ class SubmitFormEvent extends FormEvent {
     required this.sector,
     required this.account,
     required this.connectionId,
+    required this.averageConsumption,
   });
 
   @override

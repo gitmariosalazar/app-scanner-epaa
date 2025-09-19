@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
@@ -65,9 +66,10 @@ class _ScanScreenState extends State<ScanScreen> {
 
       if (data is Map<String, dynamic> && data.containsKey('acometidaId')) {
         debugPrint("Code detected as JSON: $data");
+        final String baseUrl = Environment.apiUrl;
         final response = await http.get(
           Uri.parse(
-            'http://192.168.10.129:3005/Readings/find-basic-reading/${data['acometidaId']}',
+            '$baseUrl/Readings/find-basic-reading/${data['acometidaId']}',
           ),
           headers: {'Content-Type': 'application/json'},
         );

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/card/title_card.dart';
+import 'package:flutter_application/components/text/edit_text_field.dart';
+import 'package:flutter_application/components/text/read_only_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/features/form/presentation/bloc/form_bloc.dart'
@@ -29,6 +32,7 @@ class _FormScreenState extends State<FormScreen>
   final _accountConnectionController = TextEditingController();
   final _cadastralKeyConnectionController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _averageConsumptionController = TextEditingController();
 
   // Animation controller for button scale effect
   late AnimationController _animationController;
@@ -39,7 +43,7 @@ class _FormScreenState extends State<FormScreen>
     super.initState();
     // Seleccionar el objeto con el readingId más alto
     final List<dynamic> dataList = widget.apiResponse['data'] ?? [];
-    final Map<String, dynamic> data = dataList.isNotEmpty
+    Map<String, dynamic> data = dataList.isNotEmpty
         ? dataList.first as Map<String, dynamic>
         : {};
 
@@ -69,13 +73,15 @@ class _FormScreenState extends State<FormScreen>
     _readingIdController.text = data['readingId']?.toString() ?? '';
     _cardIdController.text = data['cardId']?.toString() ?? '';
     _currentReadingController.text = data['currentReading']?.toString() ?? '';
-    _previousReadingController.text = data['previewsReading']?.toString() ?? '';
+    _previousReadingController.text = data['previousReading']?.toString() ?? '';
     _sectorConnectionController.text = data['sector']?.toString() ?? '';
     _addressConnectionController.text = data['address']?.toString() ?? '';
     _accountConnectionController.text = data['account']?.toString() ?? '';
     _cadastralKeyConnectionController.text =
         data['cadastralKey']?.toString() ?? '';
     _descriptionController.text = '';
+    _averageConsumptionController.text =
+        data['averageConsumption']?.toString() ?? '';
 
     // Initialize animation controller and scale animation
     _animationController = AnimationController(
@@ -162,87 +168,111 @@ class _FormScreenState extends State<FormScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Card(
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Conexión Activa',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TitledCard(
+                                title: 'Conexión Activa',
+                                elevation: 4,
+                                bottomRightIcon: const Icon(
+                                  Icons.cable,
+                                  color: Colors.green,
+                                  size: 28,
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
+                                child: Text(
                                   _connectionIdController.text.isEmpty
                                       ? 'Sin ID de conexión'
                                       : _connectionIdController.text,
-                                  style: theme.textTheme.headlineSmall
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                   textAlign: TextAlign.center,
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TitledCard(
+                                title: 'Consumo Promedio',
+                                elevation: 4,
+                                bottomRightIcon: const Icon(
+                                  Icons.water_drop,
+                                  color: Colors.blueAccent,
+                                  size: 28,
+                                ),
+                                child: Text(
+                                  _connectionIdController.text.isEmpty
+                                      ? '0.0 m³'
+                                      : '${double.tryParse(_averageConsumptionController.text)?.toStringAsFixed(2) ?? '0.00'} m³',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildReadOnlyField(
+                              child: ReadOnlyField(
                                 controller: _cardIdController,
                                 label: 'Cédula de Ciudadanía',
-                                icon: Icons.pin,
+                                leftIcon: Icons.pin,
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: _buildReadOnlyField(
+                              child: ReadOnlyField(
                                 controller: _readingIdController,
                                 label: 'ID de Lectura',
-                                icon: Icons.water_damage_outlined,
+                                leftIcon: Icons.water_damage_outlined,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildReadOnlyField(
+                        ReadOnlyField(
                           controller: _connectionOwnerController,
                           label: 'Propietario de la Conexión',
-                          icon: Icons.person_outline,
+                          leftIcon: Icons.person_outline,
                         ),
                         const SizedBox(height: 16),
-                        _buildReadOnlyField(
+                        ReadOnlyField(
                           controller: _addressConnectionController,
                           label: 'Dirección de la Conexión',
-                          icon: Icons.location_on_outlined,
+                          leftIcon: Icons.location_on_outlined,
                         ),
                         const SizedBox(height: 24),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildReadOnlyField(
+                              child: ReadOnlyField(
                                 controller: _previousReadingController,
                                 label: 'Lectura Anterior',
-                                icon: Icons.history_outlined,
+                                leftIcon: Icons.history_outlined,
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: _buildEditableField(
+                              child: EditTextField(
                                 controller: _currentReadingController,
                                 label: 'Lectura Actual',
-                                icon: Icons.speed_outlined,
+                                leftIcon: Icons.speed_outlined,
                                 hintText: '0.00',
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
@@ -260,10 +290,10 @@ class _FormScreenState extends State<FormScreen>
                           ],
                         ),
                         const SizedBox(height: 24),
-                        _buildEditableTextArea(
+                        EditTextField(
                           controller: _descriptionController,
                           label: 'Descripción o Novedades',
-                          icon: Icons.description,
+                          leftIcon: Icons.description,
                           maxLines: 4,
                           hintText: 'Describe cualquier novedad aquí...',
                         ),
@@ -316,57 +346,102 @@ class _FormScreenState extends State<FormScreen>
                                               if (_formKey.currentState
                                                       ?.validate() ??
                                                   false) {
-                                                context.read<form_bloc.FormBloc>().add(
-                                                  form_bloc.SubmitFormEvent(
-                                                    readingId: int.parse(
-                                                      _readingIdController
-                                                              .text
-                                                              .isEmpty
-                                                          ? '0'
-                                                          : _readingIdController
+                                                showDialog<bool>(
+                                                  context: context,
+                                                  builder: (BuildContext dialogContext) {
+                                                    return AlertDialog(
+                                                      title: const Text(
+                                                        'Confirmar Guardado',
+                                                      ),
+                                                      content: const Text(
+                                                        '¿Está seguro de que desea guardar la información?',
+                                                      ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              16,
+                                                            ),
+                                                      ),
+                                                      actions: <Widget>[
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                dialogContext,
+                                                              ).pop(false),
+                                                          child: const Text(
+                                                            'Cancelar',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                dialogContext,
+                                                              ).pop(true),
+                                                          child: const Text(
+                                                            'Guardar',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                ).then((confirmed) {
+                                                  if (confirmed == true) {
+                                                    context.read<form_bloc.FormBloc>().add(
+                                                      form_bloc.SubmitFormEvent(
+                                                        readingId: int.parse(
+                                                          _readingIdController
+                                                                  .text
+                                                                  .isEmpty
+                                                              ? '0'
+                                                              : _readingIdController
+                                                                    .text,
+                                                        ),
+                                                        novelty:
+                                                            _descriptionController
                                                                 .text,
-                                                    ),
-                                                    novelty:
-                                                        _descriptionController
-                                                            .text,
-                                                    currentReading: double.parse(
-                                                      _currentReadingController
-                                                          .text,
-                                                    ),
-                                                    previewsReading: double.parse(
-                                                      _previousReadingController
-                                                              .text
-                                                              .isEmpty
-                                                          ? '0'
-                                                          : _previousReadingController
+                                                        currentReading:
+                                                            double.parse(
+                                                              _currentReadingController
+                                                                  .text,
+                                                            ),
+                                                        previousReading: double.parse(
+                                                          _previousReadingController
+                                                                  .text
+                                                                  .isEmpty
+                                                              ? '0'
+                                                              : _previousReadingController
+                                                                    .text,
+                                                        ),
+                                                        rentalIncomeCode: 1500,
+                                                        incomeCode: 1256,
+                                                        cadastralKey:
+                                                            _cadastralKeyConnectionController
                                                                 .text,
-                                                    ),
-                                                    rentalIncomeCode: 1500,
-                                                    incomeCode: 1256,
-                                                    cadastralKey:
-                                                        _cadastralKeyConnectionController
-                                                            .text,
-                                                    sector: int.parse(
-                                                      _sectorConnectionController
-                                                              .text
-                                                              .isEmpty
-                                                          ? '0'
-                                                          : _sectorConnectionController
+                                                        sector: int.parse(
+                                                          _sectorConnectionController
+                                                                  .text
+                                                                  .isEmpty
+                                                              ? '0'
+                                                              : _sectorConnectionController
+                                                                    .text,
+                                                        ),
+                                                        account: int.parse(
+                                                          _accountConnectionController
+                                                                  .text
+                                                                  .isEmpty
+                                                              ? '0'
+                                                              : _accountConnectionController
+                                                                    .text,
+                                                        ),
+                                                        connectionId:
+                                                            _connectionIdController
                                                                 .text,
-                                                    ),
-                                                    account: int.parse(
-                                                      _accountConnectionController
-                                                              .text
-                                                              .isEmpty
-                                                          ? '0'
-                                                          : _accountConnectionController
-                                                                .text,
-                                                    ),
-                                                    connectionId:
-                                                        _connectionIdController
-                                                            .text,
-                                                  ),
-                                                );
+                                                        averageConsumption:
+                                                            24.2,
+                                                      ),
+                                                    );
+                                                  }
+                                                });
                                               }
                                             },
                                       style: ElevatedButton.styleFrom(
@@ -537,250 +612,6 @@ class _FormScreenState extends State<FormScreen>
           ),
         ),
       ),
-    );
-  }
-
-  // Read-only field with external label
-  Widget _buildReadOnlyField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(left: 5),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        const SizedBox(height: 5), // 5px spacing between label and field
-        TextField(
-          controller: controller,
-          readOnly: true,
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-          ),
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEditableTextArea({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    int maxLines = 4,
-    String? Function(String?)? validator,
-    String? hintText, // Añadido para el placeholder
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(left: 5),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        const SizedBox(height: 5), // 5px spacing between label and field
-        TextFormField(
-          controller: controller,
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-            hintText: hintText, // Aquí agregamos el placeholder
-            hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              fontWeight: FontWeight.w400,
-              fontSize: 16,
-            ),
-          ),
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: maxLines,
-          validator: validator,
-        ),
-      ],
-    );
-  }
-
-  // Editable field with external label
-  Widget _buildEditableField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-    String? hintText, // Added to fix undefined name error
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(left: 5),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        const SizedBox(height: 5),
-        TextFormField(
-          controller: controller,
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              fontWeight: FontWeight.w400,
-              fontSize: 16,
-            ),
-          ),
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          validator: validator,
-        ),
-      ],
     );
   }
 
