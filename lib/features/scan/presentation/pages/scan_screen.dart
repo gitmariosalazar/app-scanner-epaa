@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -13,232 +15,240 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> {
+class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
     torchEnabled: false,
     formats: [BarcodeFormat.qrCode],
-    detectionTimeoutMs: 3000,
     autoStart: false,
+    returnImage: false,
   );
 
   Rect? _scanWindow;
   bool _isTorchOn = false;
+  bool _isRestarting = false;
+  bool _isBorderHighlighted = true;
+  bool _isProcessing = false;
+  String? _lastScannedCode;
+  bool _shouldPauseCamera = false;
+  bool _isStarting = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!mounted) return;
+    final size = MediaQuery.of(context).size;
+    final isSmall = ResponsiveUtils.isSmallDevice(context);
+    final scanAreaSize = size.width * (isSmall ? 0.55 : 0.65);
+    final left = (size.width - scanAreaSize) / 2;
+    final top = (size.height - scanAreaSize) / 2;
+    _scanWindow = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
+    _startScanner();
+  }
+
+  Future<void> _startScanner() async {
+    if (_isStarting) return;
+    _isStarting = true;
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
       if (mounted) {
-        try {
-          await _controller.start();
-          debugPrint('Scanner started');
-        } catch (e) {
-          debugPrint('Error starting scanner: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al iniciar el escáner: $e'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        }
+        _showError('Se requiere permiso de cámara para escanear.');
       }
-    });
+      _isStarting = false;
+      return;
+    }
+    try {
+      if (!_controller.value.isInitialized) {
+        await _controller.start();
+        if (mounted) setState(() {});
+      } else {
+        await _controller.stop();
+        await _controller.start();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Error al iniciar el escáner: $e');
+      }
+    } finally {
+      _isStarting = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
+    if (state == AppLifecycleState.resumed) {
+      _resumeScanning();
+    } else if (state == AppLifecycleState.paused) {
+      _controller.stop();
+    }
   }
 
   Future<void> _handleScan(String code) async {
+    setState(() {
+      _isProcessing = true;
+      _lastScannedCode = null;
+    });
+
     try {
       final data = jsonDecode(code);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Código QR escaneado correctamente: $code'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
+      if (data is! Map<String, dynamic> || !data.containsKey('acometidaId')) {
+        _showError('Código QR no contiene un acometidaId válido.');
+        if (mounted) await _resumeScanning();
+        return;
+      }
+
+      final acometidaId = data['acometidaId'];
+      _showMessage(
+        'Código QR escaneado correctamente: $acometidaId',
+        Colors.green,
       );
 
-      debugPrint("Code detected as JSON: $data");
+      final String baseUrl = Environment.apiUrl;
+      final response = await http.get(
+        Uri.parse('$baseUrl/Readings/find-basic-reading/$acometidaId'),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-      if (data is Map<String, dynamic> && data.containsKey('acometidaId')) {
-        debugPrint("Code detected as JSON: $data");
-        final String baseUrl = Environment.apiUrl;
-        final response = await http.get(
-          Uri.parse(
-            '$baseUrl/Readings/find-basic-reading/${data['acometidaId']}',
-          ),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final responseData = jsonDecode(response.body);
-          if (responseData is Map<String, dynamic>) {
-            debugPrint("Response data as JSON from API: $responseData");
-            if (mounted) {
-              context.push('/form', extra: responseData).then((_) {
-                Future.delayed(const Duration(milliseconds: 500), () async {
-                  try {
-                    if (_controller.value.isInitialized) {
-                      await _controller.start();
-                      debugPrint('Scanner restarted after navigation');
-                    }
-                  } catch (e) {
-                    debugPrint('Error restarting scanner: $e');
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al reiniciar el escáner: $e'),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  }
-                });
-              });
-            }
-          } else {
-            debugPrint('Response is not a valid JSON object.');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'Respuesta de la API no es un objeto JSON válido.',
-                  ),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              _resumeScanning();
-            }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        if (responseData is Map<String, dynamic>) {
+          await _controller.stop();
+          _shouldPauseCamera = true;
+          if (mounted) {
+            debugPrint('Navegando a FormScreen con datos: $responseData');
+            await context.push(
+              '/form',
+              extra: {'apiResponse': responseData, 'mode': 'scan'},
+            );
+            _shouldPauseCamera = false;
+            await _resumeScanning();
           }
         } else {
-          debugPrint('Error en la API: ${response.statusCode}');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error en la API: ${response.statusCode}'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            _resumeScanning();
-          }
+          _showError('Respuesta de la API no es un objeto JSON válido.');
+          if (mounted) await _resumeScanning();
         }
       } else {
-        debugPrint('Código QR no contiene un acometidaId válido.');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Código QR no contiene un acometidaId válido.'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          _resumeScanning();
-        }
+        _showError('Error en la API: ${response.statusCode}');
+        if (mounted) await _resumeScanning();
       }
     } catch (e) {
-      debugPrint('Error: $e');
+      _showError('Error procesando el código QR: $e');
+      if (mounted) await _resumeScanning();
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al procesar el código QR: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _resumeScanning();
+        setState(() {
+          _isProcessing = false;
+          _lastScannedCode = null;
+        });
       }
     }
   }
 
   Future<void> _resumeScanning() async {
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      try {
-        if (_controller.value.isInitialized) {
-          await _controller.start();
-          debugPrint('Scanner restarted after error');
-        }
-      } catch (e) {
-        debugPrint('Error restarting scanner: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al reiniciar el escáner: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+    if (_isRestarting || _shouldPauseCamera) return;
+    _isRestarting = true;
+
+    try {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        _showError('Se requiere permiso de cámara para escanear.');
+        _isRestarting = false;
+        return;
       }
+      await _controller.start();
+
+      if (mounted) {
+        setState(() {
+          _isBorderHighlighted = true;
+        });
+        Future.delayed(const Duration(milliseconds: 250), () {
+          if (mounted) setState(() => _isBorderHighlighted = false);
+        });
+      }
+    } catch (e) {
+      _showError('Error reiniciando el escáner: $e');
+    } finally {
+      _isRestarting = false;
+    }
+  }
+
+  Future<void> _resetScanner() async {
+    if (_isProcessing) return;
+    setState(() {
+      _isProcessing = false;
+      _shouldPauseCamera = false;
+      _lastScannedCode = null;
     });
+    await _controller.stop();
+    await _resumeScanning();
+    _showMessage('Escáner reiniciado.', Colors.blueAccent);
   }
 
   Future<void> _scanFromPhoto() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      if (image == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se seleccionó ninguna imagen.'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        return;
-      }
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) {
+      _showMessage('No se seleccionó ninguna imagen.', Colors.orange);
+      return;
+    }
 
+    setState(() {
+      _isProcessing = true;
+      _lastScannedCode = null;
+    });
+    try {
       final result = await _controller.analyzeImage(image.path);
       if (result != null && result.barcodes.isNotEmpty) {
         final String? code = result.barcodes.first.rawValue;
         if (code != null && code.isNotEmpty) {
-          _controller.stop();
-          _handleScan(code);
+          await _controller.stop();
+          await _handleScan(code);
         } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('No se detectó un código QR en la imagen.'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            _resumeScanning();
-          }
+          _showError('No se detectó un código QR en la imagen.');
+          setState(() => _isProcessing = false);
+          await _resumeScanning();
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se detectó un código QR en la imagen.'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          _resumeScanning();
-        }
+        _showError('No se detectó un código QR en la imagen.');
+        setState(() => _isProcessing = false);
+        await _resumeScanning();
       }
     } catch (e) {
-      debugPrint('Error scanning image: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al escanear la imagen: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _resumeScanning();
-      }
+      _showError('Error al escanear la imagen: $e');
+      setState(() => _isProcessing = false);
+      await _resumeScanning();
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: ResponsiveUtils.bodyMedium(context)),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showMessage(String message, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: ResponsiveUtils.bodyMedium(context)),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -247,111 +257,184 @@ class _ScanScreenState extends State<ScanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Escanear Código QR',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: ResponsiveUtils.titleMedium(
+            context,
+          ).copyWith(fontWeight: FontWeight.w600, color: Colors.white),
         ),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: ResponsiveUtils.cardElevation(context),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Reiniciar escáner',
+            icon: Icon(
+              Icons.refresh,
+              color: Colors.white,
+              size: ResponsiveUtils.iconMedium(context),
+            ),
+            onPressed: _resetScanner,
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final height = constraints.maxHeight;
-              final scanAreaSize = width * 0.65;
-              final left = (width - scanAreaSize) / 2;
-              final top = (height - scanAreaSize) / 2;
-
-              _scanWindow = Rect.fromLTWH(
-                left,
-                top,
-                scanAreaSize,
-                scanAreaSize,
-              );
-
-              return MobileScanner(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            GestureDetector(
+              onTap: () async {
+                await _resumeScanning();
+              },
+              child: MobileScanner(
                 controller: _controller,
                 scanWindow: _scanWindow,
-                onDetect: (capture) {
+                onDetect: (capture) async {
+                  if (_isProcessing || _shouldPauseCamera) return;
                   final List<Barcode> barcodes = capture.barcodes;
                   if (barcodes.isNotEmpty) {
-                    final String? code = barcodes.first.rawValue;
+                    final barcode = barcodes.first;
+                    final String? code = barcode.rawValue;
+
                     if (code != null && code.isNotEmpty) {
-                      _controller.stop();
-                      _handleScan(code);
+                      setState(() {
+                        _isProcessing = true;
+                        try {
+                          final data = jsonDecode(code);
+                          _lastScannedCode = data['acometidaId']?.toString();
+                        } catch (_) {
+                          _lastScannedCode = null;
+                        }
+                      });
+                      await _controller.stop();
+                      await _handleScan(code);
                     }
                   }
                 },
-              );
-            },
-          ),
-          // Scanner Overlay
-          _buildScannerOverlay(context),
-          // Bottom Button Bar
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Torch Toggle Button
-                _buildActionButton(
-                  icon: _isTorchOn ? Icons.flash_off : Icons.flash_on,
-                  label: _isTorchOn ? 'Apagar Linterna' : 'Encender Linterna',
-                  onPressed: () async {
-                    try {
-                      await _controller.toggleTorch();
-                      setState(() {
-                        _isTorchOn = !_isTorchOn;
-                      });
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al alternar la linterna: $e'),
-                          backgroundColor: theme.colorScheme.error,
-                          behavior: SnackBarBehavior.floating,
+              ),
+            ),
+            _buildScannerOverlay(context),
+            // Este bloque combina estado y botones, evitando superposición:
+            Positioned(
+              left: ResponsiveUtils.mediumSpacing(context),
+              right: ResponsiveUtils.mediumSpacing(context),
+              bottom: ResponsiveUtils.mediumSpacing(context),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(
+                      bottom: ResponsiveUtils.smallSpacing(context),
+                    ),
+                    padding: ResponsiveUtils.cardPadding(context),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveUtils.cardBorderRadius(context),
+                      ),
+                    ),
+                    child: Text(
+                      'Estado: ${_controller.value.isInitialized ? "Iniciado" : "No iniciado"}',
+                      style: ResponsiveUtils.bodySmall(
+                        context,
+                      ).copyWith(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildActionButton(
+                        icon: _isTorchOn ? Icons.flash_off : Icons.flash_on,
+                        circular: true,
+                        onPressed: () async {
+                          if (_controller.value.isInitialized) {
+                            try {
+                              await _controller.toggleTorch();
+                              setState(() {
+                                _isTorchOn = !_isTorchOn;
+                              });
+                            } catch (e) {
+                              _showError('Error al alternar la linterna: $e');
+                            }
+                          }
+                        },
+                      ),
+                      _buildActionButton(
+                        icon: Icons.photo_library,
+                        label: 'Escanear desde Foto',
+                        onPressed: _scanFromPhoto,
+                      ),
+                      _buildActionButton(
+                        icon: Icons.restart_alt_rounded,
+                        circular: true,
+                        onPressed: _resetScanner,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: ResponsiveUtils.mediumSpacing(context),
+              left: ResponsiveUtils.mediumSpacing(context),
+              right: ResponsiveUtils.mediumSpacing(context),
+              child: Container(
+                padding: ResponsiveUtils.cardPadding(context),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.cardBorderRadius(context),
+                  ),
+                ),
+                child: Text(
+                  'Alinea el código QR dentro del marco para escanear',
+                  style: ResponsiveUtils.bodyLarge(
+                    context,
+                  ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            if (_isProcessing)
+              Center(
+                child: Container(
+                  padding: ResponsiveUtils.cardPadding(context),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtils.cardBorderRadius(context),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                      ResponsiveUtils.vSpace(context, 0.015),
+                      Text(
+                        'Procesando',
+                        style: ResponsiveUtils.bodyLarge(context).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
-                      );
-                    }
-                  },
+                      ),
+                      ResponsiveUtils.vSpace(context, 0.015),
+                      Text(
+                        _lastScannedCode != null ? ' $_lastScannedCode' : '',
+                        style: ResponsiveUtils.bodyLarge(context).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                // Scan from Photo Button
-                _buildActionButton(
-                  icon: Icons.photo_library,
-                  label: 'Escanear desde Foto',
-                  onPressed: _scanFromPhoto,
-                ),
-              ],
-            ),
-          ),
-          // Instructions
-          Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'Alinea el código QR dentro del marco',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -361,13 +444,15 @@ class _ScanScreenState extends State<ScanScreen> {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final height = constraints.maxHeight;
-        final scanAreaSize = width * 0.65;
+        final isSmall = ResponsiveUtils.isSmallDevice(context);
+        final scanAreaSize = width * (isSmall ? 0.55 : 0.65);
         final left = (width - scanAreaSize) / 2;
         final top = (height - scanAreaSize) / 2;
 
+        _scanWindow = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
+
         return Stack(
           children: [
-            // Darkened area around
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 Colors.black.withOpacity(0.6),
@@ -391,14 +476,15 @@ class _ScanScreenState extends State<ScanScreen> {
                       height: scanAreaSize,
                       decoration: BoxDecoration(
                         color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveUtils.cardBorderRadius(context),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            // Border with corner markers
             Positioned(
               left: left,
               top: top,
@@ -406,37 +492,37 @@ class _ScanScreenState extends State<ScanScreen> {
                 width: scanAreaSize,
                 height: scanAreaSize,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.cardBorderRadius(context),
+                  ),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 3,
+                    color: _isBorderHighlighted
+                        ? Colors.yellow
+                        : Theme.of(context).colorScheme.primary,
+                    width: _isBorderHighlighted ? 4 : 2,
                   ),
                 ),
                 child: Stack(
                   children: [
-                    // Top-left corner
                     Positioned(
                       top: 0,
                       left: 0,
-                      child: _buildCornerMarker(3.1416),
+                      child: _buildCornerMarker(context, 3.1416),
                     ),
-                    // Top-right corner
                     Positioned(
                       top: 0,
                       right: 0,
-                      child: _buildCornerMarker(-1.5708),
+                      child: _buildCornerMarker(context, -1.5708),
                     ),
-                    // Bottom-left corner
                     Positioned(
                       bottom: 0,
                       left: 0,
-                      child: _buildCornerMarker(1.5708),
+                      child: _buildCornerMarker(context, 1.5708),
                     ),
-                    // Bottom-right corner
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: _buildCornerMarker(0),
+                      child: _buildCornerMarker(context, 0),
                     ),
                   ],
                 ),
@@ -448,21 +534,28 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  Widget _buildCornerMarker(double rotationAngleInRadians) {
+  Widget _buildCornerMarker(
+    BuildContext context,
+    double rotationAngleInRadians,
+  ) {
     return Transform.rotate(
       angle: rotationAngleInRadians,
       child: Container(
-        width: 24,
-        height: 24,
+        width: ResponsiveUtils.iconMedium(context),
+        height: ResponsiveUtils.iconMedium(context),
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
-              width: 3,
+              color: _isBorderHighlighted
+                  ? Colors.yellow
+                  : Theme.of(context).colorScheme.primary,
+              width: _isBorderHighlighted ? 4 : 2,
             ),
             left: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
-              width: 3,
+              color: _isBorderHighlighted
+                  ? Colors.yellow
+                  : Theme.of(context).colorScheme.primary,
+              width: _isBorderHighlighted ? 4 : 2,
             ),
           ),
         ),
@@ -472,34 +565,58 @@ class _ScanScreenState extends State<ScanScreen> {
 
   Widget _buildActionButton({
     required IconData icon,
-    required String label,
+    String? label,
     required VoidCallback onPressed,
+    bool circular = false,
+    Color? color,
   }) {
+    final buttonColor = color ?? Theme.of(context).colorScheme.primary;
+    final iconSize = ResponsiveUtils.iconMedium(context);
+    final borderRadius = circular
+        ? iconSize // Makes it a perfect circle
+        : ResponsiveUtils.buttonBorderRadius(context);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      child: ElevatedButton.icon(
-        icon: Icon(icon, size: 24),
-        label: Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 3,
-          shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-        ),
-        onPressed: onPressed,
-      ),
+      child: circular
+          ? RawMaterialButton(
+              onPressed: onPressed,
+              elevation: ResponsiveUtils.cardElevation(context),
+              fillColor: buttonColor,
+              shape: CircleBorder(),
+              constraints: BoxConstraints.tightFor(
+                width: iconSize * 2,
+                height: iconSize * 2,
+              ),
+              child: Icon(icon, size: iconSize, color: Colors.white),
+            )
+          : ElevatedButton.icon(
+              icon: Icon(icon, size: iconSize),
+              label: Text(
+                label ?? '',
+                style: ResponsiveUtils.buttonText(context),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.mediumSpacing(context),
+                  vertical: ResponsiveUtils.smallSpacing(context),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                ),
+                backgroundColor: buttonColor,
+                foregroundColor: Colors.white,
+                elevation: ResponsiveUtils.cardElevation(context),
+                shadowColor: buttonColor.withOpacity(0.3),
+              ),
+              onPressed: onPressed,
+            ),
     );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }

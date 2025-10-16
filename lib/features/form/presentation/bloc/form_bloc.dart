@@ -12,28 +12,27 @@ part 'form_state.dart';
 
 class FormBloc extends Bloc<FormEvent, FormState> {
   FormBloc() : super(FormInitial()) {
-    on<SubmitFormEvent>((event, emit) async {
+    on<InsertReadingEvent>((event, emit) async {
       emit(FormLoading());
       try {
         final String baseUrl = Environment.apiUrl;
-        debugPrint(
-          'Enviando a: $baseUrl/Readings/update-current-reading/${event.readingId}',
-        );
-        final response = await http.put(
-          Uri.parse(
-            '$baseUrl/Readings/update-current-reading/${event.readingId}',
-          ),
+        debugPrint('Enviando a: $baseUrl/Readings/create-reading');
+        final response = await http.post(
+          Uri.parse('$baseUrl/Readings/create-reading'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            "previewsReading": event.previousReading,
-            "currentReading": event.currentReading,
-            "rentalIncomeCode": event.rentalIncomeCode,
-            "novelty": event.novelty,
-            "incomeCode": event.incomeCode,
-            "cadastralKey": event.cadastralKey,
+            "connectionId": event.connectionId,
             "sector": event.sector,
             "account": event.account,
-            "connectionId": event.connectionId,
+            "cadastralKey": event.cadastralKey,
+            "previousReading": event.previousReading,
+            "currentReading": event.currentReading,
+            "incomeCode": event.incomeCode,
+            "rentalIncomeCode": event.rentalIncomeCode,
+            "readingValue": event.readingValue,
+            "novelty": event.novelty,
+            "sewerRate": event.sewerRate,
+            "averageConsumption": event.averageConsumption,
           }),
         );
         debugPrint(

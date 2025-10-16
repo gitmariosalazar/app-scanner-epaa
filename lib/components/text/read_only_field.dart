@@ -1,84 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/utils/responsive_utils.dart';
 
 class ReadOnlyField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
-  final IconData? leftIcon;
-  final IconData? rightIcon;
+  final IconData leftIcon;
+  final TextStyle? textStyle;
 
   const ReadOnlyField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.label,
-    this.leftIcon,
-    this.rightIcon,
-  }) : super(key: key);
+    required this.leftIcon,
+    this.textStyle,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    const iconPaddingLeft = 8.0;
+    final iconSize = ResponsiveUtils.iconExtraSmall(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(left: 5),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+        Text(
+          label,
+          style: (textStyle ?? ResponsiveUtils.bodySmall(context)).copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface.withOpacity(0.8),
           ),
         ),
-        const SizedBox(height: 5),
-        TextField(
-          controller: controller,
-          readOnly: true,
-          decoration: InputDecoration(
-            prefixIcon: leftIcon != null
-                ? Icon(
-                    leftIcon,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  )
-                : null,
-            suffixIcon: rightIcon != null
-                ? Icon(
-                    rightIcon,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  )
-                : null,
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+        ResponsiveUtils.vSpace(context, 0.0035),
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            TextFormField(
+              controller: controller,
+              readOnly: true,
+              enabled: false,
+              decoration: InputDecoration(
+                // Asegura espacio a la izquierda para el icono
+                contentPadding: EdgeInsets.only(
+                  left:
+                      iconSize +
+                      iconPaddingLeft +
+                      4, // Espacio para el icono + padding + margen extra
+                  right: 10,
+                  top: 6,
+                  bottom: 6,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.extraSmallBorderRadiusValue(context),
+                  ),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline.withOpacity(0.5),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveUtils.extraSmallBorderRadiusValue(context),
+                  ),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline.withOpacity(0.5),
+                  ),
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface.withOpacity(0.6),
+              ),
+              style: textStyle ?? ResponsiveUtils.bodyMedium(context),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
+            // Icono pegado al borde izquierdo
+            Positioned(
+              left: iconPaddingLeft,
+              child: Icon(
+                leftIcon,
+                size: iconSize,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-          ),
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
+          ],
         ),
       ],
     );

@@ -7,33 +7,59 @@ abstract class FormEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class SubmitFormEvent extends FormEvent {
-  final int readingId;
-  final double previousReading;
-  final double currentReading;
-  final int rentalIncomeCode;
-  final String novelty;
-  final int incomeCode;
-  final String cadastralKey;
+/// Evento para cargar lecturas desde la API (GET)
+class LoadReadingEvent extends FormEvent {
+  final String connectionId;
+
+  const LoadReadingEvent(this.connectionId);
+
+  @override
+  List<Object> get props => [connectionId];
+}
+
+/// Evento para insertar una lectura (POST)
+class InsertReadingEvent extends FormEvent {
+  final String connectionId;
   final int sector;
   final int account;
-  final String connectionId;
+  final String cadastralKey;
+  final double sewerRate;
+  final double previousReading;
+  final double currentReading;
+  final int incomeCode;
+  final double readingValue;
+  final int rentalIncomeCode;
+  final String novelty;
   final double averageConsumption;
 
-  const SubmitFormEvent({
-    required this.readingId,
-    required this.currentReading,
-    required this.previousReading,
-    required this.rentalIncomeCode,
-    required this.novelty,
-    required this.incomeCode,
-    required this.cadastralKey,
+  const InsertReadingEvent({
+    required this.connectionId,
     required this.sector,
     required this.account,
-    required this.connectionId,
+    required this.cadastralKey,
+    required this.sewerRate,
+    required this.previousReading,
+    required this.currentReading,
+    required this.incomeCode,
+    required this.readingValue,
+    required this.rentalIncomeCode,
+    required this.novelty,
     required this.averageConsumption,
   });
 
   @override
-  List<Object> get props => [currentReading];
+  List<Object> get props => [
+    connectionId,
+    sector,
+    account,
+    cadastralKey,
+    sewerRate,
+    previousReading,
+    currentReading,
+    incomeCode,
+    readingValue,
+    rentalIncomeCode,
+    novelty,
+    averageConsumption,
+  ];
 }

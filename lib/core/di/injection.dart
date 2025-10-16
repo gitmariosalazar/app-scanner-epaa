@@ -1,3 +1,9 @@
+import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
+import 'package:flutter_application/features/observations/data/repositories/observation_repository_impl.dart';
+import 'package:flutter_application/features/observations/domain/repositories/observation_repository.dart';
+import 'package:flutter_application/features/observations/domain/usecases/get_observations_by_cadasralkey_usecase.dart';
+import 'package:flutter_application/features/observations/domain/usecases/get_observations_usecase.dart.dart';
+import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/auth/data/repositories/auth_repository_impl.dart';
@@ -52,4 +58,30 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<ManuallyUseCase>(() => ManuallyUseCase(sl()));
   sl.registerFactory(() => ManuallyBloc(sl()));
+
+  // Observations Feature
+  // Observations Feature
+  sl.registerLazySingleton<ObservationsDataSource>(
+    () => ObservationsDataSourceImpl(),
+  );
+  sl.registerLazySingleton<ObservationRepository>(
+    () => ObservationRepositoryImpl(dataSource: sl()),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton<FindAllObservationsUseCase>(
+    () => FindAllObservationsUseCase(sl()),
+  );
+
+  sl.registerLazySingleton<FindAllObservationsByCadastralKeyUseCase>(
+    () => FindAllObservationsByCadastralKeyUseCase(sl()),
+  );
+
+  // Bloc
+  sl.registerFactory(
+    () => ObservationBloc(
+      sl<FindAllObservationsUseCase>(),
+      sl<FindAllObservationsByCadastralKeyUseCase>(),
+    ),
+  );
 }
