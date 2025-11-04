@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_application/features/observations/data/models/observation_model.dart';
 import 'package:flutter_application/features/observations/domain/entities/observation_entity.dart';
 import 'package:flutter_application/features/observations/domain/usecases/get_observations_by_cadasralkey_usecase.dart';
 import 'package:flutter_application/features/observations/domain/usecases/get_observations_usecase.dart.dart';

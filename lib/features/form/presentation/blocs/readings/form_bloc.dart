@@ -1,5 +1,5 @@
+// features/form/presentation/blocs/readings/form_bloc.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,7 +39,16 @@ class FormBloc extends Bloc<FormEvent, FormState> {
           'Respuesta API (save): ${response.statusCode} - ${response.body}',
         );
         if (response.statusCode == 200 || response.statusCode == 201) {
-          emit(FormSuccess());
+          final responseData = jsonDecode(response.body);
+          final data =
+              responseData['data']
+                  as Map<String, dynamic>?; // Extraer el objeto data
+          if (data == null) {
+            emit(FormFailure(message: 'No se recibió los datos de la lectura'));
+          } else {
+            debugPrint('Respuesta exitosa: $data');
+            emit(FormSuccess(data));
+          }
         } else {
           emit(
             FormFailure(

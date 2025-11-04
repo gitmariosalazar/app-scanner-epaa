@@ -1,10 +1,14 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/features/form/presentation/blocs/photo-readings/photo_reading_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/core/router/app_router.dart';
 import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// 1. Declara el RouteObserver global para la app.
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +25,7 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
+        BlocProvider(create: (_) => di.sl<PhotoReadingBloc>()),
         // Add other blocs as needed
       ],
       child: MaterialApp.router(

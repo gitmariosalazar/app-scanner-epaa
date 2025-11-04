@@ -7,6 +7,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_application/main.dart';
+import 'package:flutter_application/components/button/widget_button.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -15,7 +17,8 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
+class _ScanScreenState extends State<ScanScreen>
+    with WidgetsBindingObserver, RouteAware {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
@@ -43,7 +46,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!mounted) return;
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
     final size = MediaQuery.of(context).size;
     final isSmall = ResponsiveUtils.isSmallDevice(context);
     final scanAreaSize = size.width * (isSmall ? 0.55 : 0.65);
@@ -51,6 +54,23 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
     final top = (size.height - scanAreaSize) / 2;
     _scanWindow = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
     _startScanner();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint('didPopNext called: Reanudando escáner');
+    if (mounted) {
+      _shouldPauseCamera = false;
+      _resumeScanning();
+    }
   }
 
   Future<void> _startScanner() async {
@@ -129,8 +149,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
               '/form',
               extra: {'apiResponse': responseData, 'mode': 'scan'},
             );
-            _shouldPauseCamera = false;
-            await _resumeScanning();
+            // didPopNext se encargará de reanudar el escáner al volver.
           }
         } else {
           _showError('Respuesta de la API no es un objeto JSON válido.');
@@ -295,7 +314,6 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
                   if (barcodes.isNotEmpty) {
                     final barcode = barcodes.first;
                     final String? code = barcode.rawValue;
-
                     if (code != null && code.isNotEmpty) {
                       setState(() {
                         _isProcessing = true;
@@ -314,7 +332,6 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
               ),
             ),
             _buildScannerOverlay(context),
-            // Este bloque combina estado y botones, evitando superposición:
             Positioned(
               left: ResponsiveUtils.mediumSpacing(context),
               right: ResponsiveUtils.mediumSpacing(context),
@@ -345,7 +362,7 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildActionButton(
+                      ActionButton(
                         icon: _isTorchOn ? Icons.flash_off : Icons.flash_on,
                         circular: true,
                         onPressed: () async {
@@ -361,12 +378,12 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
                           }
                         },
                       ),
-                      _buildActionButton(
+                      ActionButton(
                         icon: Icons.photo_library,
                         label: 'Escanear desde Foto',
                         onPressed: _scanFromPhoto,
                       ),
-                      _buildActionButton(
+                      ActionButton(
                         icon: Icons.restart_alt_rounded,
                         circular: true,
                         onPressed: _resetScanner,
@@ -561,63 +578,5 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
         ),
       ),
     );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    String? label,
-    required VoidCallback onPressed,
-    bool circular = false,
-    Color? color,
-  }) {
-    final buttonColor = color ?? Theme.of(context).colorScheme.primary;
-    final iconSize = ResponsiveUtils.iconMedium(context);
-    final borderRadius = circular
-        ? iconSize // Makes it a perfect circle
-        : ResponsiveUtils.buttonBorderRadius(context);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      child: circular
-          ? RawMaterialButton(
-              onPressed: onPressed,
-              elevation: ResponsiveUtils.cardElevation(context),
-              fillColor: buttonColor,
-              shape: CircleBorder(),
-              constraints: BoxConstraints.tightFor(
-                width: iconSize * 2,
-                height: iconSize * 2,
-              ),
-              child: Icon(icon, size: iconSize, color: Colors.white),
-            )
-          : ElevatedButton.icon(
-              icon: Icon(icon, size: iconSize),
-              label: Text(
-                label ?? '',
-                style: ResponsiveUtils.buttonText(context),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveUtils.mediumSpacing(context),
-                  vertical: ResponsiveUtils.smallSpacing(context),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                ),
-                backgroundColor: buttonColor,
-                foregroundColor: Colors.white,
-                elevation: ResponsiveUtils.cardElevation(context),
-                shadowColor: buttonColor.withOpacity(0.3),
-              ),
-              onPressed: onPressed,
-            ),
-    );
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller.dispose();
-    super.dispose();
   }
 }

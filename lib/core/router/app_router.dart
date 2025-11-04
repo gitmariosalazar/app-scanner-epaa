@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/features/form/presentation/pages/location_screen.dart';
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,15 +12,21 @@ import 'package:flutter_application/features/manually/presentation/pages/manual_
 import 'package:flutter_application/features/scan/presentation/pages/scan_screen.dart';
 import 'package:flutter_application/features/form/presentation/pages/form_screen.dart'
     as form;
-import 'package:flutter_application/features/form/presentation/bloc/form_bloc.dart'
+import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
+import 'package:flutter_application/main.dart'; // Importa routeObserver
 
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/login',
+    observers: [routeObserver], // <-- Añade RouteObserver aquí
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/location',
+        builder: (context, state) => const LocationPage(),
+      ),
       GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
       GoRoute(
         path: '/form',
@@ -39,7 +46,6 @@ class AppRouter {
           );
         },
       ),
-
       GoRoute(
         path: '/manually-entry',
         builder: (context, state) => BlocProvider(
@@ -47,7 +53,6 @@ class AppRouter {
           child: const ManualEntryScreen(),
         ),
       ),
-
       GoRoute(
         path: '/observations',
         builder: (context, state) {

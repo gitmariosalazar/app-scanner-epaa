@@ -118,7 +118,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             controller: _acometidaIdController,
                             enabled: !isLoading,
                             decoration: InputDecoration(
-                              labelText: 'Acometida ID (ej: 5-256 o 12-256)',
+                              labelText: 'Acometida ID (ej: 1-256 o 12-256)',
                               labelStyle: context.bodyMedium.copyWith(
                                 color: theme.colorScheme.primary.withOpacity(
                                   0.7,
@@ -192,8 +192,8 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             ),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'[1-9][0-9-]*'),
-                              ), // Allow 1-9 first, then digits or hyphen
+                                RegExp(r'[0-9-]'),
+                              ),
                               _AcometidaIdInputFormatter(),
                             ],
                             validator: (value) {
@@ -201,10 +201,10 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                                 return 'Por favor, ingrese un ID de acometida válido';
                               }
                               final regex = RegExp(
-                                r'^([5-9]|[1-3][0-9]|40)-\d+$',
+                                r'^([1-9]|[1-3][0-9]|40)-[1-9]\d*$',
                               );
                               if (!regex.hasMatch(value)) {
-                                return 'Formato inválido. Use 5-40 seguido de guion y números (ej., 5-256 o 12-256)';
+                                return 'Formato inválido. Sector (1-40) seguido de guion y Cuenta (1 o más) (ej., 1-256 o 12-256)';
                               }
                               return null;
                             },
@@ -282,7 +282,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   }
 }
 
-// Custom TextInputFormatter to enforce 5-40, auto-hyphen after 5-9 or 10-40, allow full editing, and prevent leading zero
+// Formateador personalizado para validar Sector (1-40) y Cuenta (1 o más), con guion automático y manual
 class _AcometidaIdInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -292,32 +292,36 @@ class _AcometidaIdInputFormatter extends TextInputFormatter {
     final newText = newValue.text;
     final oldText = oldValue.text;
 
-    // Allow empty input
+    // Permitir entrada vacía
     if (newText.isEmpty) {
       return newValue;
     }
 
-    // Remove all non-digits and non-hyphen characters
+    // Eliminar caracteres que no sean dígitos o guion
     String cleaned = newText.replaceAll(RegExp(r'[^0-9-]'), '');
 
-    // Prevent leading zero for the first part
+    // Prevenir cero inicial
     if (!cleaned.contains('-') && cleaned.startsWith('0')) {
       return oldValue;
     }
 
-    // Prevent multiple hyphens
+    // Prevenir múltiples guiones
     if (cleaned.contains('-')) {
       final parts = cleaned.split('-');
       if (parts.length > 2) {
         return oldValue;
       }
-      // Prevent leading zero before hyphen
+      // Prevenir cero inicial antes del guion
       if (parts[0].startsWith('0')) {
+        return oldValue;
+      }
+      // Prevenir cero inicial en Cuenta
+      if (parts.length == 2 && parts[1].startsWith('0')) {
         return oldValue;
       }
     }
 
-    // Handle deletion
+    // Manejar eliminación
     if (newText.length < oldText.length) {
       return TextEditingValue(
         text: cleaned,
@@ -325,39 +329,77 @@ class _AcometidaIdInputFormatter extends TextInputFormatter {
       );
     }
 
-    // Handle input before the hyphen (5-40)
+    // Manejar entrada antes del guion (Sector: 1-40)
     if (!cleaned.contains('-')) {
-      // Check for single digit (5-9)
+      // Verificar un solo dígito (1-9)
       if (cleaned.length == 1) {
         final number = int.tryParse(cleaned);
-        if (number != null && number >= 5 && number <= 9) {
+        if (number != null && number >= 1 && number <= 9) {
+          // Permitir guion manual después de 1-4
+          if (newText.endsWith('-') && number >= 1 && number <= 4) {
+            return TextEditingValue(
+              text: '$cleaned-',
+              selection: TextSelection.collapsed(offset: cleaned.length + 1),
+            );
+          }
+          // Agregar guion automático para 5-9
+          if (number >= 5) {
+            return TextEditingValue(
+              text: '$cleaned-',
+              selection: TextSelection.collapsed(offset: cleaned.length + 1),
+            );
+          }
+          return newValue; // Mantener 1-4 sin guion
+        }
+      }
+      // Verificar dos dígitos (10-40)
+      if (cleaned.length == 2) {
+        final firstDigit = int.tryParse(cleaned[0]);
+        final number = int.tryParse(cleaned);
+        if (firstDigit != null && number != null) {
+          if (firstDigit >= 1 && firstDigit <= 3) {
+            // Permitir 10-39 (cualquier segundo dígito 0-9)
+            if (number >= 10 && number <= 39) {
+              return TextEditingValue(
+                text: '$cleaned-',
+                selection: TextSelection.collapsed(offset: cleaned.length + 1),
+              );
+            }
+          } else if (firstDigit == 4 && number == 40) {
+            // Permitir solo 40 para el primer dígito 4
+            return TextEditingValue(
+              text: '$cleaned-',
+              selection: TextSelection.collapsed(offset: cleaned.length + 1),
+            );
+          }
+        }
+      }
+      // Manejar caso especial: después de 4, permitir cualquier dígito pero forzar 4-X
+      if (cleaned.length >= 2 && cleaned.startsWith('4')) {
+        final secondChar = cleaned[1];
+        if (secondChar != '0') {
           return TextEditingValue(
-            text: '$cleaned-',
-            selection: TextSelection.collapsed(
-              offset: newValue.selection.end + 1,
-            ),
+            text: '4-$secondChar',
+            selection: TextSelection.collapsed(offset: 3),
           );
         }
       }
-      // Check for two digits (10-40)
-      if (cleaned.length >= 2) {
-        final number = int.tryParse(cleaned.substring(0, 2));
-        if (number != null && number >= 10 && number <= 40) {
-          return TextEditingValue(
-            text:
-                '${cleaned.substring(0, 2)}-${cleaned.length > 2 ? cleaned.substring(2) : ''}',
-            selection: TextSelection.collapsed(
-              offset: newValue.selection.end + 1,
-            ),
-          );
-        } else if (number != null && (number < 5 || number > 40)) {
-          return oldValue;
-        }
+      // Prevenir más de dos dígitos antes del guion
+      if (cleaned.length > 2) {
+        return oldValue;
       }
     }
 
-    final regex = RegExp(r'^[1-9]\d{0,1}-?\d*$');
-    if (!regex.hasMatch(cleaned)) {
+    // Permitir entrada después del guion (Cuenta)
+    if (cleaned.contains('-')) {
+      final parts = cleaned.split('-');
+      final sector = int.tryParse(parts[0]);
+      if (sector != null && sector >= 1 && sector <= 40) {
+        return TextEditingValue(
+          text: cleaned,
+          selection: TextSelection.collapsed(offset: newValue.selection.end),
+        );
+      }
       return oldValue;
     }
 
@@ -368,7 +410,7 @@ class _AcometidaIdInputFormatter extends TextInputFormatter {
   }
 }
 
-/// Attractive, responsive button with loading state and icon
+/// Botón atractivo y responsivo con estado de carga e ícono
 class _MenuButton extends StatelessWidget {
   final Color color;
   final IconData icon;

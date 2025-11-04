@@ -4,30 +4,28 @@ import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
 import 'package:flutter_application/components/text/edit_text_field.dart';
 import 'package:flutter_application/components/text/read_only_field.dart';
+import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 import 'package:flutter_application/utils/dialog_utils.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/utils/screen_type_layout.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_application/features/form/presentation/bloc/form_bloc.dart'
+import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_application/components/button/widget_button.dart';
+import 'package:go_router/go_router.dart';
 
-// Define a consistent color palette
 class AppColors {
-  static const primary = Color(0xFF0288D1); // Bright blue for primary elements
-  static const secondary = Color(0xFF4CAF50); // Green for secondary elements
-  static const error = Color(0xFFE57373); // Red for errors
-  static const background = Color(0xFFF5F7FA); // Light neutral background
-  static const cardBackground = Colors.white; // White for cards
-  static const cardSecondaryBackground = Color(
-    0xFFE3F2FD,
-  ); // Light blue for secondary cards
-  static const textPrimary = Color(0xFF212121); // Dark text for primary content
-  static const textSecondary = Color(
-    0xFF757575,
-  ); // Lighter text for secondary content
+  static const primary = Color(0xFF0288D1);
+  static const secondary = Color(0xFF4CAF50);
+  static const error = Color(0xFFE57373);
+  static const background = Color(0xFFF5F7FA);
+  static const cardBackground = Colors.white;
+  static const cardSecondaryBackground = Color(0xFFE3F2FD);
+  static const textPrimary = Color(0xFF212121);
+  static const textSecondary = Color(0xFF757575);
 }
 
 class FormScreen extends StatefulWidget {
@@ -65,55 +63,34 @@ class _FormScreenState extends State<FormScreen>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late ConsumptionVisuals _consumptionVisuals;
+  String? _errorMessage;
+  String? _successMessage;
 
   @override
   void initState() {
     super.initState();
-    // Procesar apiResponse (unchanged)
-    List<dynamic> dataList = [];
-    Map<String, dynamic> data = {};
+    _initializeData();
+    _setupListeners();
+    _setupAnimations();
+  }
 
+  void _initializeData() {
+    final List<dynamic> dataList = [];
+    Map<String, dynamic> data = {};
     if (widget.apiResponse.containsKey('apiResponse') &&
         widget.apiResponse['apiResponse'] is Map<String, dynamic> &&
         widget.apiResponse['apiResponse'].containsKey('data') &&
         widget.apiResponse['apiResponse']['data'] is List) {
-      dataList = widget.apiResponse['apiResponse']['data'] as List<dynamic>;
+      dataList.addAll(
+        widget.apiResponse['apiResponse']['data'] as List<dynamic>,
+      );
     } else if (widget.apiResponse.containsKey('data') &&
         widget.apiResponse['data'] is List) {
-      dataList = widget.apiResponse['data'] as List<dynamic>;
+      dataList.addAll(widget.apiResponse['data'] as List<dynamic>);
     } else {
       data = widget.apiResponse;
     }
-
-    if (dataList.isNotEmpty) {
-      data = dataList.first as Map<String, dynamic>;
-    }
-
-    if (data.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'No se encontraron datos válidos en la respuesta de la API.',
-              style: ResponsiveUtils.bodyMedium(
-                context,
-              ).copyWith(color: AppColors.textPrimary),
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveUtils.buttonBorderRadius(context),
-              ),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      });
-    }
-
-    debugPrint('Datos procesados en FormScreen: $data, modo: ${widget.mode}');
-
+    if (dataList.isNotEmpty) data = dataList.first as Map<String, dynamic>;
     _connectionIdController.text = data['cadastralKey']?.toString() ?? '';
     _connectionOwnerController.text = data['clientName']?.toString() ?? '';
     _readingIdController.text = data['readingId']?.toString() ?? '';
@@ -131,22 +108,23 @@ class _FormScreenState extends State<FormScreen>
     _readingValueController.text = data['readingValue']?.toString() ?? '';
     _previousReadingDate.text = data['previousReadingDate']?.toString() ?? '';
     _newCurrentReadingController.text = '';
-
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
       _currentReadingController.text,
     );
-
     _previousConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _currentReadingController.text,
       _previousReadingController.text,
     );
-
     _updateConsumptionVisuals();
+  }
 
+  void _setupListeners() {
     _newCurrentReadingController.addListener(_updateCurrentConsumption);
     _previousReadingController.addListener(_updateCurrentConsumption);
+  }
 
+  void _setupAnimations() {
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -163,7 +141,7 @@ class _FormScreenState extends State<FormScreen>
     );
     _currentConsumptionController.text = value;
     _updateConsumptionVisuals();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _updateConsumptionVisuals() {
@@ -175,135 +153,149 @@ class _FormScreenState extends State<FormScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.background, // Updated background color
-      appBar: AppBar(
-        title: Text(
-          'Detalle de La Acometida',
-          style: ResponsiveUtils.titleMedium(
-            context,
-          ).copyWith(fontWeight: FontWeight.w600, color: Colors.white),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: ResponsiveUtils.cardElevation(context),
-        centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.primary.withOpacity(0.05), // Softer gradient
-              AppColors.background,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Padding(
-          padding: ResponsiveUtils.screenPadding(context).copyWith(
-            top: ResponsiveUtils.scaleHeight(
+    return WillPopScope(
+      onWillPop: () async => true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text(
+            'Detalle de La Acometida',
+            style: ResponsiveUtils.titleMedium(
               context,
-              0.035,
-            ), // Increased top padding
-            bottom: ResponsiveUtils.scaleHeight(
-              context,
-              0.025,
-            ), // Increased bottom padding
+            ).copyWith(fontWeight: FontWeight.w600, color: Colors.white),
           ),
-          child: BlocConsumer<form_bloc.FormBloc, form_bloc.FormState>(
-            listener: (context, state) {
-              if (state is form_bloc.FormSuccess) {
-                DialogUtils.showResultDialog(
-                  context,
-                  '¡Formulario enviado con éxito!',
-                  Icons.check_circle,
-                  AppColors.secondary,
-                );
-              } else if (state is form_bloc.FormFailure) {
-                DialogUtils.showResultDialog(
-                  context,
-                  state.message,
-                  Icons.error_outline,
-                  AppColors.error,
-                );
-              }
-            },
-            builder: (context, state) {
-              return SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeaderRow(theme),
-                      ResponsiveUtils.vSpace(
-                        context,
-                        0.03,
-                      ), // Increased spacing
-                      _buildConsumptionRow(theme, state),
-                      ResponsiveUtils.vSpace(
-                        context,
-                        0.03,
-                      ), // Increased spacing
-                      _buildReadingFieldsRow(),
-                      ResponsiveUtils.vSpace(
-                        context,
-                        0.015,
-                      ), // Adjusted spacing
-                      _buildDescriptionField(theme),
-                      ResponsiveUtils.vSpace(context, 0),
-                      ResponsiveUtils.vSpace(context, 0.015),
-                      _buildImagesSection(context),
-                      ResponsiveUtils.vSpace(
-                        context,
-                        0.02,
-                      ), // Increased spacing
-                      _buildActionButtonsRow(theme, state),
-                      ResponsiveUtils.vSpace(
-                        context,
-                        0.03,
-                      ), // Increased spacing
-                      MinimalSectionDivider(
-                        title: 'Información Adicional',
-                        color: AppColors.primary.withOpacity(0.8),
-
-                        children: [
-                          ResponsiveUtils.vSpace(
-                            context,
-                            0.015,
-                          ), // Adjusted spacing
-                          _buildIdFieldsRow(),
-                          ResponsiveUtils.vSpace(
-                            context,
-                            0.03,
-                          ), // Increased spacing
-                          _buildOwnerAddressFields(),
-                          ResponsiveUtils.vSpace(
-                            context,
-                            0.03,
-                          ), // Increased spacing
-                        ],
-                      ),
-                    ],
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          elevation: ResponsiveUtils.cardElevation(context),
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withOpacity(0.05),
+                AppColors.background,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Padding(
+            padding: ResponsiveUtils.screenPadding(context).copyWith(
+              top: ResponsiveUtils.scaleHeight(context, 0.035),
+              bottom: ResponsiveUtils.scaleHeight(context, 0.025),
+            ),
+            child: BlocConsumer<form_bloc.FormBloc, form_bloc.FormState>(
+              listener: (context, state) {
+                if (!mounted) return;
+                if (state is form_bloc.FormSuccess) {
+                  _handleSuccess(context, state);
+                } else if (state is form_bloc.FormFailure) {
+                  setState(() => _errorMessage = state.message);
+                }
+              },
+              builder: (context, state) {
+                return SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildHeaderRow(context),
+                        ResponsiveUtils.vSpace(context, 0.03),
+                        _buildConsumptionRow(context, state),
+                        ResponsiveUtils.vSpace(context, 0.03),
+                        _buildReadingFieldsRow(),
+                        ResponsiveUtils.vSpace(context, 0.015),
+                        _buildDescriptionField(context),
+                        ResponsiveUtils.vSpace(context, 0.015),
+                        _buildImagesSection(context),
+                        if (_errorMessage != null || _successMessage != null)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: ResponsiveUtils.scaleHeight(context, 0.01),
+                              left: ResponsiveUtils.scaleWidth(context, 0.03),
+                              right: ResponsiveUtils.scaleWidth(context, 0.03),
+                            ),
+                            child: Text(
+                              _errorMessage ?? _successMessage ?? "",
+                              style: ResponsiveUtils.bodySmall(context)
+                                  .copyWith(
+                                    color: _errorMessage != null
+                                        ? AppColors.error
+                                        : AppColors.secondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ),
+                        ResponsiveUtils.vSpace(context, 0.02),
+                        _buildActionButtonsRow(context, state),
+                        ResponsiveUtils.vSpace(context, 0.03),
+                        MinimalSectionDivider(
+                          title: 'Información Adicional',
+                          color: AppColors.primary.withOpacity(0.8),
+                          children: [
+                            ResponsiveUtils.vSpace(context, 0.015),
+                            _buildIdFieldsRow(),
+                            ResponsiveUtils.vSpace(context, 0.03),
+                            _buildOwnerAddressFields(),
+                            ResponsiveUtils.vSpace(context, 0.03),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildImagesSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final double imageSize = ResponsiveUtils.isTablet(context)
-        ? 110 - 20
-        : 75 - 20;
+  void _handleSuccess(BuildContext context, form_bloc.FormSuccess state) async {
+    DialogUtils.showResultDialog(
+      context,
+      '¡Formulario enviado con éxito!',
+      Icons.check_circle,
+      AppColors.secondary,
+    );
+    if (_attachedImages.isNotEmpty) {
+      debugPrint('Iniciando subida de imágenes...');
+      debugPrint('Número de imágenes a subir: ${_attachedImages.length}');
+      /*Print Datos a Enviar*/
+      debugPrint('Datos a enviar:');
+      debugPrint('Reading ID: ${state.data['readingId']}');
+      debugPrint('Cadastral Key: ${state.data['cadastralKey']}');
 
+      try {
+        await submitPhotoReading(
+          context: context,
+          images: _attachedImages,
+          readingId: state.data['readingId'],
+          cadastralKey: state.data['cadastralKey'],
+          description: state.data['novelty'] ?? 'Sin descripción',
+          mode: widget.mode,
+        );
+        if (!mounted) return;
+        setState(() {
+          _attachedImages.clear();
+          _successMessage = 'Imágenes subidas con éxito.';
+          _errorMessage = null;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _errorMessage = 'Error al subir imágenes: $e');
+      }
+    } else {
+      debugPrint('No hay imágenes para subir.');
+    }
+  }
+
+  Widget _buildImagesSection(BuildContext context) {
+    final double imageSize = ResponsiveUtils.isTablet(context) ? 90.0 : 55.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -323,7 +315,6 @@ class _FormScreenState extends State<FormScreen>
                 SizedBox(width: ResponsiveUtils.smallSpacing(context)),
             itemBuilder: (context, index) {
               if (index == _attachedImages.length) {
-                // Botón de agregar imagen
                 return _buildAddImageButton(context, imageSize);
               } else {
                 final file = _attachedImages[index];
@@ -333,13 +324,22 @@ class _FormScreenState extends State<FormScreen>
                       borderRadius: BorderRadius.circular(14),
                       child: Image.file(
                         file,
-                        width: ResponsiveUtils.isTablet(context)
-                            ? 110 - 20
-                            : 75 - 20,
-                        height: ResponsiveUtils.isTablet(context)
-                            ? 110 - 20
-                            : 75 - 20,
+                        width: imageSize,
+                        height: imageSize,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: AppColors.error.withOpacity(0.3),
+                            child: Center(
+                              child: Text(
+                                'Error al cargar imagen',
+                                style: ResponsiveUtils.bodySmall(
+                                  context,
+                                ).copyWith(color: AppColors.error),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     Positioned(
@@ -347,9 +347,8 @@ class _FormScreenState extends State<FormScreen>
                       right: 2,
                       child: GestureDetector(
                         onTap: () {
-                          setState(() {
-                            _attachedImages.removeAt(index);
-                          });
+                          if (!mounted) return;
+                          setState(() => _attachedImages.removeAt(index));
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -377,6 +376,7 @@ class _FormScreenState extends State<FormScreen>
   Widget _buildAddImageButton(BuildContext context, double size) {
     return GestureDetector(
       onTap: () async {
+        if (!mounted) return;
         final picker = ImagePicker();
         final XFile? pickedImage = await picker.pickImage(
           source: ImageSource.camera,
@@ -384,9 +384,12 @@ class _FormScreenState extends State<FormScreen>
           maxHeight: 1024,
           imageQuality: 85,
         );
-        if (pickedImage != null) {
+        if (pickedImage != null && mounted) {
           setState(() {
             _attachedImages.add(File(pickedImage.path));
+            if (widget.mode == 'manual' && _attachedImages.length >= 1) {
+              _errorMessage = null;
+            }
           });
         }
       },
@@ -410,7 +413,7 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
-  Widget _buildHeaderRow(ThemeData theme) {
+  Widget _buildHeaderRow(BuildContext context) {
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       children: [
@@ -419,11 +422,11 @@ class _FormScreenState extends State<FormScreen>
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.cable,
-            color: AppColors.secondary, // Updated icon color
+            color: AppColors.secondary,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground, // Updated card background
+          backgroundColor: AppColors.cardBackground,
           children: [
             Text(
               _connectionIdController.text.isEmpty
@@ -431,7 +434,7 @@ class _FormScreenState extends State<FormScreen>
                   : _connectionIdController.text,
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary, // Updated text color
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -443,11 +446,11 @@ class _FormScreenState extends State<FormScreen>
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.water_drop,
-            color: AppColors.primary, // Updated icon color
+            color: AppColors.primary,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground, // Updated card background
+          backgroundColor: AppColors.cardBackground,
           children: [
             Text(
               _connectionIdController.text.isEmpty
@@ -455,7 +458,7 @@ class _FormScreenState extends State<FormScreen>
                   : '${double.tryParse(_averageConsumptionController.text)?.toStringAsFixed(2) ?? '0.00'} m³',
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary, // Updated text color
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -466,7 +469,7 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
-  Widget _buildConsumptionRow(ThemeData theme, form_bloc.FormState state) {
+  Widget _buildConsumptionRow(BuildContext context, form_bloc.FormState state) {
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       children: [
@@ -475,13 +478,12 @@ class _FormScreenState extends State<FormScreen>
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.history,
-            color: AppColors.textSecondary, // Updated icon color
+            color: AppColors.textSecondary,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor:
-              AppColors.cardSecondaryBackground, // Updated card background
-          children: [_buildConsumptionCardContent(theme, isPrevious: true)],
+          backgroundColor: AppColors.cardSecondaryBackground,
+          children: [_buildConsumptionCardContent(context, isPrevious: true)],
         ),
         TitledCard(
           title: 'Consumo Actual',
@@ -493,14 +495,14 @@ class _FormScreenState extends State<FormScreen>
           ),
           backgroundColor: _consumptionVisuals.backgroundColor,
           titleStyle: ResponsiveUtils.titleSmall(context),
-          children: [_buildConsumptionCardContent(theme, isPrevious: false)],
+          children: [_buildConsumptionCardContent(context, isPrevious: false)],
         ),
       ],
     );
   }
 
   Widget _buildConsumptionCardContent(
-    ThemeData theme, {
+    BuildContext context, {
     required bool isPrevious,
     TextStyle? textStyle,
   }) {
@@ -550,7 +552,7 @@ class _FormScreenState extends State<FormScreen>
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        ResponsiveUtils.vSpace(context, 0.015), // Adjusted spacing
+        ResponsiveUtils.vSpace(context, 0.015),
         Text(
           'Fecha: $dateText',
           style: ResponsiveUtils.bodySmall(
@@ -598,7 +600,7 @@ class _FormScreenState extends State<FormScreen>
             context,
           ).copyWith(color: AppColors.textPrimary),
         ),
-        ResponsiveUtils.vSpace(context, 0.03), // Increased spacing
+        ResponsiveUtils.vSpace(context, 0.03),
         ReadOnlyField(
           controller: _addressConnectionController,
           label: 'Dirección de la Conexión',
@@ -631,13 +633,11 @@ class _FormScreenState extends State<FormScreen>
           hintText: '0.00',
           keyboardType: TextInputType.number,
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (value == null || value.isEmpty)
               return 'Por favor, ingrese la lectura actual';
-            }
             final number = double.tryParse(value);
-            if (number == null || number < 0) {
+            if (number == null || number < 0)
               return 'Ingrese un número positivo válido';
-            }
             return null;
           },
           textStyle: ResponsiveUtils.bodyLarge(
@@ -648,7 +648,7 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
-  Widget _buildDescriptionField(ThemeData theme) {
+  Widget _buildDescriptionField(BuildContext context) {
     return EditTextField(
       controller: _descriptionController,
       label:
@@ -663,19 +663,21 @@ class _FormScreenState extends State<FormScreen>
       ).copyWith(color: AppColors.textPrimary),
       validator: widget.mode == 'manual'
           ? (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty)
                 return 'Por favor, ingrese una descripción';
-              }
               return null;
             }
           : null,
     );
   }
 
-  Widget _buildActionButtonsRow(ThemeData theme, form_bloc.FormState state) {
+  Widget _buildActionButtonsRow(
+    BuildContext context,
+    form_bloc.FormState state,
+  ) {
     return ResponsiveRow(
       forceRow: true,
-      rowSpacing: ResponsiveUtils.largeSpacing(context), // Increased spacing
+      rowSpacing: ResponsiveUtils.largeSpacing(context),
       children: [
         ResponsiveButton(
           onPressed: state is form_bloc.FormLoading
@@ -683,102 +685,147 @@ class _FormScreenState extends State<FormScreen>
               : () => _onSavePressed(context, state),
           icon: Icons.save,
           label: 'Guardar',
-          color: AppColors.secondary, // Updated button color
+          color: AppColors.secondary,
           loading: state is form_bloc.FormLoading,
-          height: ResponsiveUtils.buttonSmall(
-            context,
-          ), // Slightly larger button
+          height: ResponsiveUtils.buttonSmall(context),
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
         ResponsiveButton(
           onPressed: state is form_bloc.FormLoading
               ? null
-              : () => Navigator.of(context).pop(),
+              : () => context.pop(),
           icon: Icons.cancel,
           label: 'Cancelar',
-          color: AppColors.error, // Updated button color
+          color: AppColors.error,
           loading: false,
-          height: ResponsiveUtils.buttonSmall(
-            context,
-          ), // Slightly larger button
+          height: ResponsiveUtils.buttonSmall(context),
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
+        ),
+        ActionButton(
+          icon: Icons.location_on_outlined,
+          circular: true,
+          onPressed: () {
+            context.push('/location');
+          },
         ),
       ],
     );
   }
 
-  void _onSavePressed(BuildContext context, form_bloc.FormState state) {
-    debugPrint('Modo en _onSavePressed: ${widget.mode}');
-    if (_formKey.currentState?.validate() ?? false) {
-      DialogUtils.showConfirmationDialog(
-        context,
-        onConfirm: () {
-          debugPrint('Ejecutando onConfirm con context: $context');
-          context.read<form_bloc.FormBloc>().add(
-            form_bloc.InsertReadingEvent(
-              novelty: _descriptionController.text,
-              currentReading: double.parse(_newCurrentReadingController.text),
-              previousReading: double.parse(
-                _currentReadingController.text.isEmpty
-                    ? '0'
-                    : _currentReadingController.text,
-              ),
-              rentalIncomeCode: 1500,
-              incomeCode: 1256,
-              cadastralKey: _cadastralKeyConnectionController.text,
-              sector: int.parse(
-                _sectorConnectionController.text.isEmpty
-                    ? '0'
-                    : _sectorConnectionController.text,
-              ),
-              account: int.parse(
-                _accountConnectionController.text.isEmpty
-                    ? '0'
-                    : _accountConnectionController.text,
-              ),
-              readingValue: double.parse(
-                _readingValueController.text.isNotEmpty
-                    ? _readingValueController.text
-                    : '0',
-              ),
-              connectionId: _connectionIdController.text,
-              sewerRate: 0.0,
-              averageConsumption:
-                  double.tryParse(_averageConsumptionController.text) ?? 0.0,
-            ),
-          );
-        },
-        fields: [
-          {'label': 'ID de Conexión', 'value': _connectionIdController.text},
-          {'label': 'Propietario', 'value': _connectionOwnerController.text},
-          {'label': 'Dirección', 'value': _addressConnectionController.text},
-          {
-            'label': 'Lectura Actual',
-            'value': _newCurrentReadingController.text,
-          },
-          {
-            'label': 'Descripción',
-            'value': _descriptionController.text.isEmpty
-                ? 'Sin descripción'
-                : _descriptionController.text,
-          },
-        ],
-      );
+  Future<void> _onSavePressed(
+    BuildContext context,
+    form_bloc.FormState state,
+  ) async {
+    if (!_formKey.currentState!.validate()) return;
+    if (widget.mode == 'manual' && _attachedImages.isEmpty) {
+      if (mounted) {
+        setState(
+          () =>
+              _errorMessage = 'Se requiere al menos una imagen en modo manual.',
+        );
+      }
+      return;
     }
+    setState(() => _errorMessage = null);
+
+    final confirmed = await DialogUtils.showConfirmationDialog(
+      context,
+      onConfirm: () {
+        if (!mounted) return;
+        context.read<form_bloc.FormBloc>().add(
+          form_bloc.InsertReadingEvent(
+            novelty: _descriptionController.text,
+            currentReading: double.parse(_newCurrentReadingController.text),
+            previousReading: double.parse(
+              _currentReadingController.text.isEmpty
+                  ? '0'
+                  : _currentReadingController.text,
+            ),
+            rentalIncomeCode: 1500,
+            incomeCode: 1256,
+            cadastralKey: _cadastralKeyConnectionController.text,
+            sector: int.parse(
+              _sectorConnectionController.text.isEmpty
+                  ? '0'
+                  : _sectorConnectionController.text,
+            ),
+            account: int.parse(
+              _accountConnectionController.text.isEmpty
+                  ? '0'
+                  : _accountConnectionController.text,
+            ),
+            readingValue: double.parse(
+              _readingValueController.text.isNotEmpty
+                  ? _readingValueController.text
+                  : '0',
+            ),
+            connectionId: _connectionIdController.text,
+            sewerRate: 0.0,
+            averageConsumption:
+                double.tryParse(_averageConsumptionController.text) ?? 0.0,
+          ),
+        );
+      },
+      fields: [
+        {'label': 'ID de Conexión', 'value': _connectionIdController.text},
+        {'label': 'Propietario', 'value': _connectionOwnerController.text},
+        {'label': 'Dirección', 'value': _addressConnectionController.text},
+        {
+          'label': 'Descripción',
+          'value': _descriptionController.text.isEmpty
+              ? 'Sin descripción'
+              : _descriptionController.text,
+        },
+        {
+          'label': 'Número de Imágenes Adjuntas',
+          'value': _attachedImages.length.toString(),
+        },
+        {
+          'label': 'Modo de Envío',
+          'value': widget.mode == 'manual' ? 'Manual' : 'Escaneo',
+        },
+        {
+          'label': 'Lectura Anterior',
+          'value': _currentReadingController.text.isEmpty
+              ? 'Sin lectura anterior'
+              : _currentReadingController.text,
+        },
+        {
+          'label': 'Lectura Actual',
+          'value': _newCurrentReadingController.text.isEmpty
+              ? 'Sin lectura actual'
+              : double.parse(
+                  _newCurrentReadingController.text,
+                ).toStringAsFixed(2),
+        },
+        {
+          'label': 'Consumo (m³)',
+          'value': '${_currentConsumptionController.text} m³',
+        },
+        {
+          'label': 'Estado Consumo',
+          'value': _currentConsumptionController.text.isEmpty
+              ? 'Sin consumo'
+              : double.parse(
+                  _newCurrentReadingController.text,
+                ).toStringAsFixed(2),
+        },
+      ],
+    );
   }
 
   @override
   void dispose() {
+    _newCurrentReadingController.removeListener(_updateCurrentConsumption);
+    _previousReadingController.removeListener(_updateCurrentConsumption);
     _accountConnectionController.dispose();
     _addressConnectionController.dispose();
     _cardIdController.dispose();
     _cadastralKeyConnectionController.dispose();
     _connectionIdController.dispose();
     _connectionOwnerController.dispose();
-    _currentReadingController.removeListener(_updateCurrentConsumption);
-    _previousReadingController.removeListener(_updateCurrentConsumption);
     _currentReadingController.dispose();
     _previousReadingController.dispose();
     _readingIdController.dispose();
@@ -798,7 +845,7 @@ class _FormScreenState extends State<FormScreen>
 class ResponsiveButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData icon;
-  final String label;
+  final String label; // Propiedad final
   final Color color;
   final bool loading;
   final double height;
@@ -809,7 +856,7 @@ class ResponsiveButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.icon,
-    required this.label,
+    required this.label, // Hacer 'label' required
     required this.color,
     this.loading = false,
     required this.height,
@@ -820,11 +867,7 @@ class ResponsiveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) {
-        if (!loading) {
-          animationController.forward();
-        }
-      },
+      onTapDown: (_) => !loading ? animationController.forward() : null,
       onTapUp: (_) => animationController.reverse(),
       onTapCancel: () => animationController.reverse(),
       child: AnimatedBuilder(
@@ -835,7 +878,7 @@ class ResponsiveButton extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.8)], // Smoother gradient
+                  colors: [color, color.withOpacity(0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -843,12 +886,12 @@ class ResponsiveButton extends StatelessWidget {
                   ResponsiveUtils.buttonBorderRadius(context),
                 ),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3), // Subtle border
+                  color: Colors.white.withOpacity(0.3),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.2), // Softer shadow
+                    color: color.withOpacity(0.2),
                     blurRadius: ResponsiveUtils.isSmallDevice(context) ? 8 : 12,
                     offset: Offset(
                       0,
@@ -870,10 +913,7 @@ class ResponsiveButton extends StatelessWidget {
                   ),
                   elevation: 0,
                   padding: ResponsiveUtils.cardPadding(context).copyWith(
-                    left: ResponsiveUtils.scaleWidth(
-                      context,
-                      0.04,
-                    ), // Consistent padding
+                    left: ResponsiveUtils.scaleWidth(context, 0.04),
                     right: ResponsiveUtils.scaleWidth(context, 0.04),
                   ),
                   minimumSize: Size(double.infinity, height),
@@ -883,7 +923,7 @@ class ResponsiveButton extends StatelessWidget {
                         width: ResponsiveUtils.iconMedium(context),
                         height: ResponsiveUtils.iconMedium(context),
                         child: CircularProgressIndicator(
-                          strokeWidth: 3, // Thicker stroke for visibility
+                          strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             Colors.white,
                           ),
@@ -897,10 +937,7 @@ class ResponsiveButton extends StatelessWidget {
                             size: ResponsiveUtils.iconSmall(context),
                             color: Colors.white,
                           ),
-                          ResponsiveUtils.hSpace(
-                            context,
-                            0.03,
-                          ), // Increased spacing
+                          ResponsiveUtils.hSpace(context, 0.03),
                           Text(
                             label,
                             style: ResponsiveUtils.buttonText(context).copyWith(

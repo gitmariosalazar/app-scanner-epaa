@@ -1,3 +1,9 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_application/features/form/data/datasources/photo_reading_datasource.dart';
+import 'package:flutter_application/features/form/data/repositories/photo_reading_repository_impl.dart';
+import 'package:flutter_application/features/form/domain/repositories/photo_reading_repository.dart';
+import 'package:flutter_application/features/form/domain/usecases/create_photo_reading_use_case.dart';
+import 'package:flutter_application/features/form/presentation/blocs/photo-readings/photo_reading_bloc.dart';
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
 import 'package:flutter_application/features/observations/data/repositories/observation_repository_impl.dart';
 import 'package:flutter_application/features/observations/domain/repositories/observation_repository.dart';
@@ -15,7 +21,7 @@ import 'package:flutter_application/features/scan/data/repositories/scan_reposit
 import 'package:flutter_application/features/scan/domain/repositories/scan_repository.dart';
 import 'package:flutter_application/features/scan/domain/usecases/scan_usecase.dart';
 import 'package:flutter_application/features/scan/presentation/bloc/scan_bloc.dart';
-import 'package:flutter_application/features/form/presentation/bloc/form_bloc.dart';
+import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart';
 import 'package:flutter_application/features/manually/data/datasources/manually_datasource.dart';
 import 'package:flutter_application/features/manually/data/repositories/manually_repository_impl.dart';
 import 'package:flutter_application/features/manually/domain/repositories/manually_repository.dart';
@@ -84,4 +90,19 @@ Future<void> init() async {
       sl<FindAllObservationsByCadastralKeyUseCase>(),
     ),
   );
+  // Data sources
+  sl.registerLazySingleton<PhotoReadingDataSource>(
+    () => PhotoReadingDataSource(),
+  );
+
+  // Repositories
+  sl.registerLazySingleton<PhotoReadingRepository>(
+    () => PhotoReadingRepositoryImpl(dataSource: sl()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => CreatePhotoReadingUseCase(sl()));
+
+  // Blocs
+  sl.registerFactory(() => PhotoReadingBloc(sl()));
 }

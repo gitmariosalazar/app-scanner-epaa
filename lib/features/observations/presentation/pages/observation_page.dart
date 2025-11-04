@@ -468,12 +468,12 @@ class ObservationPage extends StatelessWidget {
                   _infoRow(
                     context,
                     "🔢 Lectura anterior",
-                    obs.previousReading?.toString() ?? "—",
+                    obs.previousReading.toString(),
                   ),
                   _infoRow(
                     context,
                     "🔢 Lectura actual",
-                    obs.currentReading?.toString() ?? "—",
+                    obs.currentReading.toString(),
                   ),
                   _infoRow(context, "⚙️ Tipo de novedad", obs.noveltyTypeName),
                   _infoRow(

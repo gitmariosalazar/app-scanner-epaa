@@ -78,10 +78,8 @@ class DialogUtils {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  // SOLUCIÓN: Cierra el diálogo antes de navegar y usa el contexto del diálogo
                   onPressed: () {
                     Navigator.of(dialogContext).pop();
-                    // Usa Future.microtask para asegurar que el pop termina antes de navegar
                     Future.microtask(() {
                       if (Navigator.of(dialogContext).mounted) {
                         dialogContext.go('/home');
@@ -97,8 +95,7 @@ class DialogUtils {
     );
   }
 
-  /// Diálogo de confirmación, responsivo y moderno
-  static void showConfirmationDialog(
+  static Future<bool?> showConfirmationDialog(
     BuildContext context, {
     required VoidCallback onConfirm,
     required List<Map<String, String>> fields,
@@ -108,7 +105,7 @@ class DialogUtils {
     final sidePad = context.mediumSpacing * 1.2;
     final verticalPad = context.mediumSpacing * 1.1;
 
-    showDialog<bool>(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
@@ -116,7 +113,7 @@ class DialogUtils {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: Color.lerp(Colors.white, Colors.blueAccent, 0.5),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: sidePad,
@@ -128,13 +125,18 @@ class DialogUtils {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.blueAccent),
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.blueAccent,
+                      size: 22,
+                    ),
                     context.hSpace(0.03),
                     Text(
                       'Confirmar Guardado',
                       style: context.titleMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
+                        fontSize: 16,
                       ),
                     ),
                   ],
@@ -143,8 +145,9 @@ class DialogUtils {
                 Text(
                   'Por favor, revise los datos antes de guardar:',
                   style: context.bodyMedium.copyWith(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
+                    color: const Color.fromARGB(221, 83, 135, 255),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
                 context.vSpace(0.013),
@@ -177,7 +180,7 @@ class DialogUtils {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
                       icon: const Icon(Icons.cancel, size: 20),
                       label: const Text('Cancelar'),
                     ),
@@ -198,8 +201,8 @@ class DialogUtils {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.of(dialogContext).pop();
-                        onConfirm();
+                        onConfirm(); // Ejecuta la acción antes de cerrar el diálogo
+                        Navigator.of(dialogContext).pop(true); // Retorna true
                       },
                       icon: const Icon(Icons.save, size: 20),
                       label: const Text('Guardar'),
@@ -228,7 +231,7 @@ class DialogUtils {
             "$label: ",
             style: context.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15,
+              fontSize: 12,
               color: Colors.black87,
             ),
           ),
@@ -237,7 +240,7 @@ class DialogUtils {
               value.isNotEmpty ? value : 'No especificado',
               style: context.bodyMedium.copyWith(
                 fontWeight: FontWeight.normal,
-                fontSize: 15,
+                fontSize: 12,
                 color: Colors.black87,
               ),
               overflow: TextOverflow.ellipsis,
