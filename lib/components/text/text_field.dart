@@ -83,10 +83,10 @@ class CustomTextField extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: hintText,
                 contentPadding: contentPadding,
-                filled: isReadOnly,
+                filled: !isReadOnly,
                 fillColor: isReadOnly
-                    ? theme.colorScheme.surface.withOpacity(0.6)
-                    : null,
+                    ? null
+                    : theme.colorScheme.surface.withOpacity(0.6),
                 border: OutlineInputBorder(
                   borderRadius: borderRadius,
                   borderSide: BorderSide(

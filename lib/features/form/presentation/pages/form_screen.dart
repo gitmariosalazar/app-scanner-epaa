@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
-import 'package:flutter_application/components/text/edit_text_field.dart';
-import 'package:flutter_application/components/text/read_only_field.dart';
+import 'package:flutter_application/components/text/text_field.dart';
 import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
+import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 import 'package:flutter_application/utils/dialog_utils.dart';
@@ -29,10 +29,10 @@ class AppColors {
 }
 
 class FormScreen extends StatefulWidget {
-  final Map<String, dynamic> apiResponse;
+  final Reading reading;
   final String mode; // 'scan' or 'manual'
 
-  const FormScreen({super.key, required this.apiResponse, required this.mode});
+  const FormScreen({super.key, required this.reading, required this.mode});
 
   @override
   State<FormScreen> createState() => _FormScreenState();
@@ -59,12 +59,14 @@ class _FormScreenState extends State<FormScreen>
   final _readingValueController = TextEditingController();
   final _previousReadingDate = TextEditingController();
   final _newCurrentReadingController = TextEditingController();
+  final _meterNumberController = TextEditingController();
   final _now = DateTime.now();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late ConsumptionVisuals _consumptionVisuals;
   String? _errorMessage;
   String? _successMessage;
+  bool hasCurrentReading = false;
 
   @override
   void initState() {
@@ -75,41 +77,31 @@ class _FormScreenState extends State<FormScreen>
   }
 
   void _initializeData() {
-    final List<dynamic> dataList = [];
-    Map<String, dynamic> data = {};
-    if (widget.apiResponse.containsKey('apiResponse') &&
-        widget.apiResponse['apiResponse'] is Map<String, dynamic> &&
-        widget.apiResponse['apiResponse'].containsKey('data') &&
-        widget.apiResponse['apiResponse']['data'] is List) {
-      dataList.addAll(
-        widget.apiResponse['apiResponse']['data'] as List<dynamic>,
-      );
-    } else if (widget.apiResponse.containsKey('data') &&
-        widget.apiResponse['data'] is List) {
-      dataList.addAll(widget.apiResponse['data'] as List<dynamic>);
-    } else {
-      data = widget.apiResponse;
-    }
-    if (dataList.isNotEmpty) data = dataList.first as Map<String, dynamic>;
-    _connectionIdController.text = data['cadastralKey']?.toString() ?? '';
-    _connectionOwnerController.text = data['clientName']?.toString() ?? '';
-    _readingIdController.text = data['readingId']?.toString() ?? '';
-    _cardIdController.text = data['cardId']?.toString() ?? '';
-    _currentReadingController.text = data['currentReading']?.toString() ?? '';
-    _previousReadingController.text = data['previousReading']?.toString() ?? '';
-    _sectorConnectionController.text = data['sector']?.toString() ?? '';
-    _addressConnectionController.text = data['address']?.toString() ?? '';
-    _accountConnectionController.text = data['account']?.toString() ?? '';
-    _cadastralKeyConnectionController.text =
-        data['cadastralKey']?.toString() ?? '';
+    //final List<dynamic> dataList = [];
+    //Map<String, dynamic> data = {};
+
+    final r = widget.reading;
+    debugPrint('Inicializando FormScreen con Reading: ${r.meterNumber}');
+    hasCurrentReading = r.hasCurrentReading;
+    _connectionIdController.text = r.cadastralKey;
+    _connectionOwnerController.text = r.clientName;
+    _readingIdController.text = r.readingId.toString();
+    _cardIdController.text = r.cardId.toString();
+    _currentReadingController.text = r.currentReading?.toString() ?? '';
+    _previousReadingController.text = r.previousReading.toString();
+    _sectorConnectionController.text = r.sector.toString();
+    _addressConnectionController.text = r.address.toString();
+    _accountConnectionController.text = r.account.toString();
+    _cadastralKeyConnectionController.text = r.cadastralKey.toString();
     _descriptionController.text = '';
-    _averageConsumptionController.text =
-        data['averageConsumption']?.toString() ?? '';
-    _readingValueController.text = data['readingValue']?.toString() ?? '';
-    _previousReadingDate.text = data['previousReadingDate']?.toString() ?? '';
+    _averageConsumptionController.text = r.averageConsumption.toString();
+    _readingValueController.text = r.readingValue.toString();
+    _meterNumberController.text = r.meterNumber.toString();
+    _previousReadingDate.text = r.previousReadingDate?.toString() ?? '';
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
+
       _currentReadingController.text,
     );
     _previousConsumptionController.text = ConsumptionUtils.calculateConsumption(
@@ -206,6 +198,8 @@ class _FormScreenState extends State<FormScreen>
                         ResponsiveUtils.vSpace(context, 0.03),
                         _buildConsumptionRow(context, state),
                         ResponsiveUtils.vSpace(context, 0.03),
+
+                        /*
                         _buildReadingFieldsRow(),
                         ResponsiveUtils.vSpace(context, 0.015),
                         _buildDescriptionField(context),
@@ -231,6 +225,60 @@ class _FormScreenState extends State<FormScreen>
                           ),
                         ResponsiveUtils.vSpace(context, 0.02),
                         _buildActionButtonsRow(context, state),
+
+                        */
+                        if (hasCurrentReading) ...[
+                          _buildReadingFieldsRow(),
+                          ResponsiveUtils.vSpace(context, 0.015),
+                          _buildDescriptionField(context),
+                          ResponsiveUtils.vSpace(context, 0.015),
+                          _buildImagesSection(context),
+                          if (_errorMessage != null || _successMessage != null)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                top: ResponsiveUtils.scaleHeight(context, 0.01),
+                                left: ResponsiveUtils.scaleWidth(context, 0.03),
+                                right: ResponsiveUtils.scaleWidth(
+                                  context,
+                                  0.03,
+                                ),
+                              ),
+                              child: Text(
+                                _errorMessage ?? _successMessage ?? "",
+                                style: ResponsiveUtils.bodySmall(context)
+                                    .copyWith(
+                                      color: _errorMessage != null
+                                          ? AppColors.error
+                                          : AppColors.secondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              ),
+                            ),
+                          ResponsiveUtils.vSpace(context, 0.02),
+                          _buildActionButtonsRow(context, state),
+                        ] else ...[
+                          TitledCard(
+                            title: 'Lectura Ya Registrada',
+                            elevation: ResponsiveUtils.cardElevation(context),
+                            bottomRightIcon: Icon(
+                              Icons.check_circle_outline,
+                              color: AppColors.primary,
+                              size: ResponsiveUtils.iconSmall(context),
+                            ),
+                            backgroundColor: const Color.fromARGB(
+                              255,
+                              255,
+                              255,
+                              255,
+                            ),
+                            children: [
+                              _buildReadingCurrentRow(),
+                              ResponsiveUtils.vSpace(context, 0.03),
+                              _buildActionButtonExitRow(context, state),
+                            ],
+                          ),
+                        ],
+
                         ResponsiveUtils.vSpace(context, 0.03),
                         MinimalSectionDivider(
                           title: 'Información Adicional',
@@ -568,21 +616,23 @@ class _FormScreenState extends State<FormScreen>
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       children: [
-        ReadOnlyField(
+        CustomTextField(
           controller: _cardIdController,
           label: 'Cédula de Ciudadanía',
           leftIcon: Icons.pin,
           textStyle: ResponsiveUtils.bodyMedium(
             context,
           ).copyWith(color: AppColors.textPrimary),
+          isReadOnly: true,
         ),
-        ReadOnlyField(
-          controller: _readingIdController,
-          label: 'ID de Lectura',
+        CustomTextField(
+          controller: _meterNumberController,
+          label: 'Número de Medidor',
           leftIcon: Icons.water_damage_outlined,
           textStyle: ResponsiveUtils.bodyMedium(
             context,
           ).copyWith(color: AppColors.textPrimary),
+          isReadOnly: true,
         ),
       ],
     );
@@ -592,22 +642,24 @@ class _FormScreenState extends State<FormScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ReadOnlyField(
+        CustomTextField(
           controller: _connectionOwnerController,
           label: 'Propietario de la Conexión',
           leftIcon: Icons.person_outline,
           textStyle: ResponsiveUtils.bodyMedium(
             context,
           ).copyWith(color: AppColors.textPrimary),
+          isReadOnly: true,
         ),
         ResponsiveUtils.vSpace(context, 0.03),
-        ReadOnlyField(
+        CustomTextField(
           controller: _addressConnectionController,
           label: 'Dirección de la Conexión',
           leftIcon: Icons.location_on_outlined,
           textStyle: ResponsiveUtils.bodyMedium(
             context,
           ).copyWith(color: AppColors.textPrimary),
+          isReadOnly: true,
         ),
       ],
     );
@@ -618,15 +670,16 @@ class _FormScreenState extends State<FormScreen>
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ReadOnlyField(
+        CustomTextField(
           controller: _currentReadingController,
           label: 'Lectura Anterior',
           leftIcon: Icons.history_outlined,
           textStyle: ResponsiveUtils.bodyLarge(
             context,
           ).copyWith(color: AppColors.textPrimary),
+          isReadOnly: true,
         ),
-        EditTextField(
+        CustomTextField(
           controller: _newCurrentReadingController,
           label: 'Lectura Actual (Obligatorio)',
           leftIcon: Icons.speed_outlined,
@@ -648,8 +701,90 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  Widget _buildReadingCurrentRow() {
+    return ResponsiveRow(
+      rowSpacing: ResponsiveUtils.mediumSpacing(context),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // === LECTURA ANTERIOR ===
+        TitledCard(
+          title: 'Lectura Anterior',
+          elevation: ResponsiveUtils.cardElevation(context),
+          bottomRightIcon: Icon(
+            Icons.history_outlined,
+            color: AppColors.secondary,
+            size: ResponsiveUtils.iconSmall(context),
+          ),
+          titleStyle: ResponsiveUtils.titleSmall(context),
+          backgroundColor: AppColors.cardSecondaryBackground,
+          children: [
+            Text(
+              _previousReadingController.text.isEmpty
+                  ? 'Sin lectura anterior'
+                  : _previousReadingController.text,
+              style: ResponsiveUtils.titleMedium(context).copyWith(
+                fontWeight: FontWeight.bold,
+                color: _previousReadingController.text.isEmpty
+                    ? AppColors.textSecondary
+                    : AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+            ResponsiveUtils.vSpace(context, 0.015),
+            Text(
+              'Fecha: ${_previousReadingDate.text.isEmpty ? 'N/A' : formatFromIsoDate(_previousReadingDate.text)}',
+              style: ResponsiveUtils.bodySmall(
+                context,
+              ).copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+
+        // === LECTURA ACTUAL ===
+        TitledCard(
+          title: 'Lectura Actual',
+          elevation: ResponsiveUtils.cardElevation(context),
+          bottomRightIcon: Icon(
+            Icons.speed_outlined,
+            color: AppColors.secondary,
+            size: ResponsiveUtils.iconSmall(context),
+          ),
+          titleStyle: ResponsiveUtils.titleSmall(
+            context,
+          ).copyWith(color: AppColors.secondary, fontWeight: FontWeight.w600),
+          backgroundColor: AppColors.cardSecondaryBackground.withOpacity(0.95),
+          children: [
+            Text(
+              widget.reading.currentReading == null
+                  ? 'Sin lectura actual'
+                  : widget.reading.currentReading.toString(),
+              style: ResponsiveUtils.titleMedium(context).copyWith(
+                fontWeight: FontWeight.bold,
+                color: widget.reading.currentReading == null
+                    ? AppColors.textSecondary
+                    : AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+            ResponsiveUtils.vSpace(context, 0.015),
+            Text(
+              'Fecha: ${formatDate(_now)}',
+              style: ResponsiveUtils.bodySmall(
+                context,
+              ).copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildDescriptionField(BuildContext context) {
-    return EditTextField(
+    return CustomTextField(
       controller: _descriptionController,
       label:
           'Descripción o Novedades${widget.mode == 'manual' ? ' (Requerido)' : ' (Opcional)'}',
@@ -694,7 +829,7 @@ class _FormScreenState extends State<FormScreen>
         ResponsiveButton(
           onPressed: state is form_bloc.FormLoading
               ? null
-              : () => context.pop(),
+              : () => context.go('/home'),
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,
@@ -703,12 +838,40 @@ class _FormScreenState extends State<FormScreen>
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
+        /*
         ActionButton(
           icon: Icons.location_on_outlined,
           circular: true,
           onPressed: () {
             context.push('/location');
           },
+        ),
+        */
+      ],
+    );
+  }
+
+  Widget _buildActionButtonExitRow(
+    BuildContext context,
+    form_bloc.FormState state,
+  ) {
+    return ResponsiveRow(
+      forceRow: true,
+      rowSpacing: ResponsiveUtils.largeSpacing(context),
+      children: [
+        ResponsiveButton(
+          onPressed: state is form_bloc.FormLoading
+              ? null
+              : () {
+                  context.go('/home');
+                },
+          icon: Icons.cancel,
+          label: 'Cancelar',
+          color: AppColors.error,
+          loading: false,
+          height: ResponsiveUtils.buttonSmall(context),
+          animationController: _animationController,
+          scaleAnimation: _scaleAnimation,
         ),
       ],
     );
