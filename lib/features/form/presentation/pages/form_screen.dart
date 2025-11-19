@@ -14,7 +14,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_application/components/button/widget_button.dart';
 import 'package:go_router/go_router.dart';
 
 class AppColors {
@@ -60,6 +59,9 @@ class _FormScreenState extends State<FormScreen>
   final _previousReadingDate = TextEditingController();
   final _newCurrentReadingController = TextEditingController();
   final _meterNumberController = TextEditingController();
+  final _monthReadingController = TextEditingController();
+  final _startDatePeriodController = TextEditingController();
+  final _endDatePeriodController = TextEditingController();
   final _now = DateTime.now();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -98,6 +100,9 @@ class _FormScreenState extends State<FormScreen>
     _readingValueController.text = r.readingValue.toString();
     _meterNumberController.text = r.meterNumber.toString();
     _previousReadingDate.text = r.previousReadingDate?.toString() ?? '';
+    _monthReadingController.text = r.monthReading.toString();
+    _startDatePeriodController.text = r.startDatePeriod.toIso8601String();
+    _endDatePeriodController.text = r.endDatePeriod.toIso8601String();
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
@@ -289,6 +294,7 @@ class _FormScreenState extends State<FormScreen>
                             ResponsiveUtils.vSpace(context, 0.03),
                             _buildOwnerAddressFields(),
                             ResponsiveUtils.vSpace(context, 0.03),
+                            _buildDatePeriodCard(context),
                           ],
                         ),
                       ],
@@ -517,6 +523,112 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  Widget _buildDatePeriodCard(BuildContext context) {
+    final String startDate = formatFromIsoDate(_startDatePeriodController.text);
+    final String endDate = formatFromIsoDate(_endDatePeriodController.text);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSecondaryBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Periodo de Lectura',
+            style: ResponsiveUtils.titleMedium(context).copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildDateBubble(
+                context,
+                startDate,
+                'Inicio',
+                Colors.greenAccent,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.greenAccent,
+                            AppColors.primary,
+                            Colors.orangeAccent,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Periodo Activo',
+                      style: ResponsiveUtils.bodySmall(
+                        context,
+                      ).copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              _buildDateBubble(context, endDate, 'Fin', Colors.orangeAccent),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateBubble(
+    BuildContext context,
+    String date,
+    String label,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            border: Border.all(color: color, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            date,
+            style: ResponsiveUtils.titleSmall(context).copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: ResponsiveUtils.bodySmall(
+            context,
+          ).copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
   Widget _buildConsumptionRow(BuildContext context, form_bloc.FormState state) {
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
@@ -672,7 +784,7 @@ class _FormScreenState extends State<FormScreen>
       children: [
         CustomTextField(
           controller: _currentReadingController,
-          label: 'Lectura Anterior',
+          label: 'Lectura Anterior ${_monthReadingController.text}',
           leftIcon: Icons.history_outlined,
           textStyle: ResponsiveUtils.bodyLarge(
             context,
@@ -838,15 +950,17 @@ class _FormScreenState extends State<FormScreen>
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
-        /*
-        ActionButton(
-          icon: Icons.location_on_outlined,
-          circular: true,
-          onPressed: () {
-            context.push('/location');
-          },
+        // Button for Work Ordere
+        ResponsiveButton(
+          onPressed: null,
+          icon: Icons.work_outline,
+          label: 'O. Trabajo',
+          color: AppColors.primary,
+          loading: false,
+          height: ResponsiveUtils.buttonSmall(context),
+          animationController: _animationController,
+          scaleAnimation: _scaleAnimation,
         ),
-        */
       ],
     );
   }
@@ -873,6 +987,29 @@ class _FormScreenState extends State<FormScreen>
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
+        // Button for Work Ordere
+        ResponsiveButton(
+          onPressed: state is form_bloc.FormLoading
+              ? null
+              : () {
+                  context.go(
+                    '/work-orders/create',
+                    extra: {
+                      'connectionId': _connectionIdController.text,
+                      'cadastralKey': _cadastralKeyConnectionController.text,
+                      'owner': _connectionOwnerController.text,
+                      'address': _addressConnectionController.text,
+                    },
+                  );
+                },
+          icon: Icons.work_outline,
+          label: 'O. Trabajo',
+          color: AppColors.primary,
+          loading: false,
+          height: ResponsiveUtils.buttonSmall(context),
+          animationController: _animationController,
+          scaleAnimation: _scaleAnimation,
+        ),
       ],
     );
   }
@@ -893,7 +1030,7 @@ class _FormScreenState extends State<FormScreen>
     }
     setState(() => _errorMessage = null);
 
-    final confirmed = await DialogUtils.showConfirmationDialog(
+    await DialogUtils.showConfirmationDialog(
       context,
       onConfirm: () {
         if (!mounted) return;
@@ -928,6 +1065,7 @@ class _FormScreenState extends State<FormScreen>
             sewerRate: 0.0,
             averageConsumption:
                 double.tryParse(_averageConsumptionController.text) ?? 0.0,
+            previousMonthReading: _monthReadingController.text,
           ),
         );
       },

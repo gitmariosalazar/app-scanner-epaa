@@ -55,6 +55,9 @@ ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
       rateId: (json['rateId'] as num).toInt(),
       rateName: json['rateName'] as String,
       hasCurrentReading: json['hasCurrentReading'] as bool? ?? false,
+      monthReading: json['monthReading'] as String,
+      startDatePeriod: json['startDatePeriod'] as String,
+      endDatePeriod: json['endDatePeriod'] as String,
     );
 
 Map<String, dynamic> _$ReadingInfoResponseToJson(
@@ -79,4 +82,7 @@ Map<String, dynamic> _$ReadingInfoResponseToJson(
   'rateId': instance.rateId,
   'rateName': instance.rateName,
   'hasCurrentReading': instance.hasCurrentReading,
+  'monthReading': instance.monthReading,
+  'startDatePeriod': instance.startDatePeriod,
+  'endDatePeriod': instance.endDatePeriod,
 };

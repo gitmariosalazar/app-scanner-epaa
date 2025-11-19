@@ -90,6 +90,15 @@ class ReadingInfoResponse {
   @JsonKey(name: 'hasCurrentReading', defaultValue: false)
   final bool hasCurrentReading;
 
+  @JsonKey(name: 'monthReading')
+  final String monthReading;
+
+  @JsonKey(name: 'startDatePeriod', defaultValue: null)
+  final String startDatePeriod;
+
+  @JsonKey(name: 'endDatePeriod', defaultValue: null)
+  final String endDatePeriod;
+
   ReadingInfoResponse({
     required this.readingId,
     this.previousReadingDate,
@@ -110,6 +119,9 @@ class ReadingInfoResponse {
     required this.rateId,
     required this.rateName,
     required this.hasCurrentReading,
+    required this.monthReading,
+    required this.startDatePeriod,
+    required this.endDatePeriod,
   });
 
   factory ReadingInfoResponse.fromJson(Map<String, dynamic> json) =>

@@ -33,6 +33,7 @@ class FormBloc extends Bloc<FormEvent, FormState> {
             "novelty": event.novelty,
             "sewerRate": event.sewerRate,
             "averageConsumption": event.averageConsumption,
+            "previousMonthReading": event.previousMonthReading,
           }),
         );
         debugPrint(

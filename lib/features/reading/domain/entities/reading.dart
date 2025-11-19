@@ -35,6 +35,9 @@ class Reading extends Equatable {
   final int rateId;
   final String rateName;
   final bool hasCurrentReading;
+  final String monthReading;
+  final DateTime startDatePeriod;
+  final DateTime endDatePeriod;
 
   const Reading({
     required this.readingId,
@@ -56,6 +59,9 @@ class Reading extends Equatable {
     required this.rateId,
     required this.rateName,
     required this.hasCurrentReading,
+    required this.monthReading,
+    required this.startDatePeriod,
+    required this.endDatePeriod,
   });
 
   @override
@@ -79,5 +85,8 @@ class Reading extends Equatable {
     rateId,
     rateName,
     hasCurrentReading,
+    monthReading,
+    startDatePeriod,
+    endDatePeriod,
   ];
 }

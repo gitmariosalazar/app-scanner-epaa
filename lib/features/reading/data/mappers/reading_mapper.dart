@@ -30,6 +30,9 @@ extension ReadingInfoResponseX on dto.ReadingInfoResponse {
       rateId: rateId,
       rateName: rateName,
       hasCurrentReading: hasCurrentReading,
+      monthReading: monthReading,
+      startDatePeriod: DateTime.tryParse(startDatePeriod) ?? DateTime.now(),
+      endDatePeriod: DateTime.tryParse(endDatePeriod) ?? DateTime.now(),
     );
   }
 

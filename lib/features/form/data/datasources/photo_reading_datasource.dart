@@ -3,14 +3,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:developer' as developer;
 import 'package:dartz/dartz.dart';
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:mime/mime.dart' as mime;
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/features/form/data/models/photo_reading_model.dart';
 import 'package:http/http.dart' as http;
+// ignore: depend_on_referenced_packages
 import 'package:http_parser/http_parser.dart';
 
 class PhotoReadingDataSource {
-  static const String baseUrl = 'https://dev.sigepaa-aa.com:8443/photo-reading';
+  static final String baseUrl = Environment.apiUrl;
 
   Future<Either<Failure, List<PhotoReadingModel>>> createPhotoReadings({
     required List<File> images,
@@ -44,7 +46,7 @@ class PhotoReadingDataSource {
       );
     }
 
-    final uri = Uri.parse('$baseUrl/create-photo-readings');
+    final uri = Uri.parse('$baseUrl/photo-reading/create-photo-readings');
     var request = http.MultipartRequest('POST', uri);
 
     // Añadir campos de formulario

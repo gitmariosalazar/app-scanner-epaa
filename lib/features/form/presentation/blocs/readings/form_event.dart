@@ -31,6 +31,7 @@ class InsertReadingEvent extends FormEvent {
   final int rentalIncomeCode;
   final String novelty;
   final double averageConsumption;
+  final String previousMonthReading;
 
   const InsertReadingEvent({
     required this.connectionId,
@@ -45,6 +46,7 @@ class InsertReadingEvent extends FormEvent {
     required this.rentalIncomeCode,
     required this.novelty,
     required this.averageConsumption,
+    required this.previousMonthReading,
   });
 
   @override
@@ -61,5 +63,6 @@ class InsertReadingEvent extends FormEvent {
     rentalIncomeCode,
     novelty,
     averageConsumption,
+    previousMonthReading,
   ];
 }
