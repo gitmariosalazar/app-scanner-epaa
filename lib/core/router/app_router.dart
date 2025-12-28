@@ -45,7 +45,7 @@ class AppRouter {
         path: '/form',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
-          final reading = extra['reading'] as Reading;
+          final reading = extra['reading'] as List<Reading>? ?? [];
           final mode = extra['mode'] as String? ?? 'manual';
           debugPrint('Navegando a /form con extra: $extra, mode: $mode');
           return BlocProvider(

@@ -10,8 +10,8 @@ class ReadingRepositoryImpl implements ReadingRepository {
   ReadingRepositoryImpl(this.dataSource);
 
   @override
-  Future<Reading> getReadingInfo(String cadastralKey) async {
+  Future<List<Reading>> getReadingInfo(String cadastralKey) async {
     final dto = await dataSource.getReadingInfo(cadastralKey);
-    return dto.toEntity();
+    return dto.map((e) => e.toEntity()).toList();
   }
 }

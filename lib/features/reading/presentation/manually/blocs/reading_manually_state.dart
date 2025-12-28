@@ -14,7 +14,7 @@ class ReadingManuallyLoading extends ReadingManuallyState {
 }
 
 class ReadingManuallyLoaded extends ReadingManuallyState {
-  final Reading reading;
+  final List<Reading> reading;
 
   ReadingManuallyLoaded(this.reading);
 

@@ -7,7 +7,7 @@ class GetReadingInfo {
 
   GetReadingInfo(this.repository);
 
-  Future<Reading> call(String cadastralKey) {
+  Future<List<Reading>> call(String cadastralKey) {
     return repository.getReadingInfo(cadastralKey);
   }
 }

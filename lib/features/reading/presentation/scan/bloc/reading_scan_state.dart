@@ -15,7 +15,7 @@ class ReadingScanLoading extends ReadingScanState {
 }
 
 class ReadingScanLoaded extends ReadingScanState {
-  final Reading reading;
+  final List<Reading> reading;
   ReadingScanLoaded(this.reading);
   @override
   List<Object?> get props => [reading];

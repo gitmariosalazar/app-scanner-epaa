@@ -7,7 +7,6 @@ import 'package:flutter_application/components/text/text_field.dart';
 import 'package:flutter_application/core/di/injection.dart';
 import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
-import 'package:flutter_application/features/work-orders/domain/entities/work_order_entity.dart';
 import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
 import 'package:flutter_application/utils/date_utils.dart';
@@ -34,7 +33,7 @@ class AppColors {
 }
 
 class FormScreen extends StatefulWidget {
-  final Reading reading;
+  final List<Reading> reading;
   final String mode; // 'scan' or 'manual'
 
   const FormScreen({super.key, required this.reading, required this.mode});
@@ -89,26 +88,26 @@ class _FormScreenState extends State<FormScreen>
     //Map<String, dynamic> data = {};
 
     final r = widget.reading;
-    debugPrint('Inicializando FormScreen con Reading: ${r.meterNumber}');
-    hasCurrentReading = r.hasCurrentReading;
-    _connectionIdController.text = r.cadastralKey;
-    _connectionOwnerController.text = r.clientName;
-    _readingIdController.text = r.readingId.toString();
-    _cardIdController.text = r.cardId.toString();
-    _currentReadingController.text = r.currentReading?.toString() ?? '';
-    _previousReadingController.text = r.previousReading.toString();
-    _sectorConnectionController.text = r.sector.toString();
-    _addressConnectionController.text = r.address.toString();
-    _accountConnectionController.text = r.account.toString();
-    _cadastralKeyConnectionController.text = r.cadastralKey.toString();
+    debugPrint('Inicializando FormScreen con Reading: ${r[0].meterNumber}');
+    hasCurrentReading = r[0].hasCurrentReading;
+    _connectionIdController.text = r[0].cadastralKey;
+    _connectionOwnerController.text = r[0].clientName;
+    _readingIdController.text = r[0].readingId.toString();
+    _cardIdController.text = r[0].cardId.toString();
+    _currentReadingController.text = r[0].currentReading?.toString() ?? '';
+    _previousReadingController.text = r[0].previousReading.toString();
+    _sectorConnectionController.text = r[0].sector.toString();
+    _addressConnectionController.text = r[0].address.toString();
+    _accountConnectionController.text = r[0].account.toString();
+    _cadastralKeyConnectionController.text = r[0].cadastralKey.toString();
     _descriptionController.text = '';
-    _averageConsumptionController.text = r.averageConsumption.toString();
-    _readingValueController.text = r.readingValue.toString();
-    _meterNumberController.text = r.meterNumber.toString();
-    _previousReadingDate.text = r.previousReadingDate?.toString() ?? '';
-    _monthReadingController.text = r.monthReading.toString();
-    _startDatePeriodController.text = r.startDatePeriod.toIso8601String();
-    _endDatePeriodController.text = r.endDatePeriod.toIso8601String();
+    _averageConsumptionController.text = r[0].averageConsumption.toString();
+    _readingValueController.text = r[0].readingValue.toString();
+    _meterNumberController.text = r[0].meterNumber.toString();
+    _previousReadingDate.text = r[0].previousReadingDate?.toString() ?? '';
+    _monthReadingController.text = r[0].monthReading.toString();
+    _startDatePeriodController.text = r[0].startDatePeriod.toIso8601String();
+    _endDatePeriodController.text = r[0].endDatePeriod.toIso8601String();
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
@@ -853,7 +852,7 @@ class _FormScreenState extends State<FormScreen>
             ),
             ResponsiveUtils.vSpace(context, 0.015),
             Text(
-              'Fecha: ${_previousReadingDate.text.isEmpty ? 'N/A' : formatFromIsoDate(_previousReadingDate.text)}',
+              'Fecha: ${_previousReadingDate.text.isEmpty ? 'N/A' : formatFromIsoDate(widget.reading[1].previousReadingDate.toString())}',
               style: ResponsiveUtils.bodySmall(
                 context,
               ).copyWith(color: AppColors.textSecondary),
@@ -864,7 +863,7 @@ class _FormScreenState extends State<FormScreen>
 
         // === LECTURA ACTUAL ===
         TitledCard(
-          title: 'Lectura Actual (Now)',
+          title: 'Lectura Actual',
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.speed_outlined,
@@ -877,12 +876,12 @@ class _FormScreenState extends State<FormScreen>
           backgroundColor: AppColors.cardSecondaryBackground.withOpacity(0.95),
           children: [
             Text(
-              widget.reading.currentReading == null
+              widget.reading[0].currentReading == null
                   ? 'Sin lectura actual'
-                  : widget.reading.currentReading.toString(),
+                  : widget.reading[0].currentReading.toString(),
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: widget.reading.currentReading == null
+                color: widget.reading[0].currentReading == null
                     ? AppColors.textSecondary
                     : AppColors.textPrimary,
               ),
@@ -891,7 +890,7 @@ class _FormScreenState extends State<FormScreen>
             ),
             ResponsiveUtils.vSpace(context, 0.015),
             Text(
-              'Fecha: ${formatDate(_now)}',
+              'Fecha: ${formatDate(widget.reading[0].previousReadingDate ?? DateTime.now())}',
               style: ResponsiveUtils.bodySmall(
                 context,
               ).copyWith(color: AppColors.textSecondary),

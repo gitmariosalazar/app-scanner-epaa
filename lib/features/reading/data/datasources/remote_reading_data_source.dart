@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_application/features/reading/data/model/reading_info_response.dart';
 
 abstract class RemoteReadingDataSource {
-  Future<ReadingInfoResponse> getReadingInfo(String cadastralKey);
+  Future<List<ReadingInfoResponse>> getReadingInfo(String cadastralKey);
 }
 
 class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
@@ -16,7 +16,7 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
   RemoteReadingDataSourceImpl(this.client);
 
   @override
-  Future<ReadingInfoResponse> getReadingInfo(String cadastralKey) async {
+  Future<List<ReadingInfoResponse>> getReadingInfo(String cadastralKey) async {
     final response = await client.get(
       Uri.parse('$baseUrl/Readings/find-reading-info/$cadastralKey'),
       headers: {'Content-Type': 'application/json'},
@@ -40,6 +40,6 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
     }
 
     // Devolver la primera lectura (la más reciente)
-    return apiResponse.data.first;
+    return apiResponse.data;
   }
 }

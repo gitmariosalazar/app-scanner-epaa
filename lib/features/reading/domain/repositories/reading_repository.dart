@@ -2,5 +2,5 @@
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 
 abstract class ReadingRepository {
-  Future<Reading> getReadingInfo(String cadastralKey);
+  Future<List<Reading>> getReadingInfo(String cadastralKey);
 }
