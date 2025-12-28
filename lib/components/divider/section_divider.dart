@@ -10,12 +10,14 @@ class MinimalSectionDivider extends StatefulWidget {
   final String title;
   final Color? color;
   final List<Widget>? children;
+  final bool isExpanded;
 
   const MinimalSectionDivider({
     super.key,
     required this.title,
     this.color,
     this.children,
+    this.isExpanded = true,
   });
 
   @override
@@ -24,7 +26,7 @@ class MinimalSectionDivider extends StatefulWidget {
 
 class _MinimalSectionDividerState extends State<MinimalSectionDivider>
     with SingleTickerProviderStateMixin {
-  bool _isExpanded = true;
+  late bool _isExpanded = widget.isExpanded;
   late AnimationController _controller;
   late Animation<double> _rotationAnimation;
   late Animation<double> _fadeAnimation;

@@ -3,7 +3,7 @@ import 'package:flutter_application/features/form/presentation/pages/location_sc
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
-import 'package:flutter_application/features/work-orders/modules/add-work-orders/presentation/screen/add_work_order_form_screen.dart';
+import 'package:flutter_application/features/work-orders/presentation/screen/add_work_order_form_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;

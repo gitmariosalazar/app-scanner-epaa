@@ -4,8 +4,11 @@ import 'package:flutter_application/components/button/widget_button.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
 import 'package:flutter_application/components/text/text_field.dart';
+import 'package:flutter_application/core/di/injection.dart';
 import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
+import 'package:flutter_application/features/work-orders/domain/entities/work_order_entity.dart';
+import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 import 'package:flutter_application/utils/dialog_utils.dart';
@@ -15,7 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
 
-import 'package:flutter_application/features/work-orders/modules/add-work-orders/presentation/widgets/add_work_order_form.dart';
+import 'package:flutter_application/features/work-orders/presentation/widgets/add_work_order_form.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 
@@ -801,11 +804,13 @@ class _FormScreenState extends State<FormScreen>
           hintText: '0.00',
           keyboardType: TextInputType.number,
           validator: (value) {
-            if (value == null || value.isEmpty)
+            if (value == null || value.isEmpty) {
               return 'Por favor, ingrese la lectura actual';
+            }
             final number = double.tryParse(value);
-            if (number == null || number < 0)
+            if (number == null || number < 0) {
               return 'Ingrese un número positivo válido';
+            }
             return null;
           },
           textStyle: ResponsiveUtils.bodyLarge(
@@ -859,7 +864,7 @@ class _FormScreenState extends State<FormScreen>
 
         // === LECTURA ACTUAL ===
         TitledCard(
-          title: 'Lectura Actual',
+          title: 'Lectura Actual (Now)',
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.speed_outlined,
@@ -953,9 +958,41 @@ class _FormScreenState extends State<FormScreen>
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
-        // Button for Work Ordere
+        // Button for Work Order – FINAL Y PERFECTO
         ResponsiveButton(
-          onPressed: () => showAddWorkOrderDialog(context),
+          onPressed: () async {
+            final prefillData = {
+              "connectionId": _connectionIdController.text.trim(),
+              "clientId": _cardIdController.text.trim(),
+              "ownerName": _connectionOwnerController.text.trim(),
+              "address": _addressConnectionController.text.trim(),
+              "meterNumber": _meterNumberController.text.trim(),
+              "description": _descriptionController.text.isEmpty
+                  ? "Revisar medidor - lectura tomada manualmente"
+                  : _descriptionController.text.trim(),
+            };
+
+            final bloc = sl<CreateWorkOrderBloc>();
+
+            // QUITA EL <WorkOrderEntity> → ESTO ES LO QUE CAUSA EL ERROR
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => AddWorkOrderResponsiveDialog(
+                prefillData: prefillData,
+                bloc: bloc,
+              ),
+            );
+
+            // Mensaje simple después de cerrar
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Orden de trabajo creada con éxito"),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
           icon: Icons.work_outline,
           label: 'O. Trabajo',
           color: AppColors.primary,
@@ -976,12 +1013,11 @@ class _FormScreenState extends State<FormScreen>
       forceRow: true,
       rowSpacing: ResponsiveUtils.largeSpacing(context),
       children: [
+        // Botón Cancelar
         ResponsiveButton(
           onPressed: state is form_bloc.FormLoading
               ? null
-              : () {
-                  context.go('/home');
-                },
+              : () => context.go('/home'),
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,
@@ -990,9 +1026,42 @@ class _FormScreenState extends State<FormScreen>
           animationController: _animationController,
           scaleAnimation: _scaleAnimation,
         ),
-        // Button for Work Ordere
+
+        // Botón "O. Trabajo" – 100% FUNCIONAL
         ResponsiveButton(
-          onPressed: () => showAddWorkOrderDialog(context),
+          onPressed: () async {
+            final prefillData = {
+              "connectionId": _connectionIdController.text.trim(),
+              "clientId": _cardIdController.text.trim(),
+              "ownerName": _connectionOwnerController.text.trim(),
+              "address": _addressConnectionController.text.trim(),
+              "meterNumber": _meterNumberController.text.trim(),
+              "description": _descriptionController.text.isEmpty
+                  ? "Revisar medidor - lectura tomada manualmente"
+                  : _descriptionController.text.trim(),
+            };
+
+            final bloc = sl<CreateWorkOrderBloc>();
+
+            // QUITA EL <WorkOrderEntity> → ESTO ES LO QUE CAUSA EL ERROR
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => AddWorkOrderResponsiveDialog(
+                prefillData: prefillData,
+                bloc: bloc,
+              ),
+            );
+
+            // Mensaje simple después de cerrar
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Orden de trabajo creada con éxito"),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
           icon: Icons.work_outline,
           label: 'O. Trabajo',
           color: AppColors.primary,

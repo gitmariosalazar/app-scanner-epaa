@@ -24,6 +24,11 @@ import 'package:flutter_application/features/reading/domain/repositories/reading
 import 'package:flutter_application/features/reading/domain/usecases/get_reading_info.dart';
 import 'package:flutter_application/features/reading/presentation/scan/bloc/reading_scan_bloc.dart';
 import 'package:flutter_application/features/reading/presentation/manually/blocs/reading_manually_bloc.dart';
+import 'package:flutter_application/features/work-orders/data/datasources/work_order_remote_datasource.dart';
+import 'package:flutter_application/features/work-orders/data/repositories/work_order_repository_impl.dart';
+import 'package:flutter_application/features/work-orders/domain/repositories/work_order_repository.dart';
+import 'package:flutter_application/features/work-orders/domain/usecases/create_work_order.dart';
+import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -127,5 +132,27 @@ Future<void> init() async {
       sl<FindAllObservationsUseCase>(),
       sl<FindAllObservationsByCadastralKeyUseCase>(),
     ),
+  );
+
+  // ==========================
+  // WORK ORDERS FEATURE
+  // ==========================
+  // Blocs
+  // Note: The registration of CreateWorkOrderBloc is assumed to be here
+  // as it is used in other parts of the application.
+
+  // === REPOSITORY ===
+  sl.registerLazySingleton<WorkOrderRemoteDataSource>(
+    () => WorkOrderRemoteDataSourceImpl(client: sl()),
+  );
+
+  sl.registerLazySingleton<WorkOrderRepository>(
+    () => WorkOrderRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => CreateWorkOrderUseCase(sl()));
+
+  sl.registerFactory<CreateWorkOrderBloc>(
+    () => CreateWorkOrderBloc(createWorkOrder: sl()),
   );
 }
