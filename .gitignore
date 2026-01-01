@@ -24,6 +24,14 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# Key files
+android/key.properties
+android/app/src/main/res/values/strings.xml
+upload-keystore.jks
+
+assets/.env
+assets/.env.dev
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
@@ -34,6 +42,7 @@ migrate_working_dir/
 /build/
 /coverage/
 .env
+.env.dev
 test.md
 # Symbolication related
 app.*.symbols

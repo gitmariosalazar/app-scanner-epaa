@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/features/form/presentation/pages/location_screen.dart';
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
+import 'package:flutter_application/features/properties/form/presentation/screen/map_picker_screen.dart';
+import 'package:flutter_application/features/properties/form/presentation/screen/update_form_screen.dart';
+import 'package:flutter_application/features/properties/list/domain/entities/connection.dart';
+import 'package:flutter_application/features/properties/list/presentation/manually/blocs/index.dart';
+import 'package:flutter_application/features/properties/list/presentation/scan/blocs/connection_with_properties_bloc.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
+import 'package:flutter_application/features/reading/presentation/manually/blocs/index.dart';
+import 'package:flutter_application/features/reading/presentation/scan/bloc/index.dart';
 import 'package:flutter_application/features/work-orders/presentation/screen/add_work_order_form_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -17,13 +24,10 @@ import 'package:flutter_application/features/form/presentation/blocs/readings/fo
     as form_bloc;
 import 'package:flutter_application/main.dart'; // Importa routeObserver
 
-import 'package:flutter_application/features/reading/presentation/scan/bloc/index.dart';
-import 'package:flutter_application/features/reading/presentation/manually/blocs/index.dart';
-
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/login',
-    observers: [routeObserver], // <-- Añade RouteObserver aquí
+    observers: [routeObserver],
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
@@ -33,13 +37,10 @@ class AppRouter {
       ),
       GoRoute(
         path: '/scan',
-        builder: (context, state) {
-          // Provee el BLoC aquí
-          return BlocProvider(
-            create: (_) => di.sl<ReadingScanBloc>(),
-            child: const ScanPage(),
-          );
-        },
+        builder: (context, state) => BlocProvider(
+          create: (_) => di.sl<ReadingScanBloc>(),
+          child: const ScanPage(),
+        ),
       ),
       GoRoute(
         path: '/form',
@@ -47,13 +48,14 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final reading = extra['reading'] as List<Reading>? ?? [];
           final mode = extra['mode'] as String? ?? 'manual';
-          debugPrint('Navegando a /form con extra: $extra, mode: $mode');
-          return BlocProvider(
-            create: (_) {
-              final bloc = di.sl<form_bloc.FormBloc>();
-              debugPrint('FormBloc creado en AppRouter: $bloc');
-              return bloc;
-            },
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (_) => di.sl<form_bloc.FormBloc>()),
+              BlocProvider(
+                create: (_) => di.sl<ManuallyConnectionWithPropertiesBloc>(),
+              ),
+            ],
             child: form.FormScreen(reading: reading, mode: mode),
           );
         },
@@ -61,7 +63,7 @@ class AppRouter {
       GoRoute(
         path: '/manually-entry',
         builder: (context, state) => BlocProvider(
-          create: (context) => di.sl<ReadingManuallyBloc>(),
+          create: (_) => di.sl<ReadingManuallyBloc>(),
           child: const ManualEntryScreen(),
         ),
       ),
@@ -80,6 +82,73 @@ class AppRouter {
       GoRoute(
         path: '/add-work-order',
         builder: (context, state) => const AddWorkOrderFormScreen(),
+      ),
+
+      GoRoute(
+        path: '/update-form',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          if (extra == null ||
+              !extra.containsKey('connection') ||
+              extra['connection'] == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Error: Datos de conexión no proporcionados'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              context.go('/home');
+            });
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final connectionData = extra['connection'];
+          final mode = extra['mode'] as String? ?? 'manual';
+
+          ConnectionEntity connection;
+
+          if (connectionData is ConnectionEntity) {
+            connection = connectionData;
+          } else if (connectionData is Map<String, dynamic>) {
+            connection = ConnectionEntity.fromJson(connectionData);
+          } else {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Error: Tipo de datos de conexión inválido'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              context.go('/home');
+            });
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          return UpdateConnectionFormScreen(connection: connection, mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/map-picker',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+
+          final initialLat = extra['initialLat'] as double;
+          final initialLng = extra['initialLng'] as double;
+
+          return MapPickerScreen(
+            initialLat: initialLat,
+            initialLng: initialLng,
+            onLocationPicked: (lat, lng) {
+              context.pop({'lat': lat, 'lng': lng});
+            },
+          );
+        },
       ),
     ],
   );

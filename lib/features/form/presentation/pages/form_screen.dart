@@ -1,25 +1,30 @@
+// lib/features/form/presentation/pages/form_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/components/button/widget_button.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
-import 'package:flutter_application/components/text/text_field.dart';
-import 'package:flutter_application/core/di/injection.dart';
 import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
+import 'package:flutter_application/features/form/presentation/widgets/action_button_exit_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/action_buttons_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/consumption_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/date_period_card.dart';
+import 'package:flutter_application/features/form/presentation/widgets/description_field.dart';
+import 'package:flutter_application/features/form/presentation/widgets/header_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/id_fields_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
+import 'package:flutter_application/features/form/presentation/widgets/owner_address_fields.dart';
+import 'package:flutter_application/features/form/presentation/widgets/reading_current_row.dart';
+import 'package:flutter_application/features/form/presentation/widgets/reading_fields_row.dart';
+import 'package:flutter_application/features/properties/list/domain/usecases/get_connection_with_properties.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
-import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
-import 'package:flutter_application/utils/date_utils.dart';
 import 'package:flutter_application/utils/dialog_utils.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
-import 'package:flutter_application/utils/screen_type_layout.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
-
-import 'package:flutter_application/features/work-orders/presentation/widgets/add_work_order_form.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_application/core/di/injection.dart' as di;
 
 class AppColors {
   static const primary = Color(0xFF0288D1);
@@ -34,7 +39,7 @@ class AppColors {
 
 class FormScreen extends StatefulWidget {
   final List<Reading> reading;
-  final String mode; // 'scan' or 'manual'
+  final String mode;
 
   const FormScreen({super.key, required this.reading, required this.mode});
 
@@ -84,11 +89,7 @@ class _FormScreenState extends State<FormScreen>
   }
 
   void _initializeData() {
-    //final List<dynamic> dataList = [];
-    //Map<String, dynamic> data = {};
-
     final r = widget.reading;
-    debugPrint('Inicializando FormScreen con Reading: ${r[0].meterNumber}');
     hasCurrentReading = r[0].hasCurrentReading;
     _connectionIdController.text = r[0].cadastralKey;
     _connectionOwnerController.text = r[0].clientName;
@@ -111,7 +112,6 @@ class _FormScreenState extends State<FormScreen>
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
-
       _currentReadingController.text,
     );
     _previousConsumptionController.text = ConsumptionUtils.calculateConsumption(
@@ -160,25 +160,19 @@ class _FormScreenState extends State<FormScreen>
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: Text(
+          title: const Text(
             'Detalle de La Acometida',
-            style: ResponsiveUtils.titleMedium(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600, color: Colors.white),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
-          elevation: ResponsiveUtils.cardElevation(context),
           centerTitle: true,
           automaticallyImplyLeading: false,
         ),
         body: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.primary.withOpacity(0.05),
-                AppColors.background,
-              ],
+              colors: [Colors.blueAccent, AppColors.background],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -186,7 +180,7 @@ class _FormScreenState extends State<FormScreen>
           child: Padding(
             padding: ResponsiveUtils.screenPadding(context).copyWith(
               top: ResponsiveUtils.scaleHeight(context, 0.035),
-              bottom: ResponsiveUtils.scaleHeight(context, 0.025),
+              bottom: ResponsiveUtils.scaleHeight(context, 0.1),
             ),
             child: BlocConsumer<form_bloc.FormBloc, form_bloc.FormState>(
               listener: (context, state) {
@@ -204,45 +198,54 @@ class _FormScreenState extends State<FormScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildHeaderRow(context),
+                        HeaderRow(
+                          connectionIdController: _connectionIdController,
+                          averageConsumptionController:
+                              _averageConsumptionController,
+                        ),
                         ResponsiveUtils.vSpace(context, 0.03),
-                        _buildConsumptionRow(context, state),
+                        ConsumptionRow(
+                          previousConsumptionController:
+                              _previousConsumptionController,
+                          currentConsumptionController:
+                              _currentConsumptionController,
+                          previousReadingDate: _previousReadingDate,
+                          consumptionVisuals: _consumptionVisuals,
+                          now: _now,
+                        ),
                         ResponsiveUtils.vSpace(context, 0.03),
-
-                        /*
-                        _buildReadingFieldsRow(),
-                        ResponsiveUtils.vSpace(context, 0.015),
-                        _buildDescriptionField(context),
-                        ResponsiveUtils.vSpace(context, 0.015),
-                        _buildImagesSection(context),
-                        if (_errorMessage != null || _successMessage != null)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              top: ResponsiveUtils.scaleHeight(context, 0.01),
-                              left: ResponsiveUtils.scaleWidth(context, 0.03),
-                              right: ResponsiveUtils.scaleWidth(context, 0.03),
-                            ),
-                            child: Text(
-                              _errorMessage ?? _successMessage ?? "",
-                              style: ResponsiveUtils.bodySmall(context)
-                                  .copyWith(
-                                    color: _errorMessage != null
-                                        ? AppColors.error
-                                        : AppColors.secondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
+                        if (!hasCurrentReading) ...[
+                          ReadingFieldsRow(
+                            currentReadingController: _currentReadingController,
+                            newCurrentReadingController:
+                                _newCurrentReadingController,
+                            monthReadingController: _monthReadingController,
                           ),
-                        ResponsiveUtils.vSpace(context, 0.02),
-                        _buildActionButtonsRow(context, state),
-
-                        */
-                        if (hasCurrentReading) ...[
-                          _buildReadingFieldsRow(),
                           ResponsiveUtils.vSpace(context, 0.015),
-                          _buildDescriptionField(context),
+                          DescriptionField(
+                            descriptionController: _descriptionController,
+                            mode: widget.mode,
+                          ),
                           ResponsiveUtils.vSpace(context, 0.015),
-                          _buildImagesSection(context),
+                          ImagesSection(
+                            attachedImages: _attachedImages,
+                            mode: widget.mode,
+                            onImageAdded: (file) {
+                              if (mounted) {
+                                setState(() {
+                                  _attachedImages.add(file);
+                                  if (widget.mode == 'manual' &&
+                                      _attachedImages.isNotEmpty) {
+                                    _errorMessage = null;
+                                  }
+                                });
+                              }
+                            },
+                            onImageRemoved: (index) {
+                              if (mounted)
+                                setState(() => _attachedImages.removeAt(index));
+                            },
+                          ),
                           if (_errorMessage != null || _successMessage != null)
                             Padding(
                               padding: EdgeInsets.only(
@@ -265,7 +268,25 @@ class _FormScreenState extends State<FormScreen>
                               ),
                             ),
                           ResponsiveUtils.vSpace(context, 0.02),
-                          _buildActionButtonsRow(context, state),
+                          ActionButtonsRow(
+                            state: state,
+                            onSavePressed: () => _onSavePressed(context, state),
+                            prefillData: {
+                              "connectionId": _connectionIdController.text
+                                  .trim(),
+                              "clientId": _cardIdController.text.trim(),
+                              "ownerName": _connectionOwnerController.text
+                                  .trim(),
+                              "address": _addressConnectionController.text
+                                  .trim(),
+                              "meterNumber": _meterNumberController.text.trim(),
+                              "description": _descriptionController.text.isEmpty
+                                  ? "Revisar medidor - lectura tomada manualmente"
+                                  : _descriptionController.text.trim(),
+                            },
+                            animationController: _animationController,
+                            scaleAnimation: _scaleAnimation,
+                          ),
                         ] else ...[
                           TitledCard(
                             title: 'Lectura Ya Registrada',
@@ -282,26 +303,56 @@ class _FormScreenState extends State<FormScreen>
                               255,
                             ),
                             children: [
-                              _buildReadingCurrentRow(),
+                              ReadingCurrentRow(reading: widget.reading),
                               ResponsiveUtils.vSpace(context, 0.03),
-                              _buildActionButtonExitRow(context, state),
+                              ActionButtonExitRow(
+                                prefillData: {
+                                  "connectionId": _connectionIdController.text
+                                      .trim(),
+                                  "clientId": _cardIdController.text.trim(),
+                                  "ownerName": _connectionOwnerController.text
+                                      .trim(),
+                                  "address": _addressConnectionController.text
+                                      .trim(),
+                                  "meterNumber": _meterNumberController.text
+                                      .trim(),
+                                  "description":
+                                      _descriptionController.text.isEmpty
+                                      ? "Revisar medidor - lectura tomada manualmente"
+                                      : _descriptionController.text.trim(),
+                                },
+                                animationController: _animationController,
+                                scaleAnimation: _scaleAnimation,
+                              ),
                             ],
                           ),
                         ],
-
                         ResponsiveUtils.vSpace(context, 0.03),
                         MinimalSectionDivider(
                           title: 'Información Adicional',
                           color: AppColors.primary.withOpacity(0.8),
                           children: [
                             ResponsiveUtils.vSpace(context, 0.015),
-                            _buildIdFieldsRow(),
+                            IdFieldsRow(
+                              cardIdController: _cardIdController,
+                              meterNumberController: _meterNumberController,
+                            ),
                             ResponsiveUtils.vSpace(context, 0.03),
-                            _buildOwnerAddressFields(),
+                            OwnerAddressFields(
+                              connectionOwnerController:
+                                  _connectionOwnerController,
+                              addressConnectionController:
+                                  _addressConnectionController,
+                            ),
                             ResponsiveUtils.vSpace(context, 0.03),
-                            _buildDatePeriodCard(context),
+                            DatePeriodCard(
+                              startDatePeriodController:
+                                  _startDatePeriodController,
+                              endDatePeriodController: _endDatePeriodController,
+                            ),
                           ],
                         ),
+                        ResponsiveUtils.vSpace(context, 0.2),
                       ],
                     ),
                   ),
@@ -310,6 +361,65 @@ class _FormScreenState extends State<FormScreen>
             ),
           ),
         ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            // Obtener el ID de acometida del campo de texto
+            final acometidaId = _connectionIdController.text.trim();
+
+            if (acometidaId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("ID de acometida no válido"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            // Mostrar loading
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            );
+
+            try {
+              // Llamada directa al UseCase
+              final connection = await di.sl<GetConnectionWithProperties>()(
+                acometidaId,
+              );
+
+              if (!mounted) return;
+              Navigator.pop(context); // cerrar loading
+
+              // Navegar a la pantalla de actualización
+              context.push(
+                '/update-form',
+                extra: {'connection': connection, 'mode': 'manual'},
+              );
+            } catch (e) {
+              if (!mounted) return;
+              Navigator.pop(context); // cerrar loading
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Error al cargar datos: $e"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          label: const Text(
+            "Actualizar Coordenadas",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          icon: const Icon(Icons.edit_note_rounded),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          elevation: 8.0,
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }
@@ -322,13 +432,6 @@ class _FormScreenState extends State<FormScreen>
       AppColors.secondary,
     );
     if (_attachedImages.isNotEmpty) {
-      debugPrint('Iniciando subida de imágenes...');
-      debugPrint('Número de imágenes a subir: ${_attachedImages.length}');
-      /*Print Datos a Enviar*/
-      debugPrint('Datos a enviar:');
-      debugPrint('Reading ID: ${state.data['readingId']}');
-      debugPrint('Cadastral Key: ${state.data['cadastralKey']}');
-
       try {
         await submitPhotoReading(
           context: context,
@@ -338,739 +441,18 @@ class _FormScreenState extends State<FormScreen>
           description: state.data['novelty'] ?? 'Sin descripción',
           mode: widget.mode,
         );
-        if (!mounted) return;
-        setState(() {
-          _attachedImages.clear();
-          _successMessage = 'Imágenes subidas con éxito.';
-          _errorMessage = null;
-        });
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _errorMessage = 'Error al subir imágenes: $e');
-      }
-    } else {
-      debugPrint('No hay imágenes para subir.');
-    }
-  }
-
-  Widget _buildImagesSection(BuildContext context) {
-    final double imageSize = ResponsiveUtils.isTablet(context) ? 90.0 : 55.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Cargar Imágenes',
-          style: ResponsiveUtils.bodyLarge(
-            context,
-          ).copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        ),
-        ResponsiveUtils.vSpace(context, 0.01),
-        SizedBox(
-          height: imageSize,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _attachedImages.length + 1,
-            separatorBuilder: (_, __) =>
-                SizedBox(width: ResponsiveUtils.smallSpacing(context)),
-            itemBuilder: (context, index) {
-              if (index == _attachedImages.length) {
-                return _buildAddImageButton(context, imageSize);
-              } else {
-                final file = _attachedImages[index];
-                return Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Image.file(
-                        file,
-                        width: imageSize,
-                        height: imageSize,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.error.withOpacity(0.3),
-                            child: Center(
-                              child: Text(
-                                'Error al cargar imagen',
-                                style: ResponsiveUtils.bodySmall(
-                                  context,
-                                ).copyWith(color: AppColors.error),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      top: 2,
-                      right: 2,
-                      child: GestureDetector(
-                        onTap: () {
-                          if (!mounted) return;
-                          setState(() => _attachedImages.removeAt(index));
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddImageButton(BuildContext context, double size) {
-    return GestureDetector(
-      onTap: () async {
-        if (!mounted) return;
-        final picker = ImagePicker();
-        final XFile? pickedImage = await picker.pickImage(
-          source: ImageSource.camera,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          imageQuality: 85,
-        );
-        if (pickedImage != null && mounted) {
+        if (mounted) {
           setState(() {
-            _attachedImages.add(File(pickedImage.path));
-            if (widget.mode == 'manual' && _attachedImages.length >= 1) {
-              _errorMessage = null;
-            }
+            _attachedImages.clear();
+            _successMessage = 'Imágenes subidas con éxito.';
+            _errorMessage = null;
           });
         }
-      },
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: AppColors.cardSecondaryBackground.withOpacity(0.75),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.45),
-            width: 2,
-          ),
-        ),
-        child: Icon(
-          Icons.add_a_photo_rounded,
-          size: size * 0.48,
-          color: AppColors.primary.withOpacity(0.82),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderRow(BuildContext context) {
-    return ResponsiveRow(
-      rowSpacing: ResponsiveUtils.mediumSpacing(context),
-      children: [
-        TitledCard(
-          title: 'Conexión ID',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            Icons.cable,
-            color: AppColors.secondary,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground,
-          children: [
-            Text(
-              _connectionIdController.text.isEmpty
-                  ? 'Sin ID de conexión'
-                  : _connectionIdController.text,
-              style: ResponsiveUtils.titleMedium(context).copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        TitledCard(
-          title: 'Consumo Prom.',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            Icons.water_drop,
-            color: AppColors.primary,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground,
-          children: [
-            Text(
-              _connectionIdController.text.isEmpty
-                  ? '0.0 m³'
-                  : '${double.tryParse(_averageConsumptionController.text)?.toStringAsFixed(2) ?? '0.00'} m³',
-              style: ResponsiveUtils.titleMedium(context).copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDatePeriodCard(BuildContext context) {
-    final String startDate = formatFromIsoDate(_startDatePeriodController.text);
-    final String endDate = formatFromIsoDate(_endDatePeriodController.text);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSecondaryBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            'Periodo de Lectura',
-            style: ResponsiveUtils.titleMedium(context).copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildDateBubble(
-                context,
-                startDate,
-                'Inicio',
-                Colors.greenAccent,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.greenAccent,
-                            AppColors.primary,
-                            Colors.orangeAccent,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Periodo Activo',
-                      style: ResponsiveUtils.bodySmall(
-                        context,
-                      ).copyWith(color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              _buildDateBubble(context, endDate, 'Fin', Colors.orangeAccent),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateBubble(
-    BuildContext context,
-    String date,
-    String label,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            border: Border.all(color: color, width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            date,
-            style: ResponsiveUtils.titleSmall(context).copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: ResponsiveUtils.bodySmall(
-            context,
-          ).copyWith(color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConsumptionRow(BuildContext context, form_bloc.FormState state) {
-    return ResponsiveRow(
-      rowSpacing: ResponsiveUtils.mediumSpacing(context),
-      children: [
-        TitledCard(
-          title: 'Consumo Anterior',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            Icons.history,
-            color: AppColors.textSecondary,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardSecondaryBackground,
-          children: [_buildConsumptionCardContent(context, isPrevious: true)],
-        ),
-        TitledCard(
-          title: 'Consumo Actual',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            _consumptionVisuals.icon,
-            color: _consumptionVisuals.textColor,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          backgroundColor: _consumptionVisuals.backgroundColor,
-          titleStyle: ResponsiveUtils.titleSmall(context),
-          children: [_buildConsumptionCardContent(context, isPrevious: false)],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConsumptionCardContent(
-    BuildContext context, {
-    required bool isPrevious,
-    TextStyle? textStyle,
-  }) {
-    final style = textStyle ?? ResponsiveUtils.titleMedium(context);
-    final controller = isPrevious
-        ? _previousConsumptionController
-        : _currentConsumptionController;
-    final dateText = isPrevious
-        ? (_previousReadingDate.text.isEmpty
-              ? 'N/A'
-              : formatFromIsoDate(_previousReadingDate.text))
-        : formatDate(_now);
-    final bgColor = isPrevious
-        ? AppColors.cardSecondaryBackground
-        : _consumptionVisuals.backgroundColor;
-    final textColor = isPrevious
-        ? AppColors.textPrimary
-        : _consumptionVisuals.textColor;
-    final dateTextColor = isPrevious
-        ? AppColors.textSecondary
-        : _consumptionVisuals.textColor.withOpacity(0.8);
-
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(
-              ResponsiveUtils.cardBorderRadius(context),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: ResponsiveUtils.cardPadding(context),
-          child: Text(
-            controller.text.isEmpty ? '0.0 m³' : '${controller.text} m³',
-            style: style.copyWith(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        ResponsiveUtils.vSpace(context, 0.015),
-        Text(
-          'Fecha: $dateText',
-          style: ResponsiveUtils.bodySmall(
-            context,
-          ).copyWith(color: dateTextColor),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIdFieldsRow() {
-    return ResponsiveRow(
-      rowSpacing: ResponsiveUtils.mediumSpacing(context),
-      children: [
-        CustomTextField(
-          controller: _cardIdController,
-          label: 'Cédula de Ciudadanía',
-          leftIcon: Icons.pin,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-          isReadOnly: true,
-        ),
-        CustomTextField(
-          controller: _meterNumberController,
-          label: 'Número de Medidor',
-          leftIcon: Icons.water_damage_outlined,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-          isReadOnly: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOwnerAddressFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CustomTextField(
-          controller: _connectionOwnerController,
-          label: 'Propietario de la Conexión',
-          leftIcon: Icons.person_outline,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-          isReadOnly: true,
-        ),
-        ResponsiveUtils.vSpace(context, 0.03),
-        CustomTextField(
-          controller: _addressConnectionController,
-          label: 'Dirección de la Conexión',
-          leftIcon: Icons.location_on_outlined,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-          isReadOnly: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReadingFieldsRow() {
-    return ResponsiveRow(
-      rowSpacing: ResponsiveUtils.mediumSpacing(context),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomTextField(
-          controller: _currentReadingController,
-          label: 'Lectura Anterior ${_monthReadingController.text}',
-          leftIcon: Icons.history_outlined,
-          textStyle: ResponsiveUtils.bodyLarge(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-          isReadOnly: true,
-        ),
-        CustomTextField(
-          controller: _newCurrentReadingController,
-          label: 'Lectura Actual (Obligatorio)',
-          leftIcon: Icons.speed_outlined,
-          hintText: '0.00',
-          keyboardType: TextInputType.number,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Por favor, ingrese la lectura actual';
-            }
-            final number = double.tryParse(value);
-            if (number == null || number < 0) {
-              return 'Ingrese un número positivo válido';
-            }
-            return null;
-          },
-          textStyle: ResponsiveUtils.bodyLarge(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReadingCurrentRow() {
-    return ResponsiveRow(
-      rowSpacing: ResponsiveUtils.mediumSpacing(context),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // === LECTURA ANTERIOR ===
-        TitledCard(
-          title: 'Lectura Anterior',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            Icons.history_outlined,
-            color: AppColors.secondary,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardSecondaryBackground,
-          children: [
-            Text(
-              _previousReadingController.text.isEmpty
-                  ? 'Sin lectura anterior'
-                  : _previousReadingController.text,
-              style: ResponsiveUtils.titleMedium(context).copyWith(
-                fontWeight: FontWeight.bold,
-                color: _previousReadingController.text.isEmpty
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-            ResponsiveUtils.vSpace(context, 0.015),
-            Text(
-              'Fecha: ${_previousReadingDate.text.isEmpty ? 'N/A' : formatFromIsoDate(widget.reading[1].previousReadingDate.toString())}',
-              style: ResponsiveUtils.bodySmall(
-                context,
-              ).copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-
-        // === LECTURA ACTUAL ===
-        TitledCard(
-          title: 'Lectura Actual',
-          elevation: ResponsiveUtils.cardElevation(context),
-          bottomRightIcon: Icon(
-            Icons.speed_outlined,
-            color: AppColors.secondary,
-            size: ResponsiveUtils.iconSmall(context),
-          ),
-          titleStyle: ResponsiveUtils.titleSmall(
-            context,
-          ).copyWith(color: AppColors.secondary, fontWeight: FontWeight.w600),
-          backgroundColor: AppColors.cardSecondaryBackground.withOpacity(0.95),
-          children: [
-            Text(
-              widget.reading[0].currentReading == null
-                  ? 'Sin lectura actual'
-                  : widget.reading[0].currentReading.toString(),
-              style: ResponsiveUtils.titleMedium(context).copyWith(
-                fontWeight: FontWeight.bold,
-                color: widget.reading[0].currentReading == null
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-            ResponsiveUtils.vSpace(context, 0.015),
-            Text(
-              'Fecha: ${formatDate(widget.reading[0].previousReadingDate ?? DateTime.now())}',
-              style: ResponsiveUtils.bodySmall(
-                context,
-              ).copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDescriptionField(BuildContext context) {
-    return CustomTextField(
-      controller: _descriptionController,
-      label:
-          'Descripción o Novedades${widget.mode == 'manual' ? ' (Requerido)' : ' (Opcional)'}',
-      leftIcon: Icons.description,
-      maxLines: ResponsiveUtils.isTablet(context) ? 5 : 3,
-      hintText: widget.mode == 'manual'
-          ? 'Ingrese una descripción detallada...'
-          : 'Ingrese una descripción o novedad...',
-      textStyle: ResponsiveUtils.bodyMedium(
-        context,
-      ).copyWith(color: AppColors.textPrimary),
-      validator: widget.mode == 'manual'
-          ? (value) {
-              if (value == null || value.isEmpty)
-                return 'Por favor, ingrese una descripción';
-              return null;
-            }
-          : null,
-    );
-  }
-
-  Widget _buildActionButtonsRow(
-    BuildContext context,
-    form_bloc.FormState state,
-  ) {
-    return ResponsiveRow(
-      forceRow: true,
-      rowSpacing: ResponsiveUtils.largeSpacing(context),
-      children: [
-        ResponsiveButton(
-          onPressed: state is form_bloc.FormLoading
-              ? null
-              : () => _onSavePressed(context, state),
-          icon: Icons.save,
-          label: 'Guardar',
-          color: AppColors.secondary,
-          loading: state is form_bloc.FormLoading,
-          height: ResponsiveUtils.buttonSmall(context),
-          animationController: _animationController,
-          scaleAnimation: _scaleAnimation,
-        ),
-        ResponsiveButton(
-          onPressed: state is form_bloc.FormLoading
-              ? null
-              : () => context.go('/home'),
-          icon: Icons.cancel,
-          label: 'Cancelar',
-          color: AppColors.error,
-          loading: false,
-          height: ResponsiveUtils.buttonSmall(context),
-          animationController: _animationController,
-          scaleAnimation: _scaleAnimation,
-        ),
-        // Button for Work Order – FINAL Y PERFECTO
-        ResponsiveButton(
-          onPressed: () async {
-            final prefillData = {
-              "connectionId": _connectionIdController.text.trim(),
-              "clientId": _cardIdController.text.trim(),
-              "ownerName": _connectionOwnerController.text.trim(),
-              "address": _addressConnectionController.text.trim(),
-              "meterNumber": _meterNumberController.text.trim(),
-              "description": _descriptionController.text.isEmpty
-                  ? "Revisar medidor - lectura tomada manualmente"
-                  : _descriptionController.text.trim(),
-            };
-
-            final bloc = sl<CreateWorkOrderBloc>();
-
-            // QUITA EL <WorkOrderEntity> → ESTO ES LO QUE CAUSA EL ERROR
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => AddWorkOrderResponsiveDialog(
-                prefillData: prefillData,
-                bloc: bloc,
-              ),
-            );
-
-            // Mensaje simple después de cerrar
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Orden de trabajo creada con éxito"),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          },
-          icon: Icons.work_outline,
-          label: 'O. Trabajo',
-          color: AppColors.primary,
-          loading: false,
-          height: ResponsiveUtils.buttonSmall(context),
-          animationController: _animationController,
-          scaleAnimation: _scaleAnimation,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtonExitRow(
-    BuildContext context,
-    form_bloc.FormState state,
-  ) {
-    return ResponsiveRow(
-      forceRow: true,
-      rowSpacing: ResponsiveUtils.largeSpacing(context),
-      children: [
-        // Botón Cancelar
-        ResponsiveButton(
-          onPressed: state is form_bloc.FormLoading
-              ? null
-              : () => context.go('/home'),
-          icon: Icons.cancel,
-          label: 'Cancelar',
-          color: AppColors.error,
-          loading: false,
-          height: ResponsiveUtils.buttonSmall(context),
-          animationController: _animationController,
-          scaleAnimation: _scaleAnimation,
-        ),
-
-        // Botón "O. Trabajo" – 100% FUNCIONAL
-        ResponsiveButton(
-          onPressed: () async {
-            final prefillData = {
-              "connectionId": _connectionIdController.text.trim(),
-              "clientId": _cardIdController.text.trim(),
-              "ownerName": _connectionOwnerController.text.trim(),
-              "address": _addressConnectionController.text.trim(),
-              "meterNumber": _meterNumberController.text.trim(),
-              "description": _descriptionController.text.isEmpty
-                  ? "Revisar medidor - lectura tomada manualmente"
-                  : _descriptionController.text.trim(),
-            };
-
-            final bloc = sl<CreateWorkOrderBloc>();
-
-            // QUITA EL <WorkOrderEntity> → ESTO ES LO QUE CAUSA EL ERROR
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => AddWorkOrderResponsiveDialog(
-                prefillData: prefillData,
-                bloc: bloc,
-              ),
-            );
-
-            // Mensaje simple después de cerrar
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Orden de trabajo creada con éxito"),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          },
-          icon: Icons.work_outline,
-          label: 'O. Trabajo',
-          color: AppColors.primary,
-          loading: false,
-          height: ResponsiveUtils.buttonSmall(context),
-          animationController: _animationController,
-          scaleAnimation: _scaleAnimation,
-        ),
-      ],
-    );
+      } catch (e) {
+        if (mounted)
+          setState(() => _errorMessage = 'Error al subir imágenes: $e');
+      }
+    }
   }
 
   Future<void> _onSavePressed(
@@ -1163,14 +545,6 @@ class _FormScreenState extends State<FormScreen>
         {
           'label': 'Consumo (m³)',
           'value': '${_currentConsumptionController.text} m³',
-        },
-        {
-          'label': 'Estado Consumo',
-          'value': _currentConsumptionController.text.isEmpty
-              ? 'Sin consumo'
-              : double.parse(
-                  _newCurrentReadingController.text,
-                ).toStringAsFixed(2),
         },
       ],
     );

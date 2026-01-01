@@ -29,6 +29,8 @@ dependencies:
   flutter_osm_plugin: 1.4.3
   json_annotation: ^4.9.0
   meta: ^1.17.0
+  bloc_concurrency: ^0.3.0
+  google_maps_flutter: ^2.3.0
 
 flutter_launcher_icons:
   android: 'launcher_icon'
