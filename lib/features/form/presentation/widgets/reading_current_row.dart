@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
@@ -42,9 +44,7 @@ class ReadingCurrentRow extends StatelessWidget {
                   : reading[0].previousReading.toString(),
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: reading[0].previousReading == null
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,

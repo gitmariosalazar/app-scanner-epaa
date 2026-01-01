@@ -6,7 +6,6 @@ import 'package:flutter_application/features/properties/form/presentation/screen
 import 'package:flutter_application/features/properties/form/presentation/screen/update_form_screen.dart';
 import 'package:flutter_application/features/properties/list/domain/entities/connection.dart';
 import 'package:flutter_application/features/properties/list/presentation/manually/blocs/index.dart';
-import 'package:flutter_application/features/properties/list/presentation/scan/blocs/connection_with_properties_bloc.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/features/reading/presentation/manually/blocs/index.dart';
 import 'package:flutter_application/features/reading/presentation/scan/bloc/index.dart';

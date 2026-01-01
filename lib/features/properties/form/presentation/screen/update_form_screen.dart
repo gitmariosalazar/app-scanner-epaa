@@ -1,5 +1,4 @@
 // lib/features/properties/form/update/presentation/screens/update_connection_form_screen.dart
-import 'package:flutter_application/components/common/custom_overlay_snack_bar.dart';
 import 'package:flutter_application/features/properties/form/presentation/screen/map_picker_screen.dart';
 import 'package:flutter_application/features/properties/form/update/domain/repositories/company_repository.dart';
 import 'package:flutter_application/features/properties/form/update/domain/repositories/connection_repository.dart';
@@ -58,7 +57,6 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
   bool _isSubmitting = false;
   bool _isDatePickerActive = false;
   bool _isGettingLocation = false;
-  bool _hasLoadedGeolocation = false;
 
   GoogleMapController? _mapController;
 
