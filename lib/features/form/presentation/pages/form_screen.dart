@@ -214,7 +214,7 @@ class _FormScreenState extends State<FormScreen>
                           now: _now,
                         ),
                         ResponsiveUtils.vSpace(context, 0.03),
-                        if (!hasCurrentReading) ...[
+                        if (hasCurrentReading == true) ...[
                           ReadingFieldsRow(
                             currentReadingController: _currentReadingController,
                             newCurrentReadingController:

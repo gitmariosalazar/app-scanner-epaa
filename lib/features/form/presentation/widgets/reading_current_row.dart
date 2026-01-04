@@ -51,7 +51,7 @@ class ReadingCurrentRow extends StatelessWidget {
             ),
             ResponsiveUtils.vSpace(context, 0.015),
             Text(
-              'Fecha: ${reading[0].previousReadingDate == null ? 'N/A' : formatFromIsoDate(reading[0].previousReadingDate.toString())}',
+              'Fecha: ${reading[1].previousReadingDate == null ? 'N/A' : formatFromIsoDate(reading[1].previousReadingDate.toString())}',
               style: ResponsiveUtils.bodySmall(
                 context,
               ).copyWith(color: AppColors.textSecondary),
