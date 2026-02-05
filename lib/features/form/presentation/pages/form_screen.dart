@@ -90,12 +90,12 @@ class _FormScreenState extends State<FormScreen>
 
   void _initializeData() {
     final r = widget.reading;
-    hasCurrentReading = r[0].hasCurrentReading;
-    _connectionIdController.text = r[0].cadastralKey;
-    _connectionOwnerController.text = r[0].clientName;
+    hasCurrentReading = r[0].hasCurrentReading!;
+    _connectionIdController.text = r[0].cadastralKey!;
+    _connectionOwnerController.text = r[0].clientName!;
     _readingIdController.text = r[0].readingId.toString();
     _cardIdController.text = r[0].cardId.toString();
-    _currentReadingController.text = r[0].currentReading?.toString() ?? '';
+    _currentReadingController.text = r[0].currentReading!.toString();
     _previousReadingController.text = r[0].previousReading.toString();
     _sectorConnectionController.text = r[0].sector.toString();
     _addressConnectionController.text = r[0].address.toString();
@@ -105,10 +105,10 @@ class _FormScreenState extends State<FormScreen>
     _averageConsumptionController.text = r[0].averageConsumption.toString();
     _readingValueController.text = r[0].readingValue.toString();
     _meterNumberController.text = r[0].meterNumber.toString();
-    _previousReadingDate.text = r[0].previousReadingDate?.toString() ?? '';
+    _previousReadingDate.text = r[0].previousReadingDate!.toString();
     _monthReadingController.text = r[0].monthReading.toString();
-    _startDatePeriodController.text = r[0].startDatePeriod.toIso8601String();
-    _endDatePeriodController.text = r[0].endDatePeriod.toIso8601String();
+    _startDatePeriodController.text = r[0].startDatePeriod!.toIso8601String();
+    _endDatePeriodController.text = r[0].endDatePeriod!.toIso8601String();
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
@@ -234,10 +234,7 @@ class _FormScreenState extends State<FormScreen>
                               if (mounted) {
                                 setState(() {
                                   _attachedImages.add(file);
-                                  if (widget.mode == 'manual' &&
-                                      _attachedImages.isNotEmpty) {
-                                    _errorMessage = null;
-                                  }
+                                  // Ya no limpiamos error por falta de imagen
                                 });
                               }
                             },
@@ -414,6 +411,7 @@ class _FormScreenState extends State<FormScreen>
             "Actualizar Coordenadas",
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
+          enableFeedback: false,
           icon: const Icon(Icons.edit_note_rounded),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
@@ -460,15 +458,10 @@ class _FormScreenState extends State<FormScreen>
     form_bloc.FormState state,
   ) async {
     if (!_formKey.currentState!.validate()) return;
-    if (widget.mode == 'manual' && _attachedImages.isEmpty) {
-      if (mounted) {
-        setState(
-          () =>
-              _errorMessage = 'Se requiere al menos una imagen en modo manual.',
-        );
-      }
-      return;
-    }
+
+    // SE ELIMINÓ LA RESTRICCIÓN: imágenes ya no son obligatorias en modo manual
+    // SE ELIMINÓ LA RESTRICCIÓN: descripción (observaciones) ya no es obligatoria
+
     setState(() => _errorMessage = null);
 
     await DialogUtils.showConfirmationDialog(
@@ -484,8 +477,8 @@ class _FormScreenState extends State<FormScreen>
                   ? '0'
                   : _currentReadingController.text,
             ),
-            rentalIncomeCode: 1500,
-            incomeCode: 1256,
+            rentalIncomeCode: 0,
+            incomeCode: 0,
             cadastralKey: _cadastralKeyConnectionController.text,
             sector: int.parse(
               _sectorConnectionController.text.isEmpty
@@ -497,11 +490,7 @@ class _FormScreenState extends State<FormScreen>
                   ? '0'
                   : _accountConnectionController.text,
             ),
-            readingValue: double.parse(
-              _readingValueController.text.isNotEmpty
-                  ? _readingValueController.text
-                  : '0',
-            ),
+            readingValue: double.parse('0'),
             connectionId: _connectionIdController.text,
             sewerRate: 0.0,
             averageConsumption:

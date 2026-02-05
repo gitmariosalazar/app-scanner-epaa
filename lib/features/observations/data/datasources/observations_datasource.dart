@@ -1,4 +1,7 @@
+// lib/features/observations/data/datasources/observations_datasource.dart
+
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/observations/data/models/observation_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -11,17 +14,33 @@ abstract class ObservationsDataSource {
 }
 
 class ObservationsDataSourceImpl implements ObservationsDataSource {
+  final http.Client client;
+  final AuthLocalDataSource authLocalDataSource;
   final String apiUrl = Environment.apiUrl;
+
+  ObservationsDataSourceImpl({
+    required this.client,
+    required this.authLocalDataSource,
+  });
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
 
   @override
   Future<List<ObservationModel>> fetchObservationsByCadastralKey(
     String connectionId,
   ) async {
-    final response = await http.get(
+    final headers = await _getHeaders();
+    final response = await client.get(
       Uri.parse(
         '$apiUrl/observations/get-observation-details-by-cadastral-key/$connectionId',
       ),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -43,9 +62,10 @@ class ObservationsDataSourceImpl implements ObservationsDataSource {
 
   @override
   Future<List<ObservationModel>> fetchAllObservations() async {
-    final response = await http.get(
+    final headers = await _getHeaders();
+    final response = await client.get(
       Uri.parse('$apiUrl/observations/get-observations'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {

@@ -5,3 +5,5 @@ class LoadReadingScanInfo extends ReadingScanEvent {
   final String cadastralKey;
   LoadReadingScanInfo(this.cadastralKey);
 }
+
+class ResetReadingScan extends ReadingScanEvent {}

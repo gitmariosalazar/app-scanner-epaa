@@ -4,6 +4,7 @@ import 'package:flutter_application/features/observations/presentation/bloc/obse
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
 import 'package:flutter_application/features/properties/form/presentation/screen/map_picker_screen.dart';
 import 'package:flutter_application/features/properties/form/presentation/screen/update_form_screen.dart';
+import 'package:flutter_application/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter_application/features/properties/list/domain/entities/connection.dart';
 import 'package:flutter_application/features/properties/list/presentation/manually/blocs/index.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
@@ -148,6 +149,10 @@ class AppRouter {
             },
           );
         },
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
   );

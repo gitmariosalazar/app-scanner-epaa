@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/work-orders/data/mappers/work_order_mapper.dart';
 import 'package:flutter_application/features/work-orders/data/models/assign_work_order_request.dart';
 import 'package:flutter_application/features/work-orders/data/models/create_work_order_request.dart';
@@ -30,18 +31,30 @@ abstract class WorkOrderRemoteDataSource {
 // A simple implementation using http package (pseudo)
 class WorkOrderRemoteDataSourceImpl implements WorkOrderRemoteDataSource {
   final http.Client client; // e.g. http.Client
+  final AuthLocalDataSource authLocalDataSource;
   final String baseUrl = Environment.apiUrl;
 
-  WorkOrderRemoteDataSourceImpl({required this.client});
+  WorkOrderRemoteDataSourceImpl({
+    required this.client,
+    required this.authLocalDataSource,
+  });
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
 
   @override
   Future<WorkOrderResponse> createWorkOrder(
     CreateWorkOrderRequest request,
   ) async {
-    // TODO: implement API call
+    final headers = await _getHeaders();
     final response = await client.post(
       Uri.parse('$baseUrl/work-orders/create-work-order'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode(request.toJson()),
     );
 

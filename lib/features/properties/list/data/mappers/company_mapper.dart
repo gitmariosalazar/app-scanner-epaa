@@ -1,9 +1,7 @@
-// lib/features/properties/data/mappers/company_mapper.dart
-
 import 'package:flutter_application/features/properties/list/data/model/schemas/dto/response/connection_with_properties_response.dart'
     as dto;
 import 'package:flutter_application/features/properties/list/domain/entities/company.dart';
-import 'contact_mapper.dart';
+import 'package:flutter_application/features/properties/list/data/mappers/contact_mapper.dart';
 
 extension CompanyDtoMapper on dto.Company {
   CompanyEntity toEntity() {
@@ -13,7 +11,7 @@ extension CompanyDtoMapper on dto.Company {
       country: country,
       clientId: clientId,
       parishId: parishId,
-      companyId: companyId,
+      companyId: companyId ?? 0, // Fallback to 0 if null
       businessName: businessName,
       commercialName: commercialName,
       emails: emails.map((e) => e?.toEntity()).toList(),

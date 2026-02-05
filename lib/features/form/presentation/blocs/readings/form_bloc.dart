@@ -11,7 +11,8 @@ part 'form_event.dart';
 part 'form_state.dart';
 
 class FormBloc extends Bloc<FormEvent, FormState> {
-  FormBloc() : super(FormInitial()) {
+  final String token;
+  FormBloc({required this.token}) : super(FormInitial()) {
     on<InsertReadingEvent>((event, emit) async {
       emit(FormLoading());
       try {
@@ -19,7 +20,10 @@ class FormBloc extends Bloc<FormEvent, FormState> {
         debugPrint('Enviando a: $baseUrl/Readings/create-reading');
         final response = await http.post(
           Uri.parse('$baseUrl/Readings/create-reading'),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
           body: jsonEncode({
             "connectionId": event.connectionId,
             "sector": event.sector,

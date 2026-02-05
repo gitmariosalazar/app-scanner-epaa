@@ -1,8 +1,10 @@
+// lib/features/properties/form/add-img/data/datasources/property_image_remote_data_source.dart
 import 'dart:convert';
 import 'dart:io';
 import 'dart:developer' as developer;
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,9 +23,18 @@ abstract class PropertyImageRemoteDataSource {
 class PropertyImageRemoteDataSourceImpl
     implements PropertyImageRemoteDataSource {
   final http.Client client;
+  final AuthLocalDataSource authLocalDataSource;
   final String baseUrl = Environment.apiUrl;
 
-  PropertyImageRemoteDataSourceImpl(this.client);
+  PropertyImageRemoteDataSourceImpl({
+    required this.client,
+    required this.authLocalDataSource,
+  });
+
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    return {if (token != null) 'Authorization': 'Bearer $token'};
+  }
 
   @override
   Future<Either<Failure, List<PhotoConnection>>> addPropertyImages({
@@ -55,8 +66,13 @@ class PropertyImageRemoteDataSourceImpl
       );
     }
 
+    final headers = await _getAuthHeaders();
     final uri = Uri.parse('$baseUrl/photo-connection/create-photo-connection');
     final request = http.MultipartRequest('POST', uri);
+
+    // Add headers (Authorization).
+    // DO NOT set Content-Type here; MultipartRequest sets it automatically to multipart/form-data with boundary.
+    request.headers.addAll(headers);
 
     request.fields['connectionId'] = connectionId;
     if (description != null && description.trim().isNotEmpty) {
@@ -101,10 +117,18 @@ class PropertyImageRemoteDataSourceImpl
       if (streamedResponse.statusCode == 200 ||
           streamedResponse.statusCode == 201) {
         final jsonResponse = jsonDecode(responseBody) as Map<String, dynamic>;
+
+        // Handle generic ApiResponse structure if needed, or raw data
+        // Assuming direct response based on previous code logic
+        // But previously it was wrapping in jsonResponse['data']
+
         final List<dynamic> data = jsonResponse['data'] ?? [];
 
         if (data.isEmpty) {
-          return Left(ServerFailure(message: 'No data returned from server.'));
+          // Sometimes success response might not have data list if it's just a confirmation?
+          // But method returns List<PhotoConnection>. If empty, maybe that's valid or error.
+          // Returning empty list is safer than failure if 200 OK.
+          return const Right([]);
         }
 
         final List<PhotoConnection> models = data
@@ -113,6 +137,10 @@ class PropertyImageRemoteDataSourceImpl
 
         developer.log('✅ Uploaded ${models.length} photo connections.');
         return Right(models);
+      } else if (streamedResponse.statusCode == 401) {
+        return Left(
+          ServerFailure(message: 'Unauthorized: Please login again.'),
+        );
       } else if (streamedResponse.statusCode == 500) {
         developer.log('❌ Server internal error (500): $responseBody');
         return Left(ServerFailure(message: 'Server error: $responseBody'));

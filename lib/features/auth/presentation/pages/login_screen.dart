@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_application/core/di/injection.dart' as di;
-import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -10,10 +10,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<AuthBloc>(),
-      child: const LoginView(),
-    );
+    return const LoginView();
   }
 }
 
@@ -151,11 +148,11 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     context.vSpace(0.03),
                     // Login Button
-                    BlocConsumer<AuthBloc, AuthState>(
+                    BlocConsumer<LoginCubit, LoginState>(
                       listener: (context, state) {
-                        if (state is AuthSuccess) {
+                        if (state is LoginSuccess) {
                           context.go('/home');
-                        } else if (state is AuthFailure) {
+                        } else if (state is LoginFailure) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(state.message),
@@ -167,16 +164,14 @@ class _LoginViewState extends State<LoginView> {
                       builder: (context, state) {
                         return _LoginButton(
                           text: 'Iniciar Sesión',
-                          loading: state is AuthLoading,
+                          loading: state is LoginLoading,
                           isTablet: isTablet,
-                          onPressed: state is AuthLoading
+                          onPressed: state is LoginLoading
                               ? null
                               : () {
-                                  context.read<AuthBloc>().add(
-                                    LoginEvent(
-                                      email: _emailController.text.trim(),
-                                      password: _passwordController.text,
-                                    ),
+                                  context.read<LoginCubit>().login(
+                                    _emailController.text.trim(),
+                                    _passwordController.text,
                                   );
                                 },
                         );

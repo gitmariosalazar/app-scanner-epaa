@@ -124,7 +124,7 @@ class _DynamicFieldListState extends State<DynamicFieldList> {
                       label: widget.hint,
                       icon: widget.icon,
                       keyboardType: widget.keyboardType,
-                      validator: widget.validator,
+                      //validator: widget.validator,
                       isRequired:
                           widget.required &&
                           index == 0, // Solo el primero es requerido si aplica

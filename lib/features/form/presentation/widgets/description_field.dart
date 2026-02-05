@@ -28,9 +28,11 @@ class DescriptionField extends StatelessWidget {
       ).copyWith(color: const Color(0xFF212121)),
       validator: mode == 'manual'
           ? (value) {
+              /*
               if (value == null || value.isEmpty) {
                 return 'Por favor, ingrese una descripción';
               }
+              */
               return null;
             }
           : null,

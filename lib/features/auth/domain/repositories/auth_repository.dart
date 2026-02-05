@@ -4,6 +4,10 @@ import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/features/auth/domain/entities/user.dart';
 
 abstract class AuthRepository {
-  Future<Either<Failure, User>> login(String email, String password);
+  Future<Either<Failure, User>> login(
+    String username_or_email,
+    String password,
+  );
   Future<Either<Failure, void>> logout();
+  Future<Either<Failure, User>> checkAuthStatus();
 }

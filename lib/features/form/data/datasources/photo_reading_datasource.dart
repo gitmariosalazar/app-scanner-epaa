@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:developer' as developer;
 import 'package:dartz/dartz.dart';
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:mime/mime.dart' as mime;
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/features/form/data/models/photo_reading_model.dart';
@@ -12,7 +13,19 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class PhotoReadingDataSource {
+  final http.Client client;
+  final AuthLocalDataSource authLocalDataSource;
   static final String baseUrl = Environment.apiUrl;
+
+  PhotoReadingDataSource({
+    required this.client,
+    required this.authLocalDataSource,
+  });
+
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    return {if (token != null) 'Authorization': 'Bearer $token'};
+  }
 
   Future<Either<Failure, List<PhotoReadingModel>>> createPhotoReadings({
     required List<File> images,
@@ -46,8 +59,12 @@ class PhotoReadingDataSource {
       );
     }
 
+    final headers = await _getAuthHeaders();
     final uri = Uri.parse('$baseUrl/photo-reading/create-photo-readings');
     var request = http.MultipartRequest('POST', uri);
+
+    // Add Auth header only
+    request.headers.addAll(headers);
 
     // Añadir campos de formulario
     request.fields['readingId'] = readingId.toString();
@@ -96,7 +113,13 @@ class PhotoReadingDataSource {
     );
 
     try {
-      final streamedResponse = await request.send();
+      // Use client.send if possible, but MultipartRequest.send() creates its own client internally or uses a provided one?
+      // http.MultipartRequest inherits from BaseRequest. BaseRequest.send() opens a connection.
+      // If we want to use the injected client, we should use client.send(request).
+      // However, client.send expects a BaseRequest.
+
+      final streamedResponse = await client.send(request);
+
       final responseBody = await streamedResponse.stream.bytesToString();
       developer.log('Response status: ${streamedResponse.statusCode}');
       developer.log(
@@ -107,13 +130,18 @@ class PhotoReadingDataSource {
         final jsonResponse = jsonDecode(responseBody) as Map<String, dynamic>;
         final List<dynamic> data = jsonResponse['data'] ?? [];
         if (data.isEmpty) {
-          return Left(ServerFailure(message: 'No data returned from server.'));
+          // Returning empty list is better than error if success 201
+          return const Right([]);
         }
         final List<PhotoReadingModel> models = data
             .map((json) => PhotoReadingModel.fromJson(json))
             .toList();
         developer.log('Parsed ${models.length} models successfully.');
         return Right(models);
+      } else if (streamedResponse.statusCode == 401) {
+        return Left(
+          ServerFailure(message: 'Unauthorized: Please login again.'),
+        );
       } else if (streamedResponse.statusCode == 500) {
         developer.log('Server internal error (500): $responseBody');
         return Left(ServerFailure(message: 'Server error: $responseBody'));

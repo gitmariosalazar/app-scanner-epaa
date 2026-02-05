@@ -2,66 +2,67 @@
 import 'package:equatable/equatable.dart';
 
 class Phone extends Equatable {
-  final String number;
+  final String? number;
   const Phone(this.number);
   @override
   List<Object?> get props => [number];
 }
 
 class Email extends Equatable {
-  final String email;
+  final String? email;
   const Email(this.email);
   @override
   List<Object?> get props => [email];
 }
 
 class Reading extends Equatable {
-  final int readingId;
+  final int? readingId;
   final DateTime? previousReadingDate;
   final DateTime? readingTime;
-  final String cadastralKey;
-  final String cardId;
-  final String clientName;
-  final List<Phone> phones;
-  final List<Email> emails;
-  final String address;
-  final int previousReading;
-  final int? currentReading;
-  final int sector;
-  final int account;
-  final double? readingValue;
-  final double averageConsumption;
-  final String meterNumber;
-  final int rateId;
-  final String rateName;
-  final bool hasCurrentReading;
-  final String monthReading;
-  final DateTime startDatePeriod;
-  final DateTime endDatePeriod;
+  final String? cadastralKey;
+  final String? cardId;
+  final String? clientName;
+  final List<Phone>? phones;
+  final List<Email>? emails;
+  final String? address;
+  final String?
+  previousReading; // Changed to String to match DTO if that was the case, or should be double? DTO says String.
+  final String? currentReading;
+  final int? sector;
+  final int? account;
+  final String? readingValue;
+  final String? averageConsumption;
+  final String? meterNumber;
+  final int? rateId;
+  final String? rateName;
+  final bool? hasCurrentReading;
+  final String? monthReading;
+  final DateTime? startDatePeriod;
+  final DateTime? endDatePeriod;
 
   const Reading({
-    required this.readingId,
+    this.readingId,
     this.previousReadingDate,
     this.readingTime,
-    required this.cadastralKey,
-    required this.cardId,
-    required this.clientName,
-    required this.phones,
-    required this.emails,
-    required this.address,
-    required this.previousReading,
+    this.cadastralKey,
+    this.cardId,
+    this.clientName,
+    this.phones,
+    this.emails,
+    this.address,
+    this.previousReading,
     this.currentReading,
-    required this.sector,
-    required this.account,
+    this.sector,
+    this.account,
     this.readingValue,
-    required this.averageConsumption,
-    required this.meterNumber,
-    required this.rateId,
-    required this.rateName,
-    required this.hasCurrentReading,
-    required this.monthReading,
-    required this.startDatePeriod,
-    required this.endDatePeriod,
+    this.averageConsumption,
+    this.meterNumber,
+    this.rateId,
+    this.rateName,
+    this.hasCurrentReading,
+    this.monthReading,
+    this.startDatePeriod,
+    this.endDatePeriod,
   });
 
   @override

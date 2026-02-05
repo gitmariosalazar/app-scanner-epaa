@@ -55,13 +55,13 @@ DateTime? _toDateTimeOrNull(dynamic value) {
 
 @JsonSerializable(explicitToJson: true)
 class Phone {
-  @JsonKey(name: 'telefonoid')
-  final int telefonoid;
+  @JsonKey(name: 'telefonoid', fromJson: _toIntOrNull)
+  final int? telefonoid;
 
   @JsonKey(name: 'numero')
-  final String numero;
+  final String? numero;
 
-  Phone({required this.telefonoid, required this.numero});
+  Phone({this.telefonoid, this.numero});
 
   factory Phone.fromJson(Map<String, dynamic> json) => _$PhoneFromJson(json);
   Map<String, dynamic> toJson() => _$PhoneToJson(this);
@@ -69,13 +69,13 @@ class Phone {
 
 @JsonSerializable(explicitToJson: true)
 class Email {
-  @JsonKey(name: 'correoid')
-  final int correoid;
+  @JsonKey(name: 'correoid', fromJson: _toIntOrNull)
+  final int? correoid;
 
   @JsonKey(name: 'email')
-  final String email;
+  final String? email;
 
-  Email({required this.correoid, required this.email});
+  Email({this.correoid, this.email});
 
   factory Email.fromJson(Map<String, dynamic> json) => _$EmailFromJson(json);
   Map<String, dynamic> toJson() => _$EmailToJson(this);
@@ -159,8 +159,8 @@ class Company {
   @JsonKey(name: 'parishId', fromJson: _toStringOrNull)
   final String? parishId;
 
-  @JsonKey(name: 'companyId')
-  final int companyId;
+  @JsonKey(name: 'companyId', fromJson: _toIntOrNull)
+  final int? companyId;
 
   @JsonKey(name: 'businessName')
   final String? businessName;
@@ -180,7 +180,7 @@ class Company {
     this.country,
     required this.clientId,
     this.parishId,
-    required this.companyId,
+    this.companyId,
     this.businessName,
     this.commercialName,
     required this.emails,

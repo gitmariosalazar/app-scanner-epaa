@@ -10,6 +10,7 @@ class ReadingScanBloc extends Bloc<ReadingScanEvent, ReadingScanState> {
 
   ReadingScanBloc(this.getReadingInfo) : super(ReadingScanInitial()) {
     on<LoadReadingScanInfo>(_onLoadReadingInfo);
+    on<ResetReadingScan>(_onResetReadingScan);
   }
 
   Future<void> _onLoadReadingInfo(
@@ -23,5 +24,12 @@ class ReadingScanBloc extends Bloc<ReadingScanEvent, ReadingScanState> {
     } catch (e) {
       emit(ReadingScanError(e.toString()));
     }
+  }
+
+  void _onResetReadingScan(
+    ResetReadingScan event,
+    Emitter<ReadingScanState> emit,
+  ) {
+    emit(ReadingScanInitial());
   }
 }

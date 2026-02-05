@@ -7,8 +7,8 @@ part of 'reading_info_response.dart';
 // **************************************************************************
 
 Phone _$PhoneFromJson(Map<String, dynamic> json) => Phone(
-  telefonoid: (json['telefonoid'] as num).toInt(),
-  numero: json['numero'] as String,
+  telefonoid: (json['telefonoid'] as num?)?.toInt(),
+  numero: json['numero'] as String?,
 );
 
 Map<String, dynamic> _$PhoneToJson(Phone instance) => <String, dynamic>{
@@ -17,8 +17,8 @@ Map<String, dynamic> _$PhoneToJson(Phone instance) => <String, dynamic>{
 };
 
 Email _$EmailFromJson(Map<String, dynamic> json) => Email(
-  correoid: (json['correoid'] as num).toInt(),
-  email: json['email'] as String,
+  correoid: (json['correoid'] as num?)?.toInt(),
+  email: json['email'] as String?,
 );
 
 Map<String, dynamic> _$EmailToJson(Email instance) => <String, dynamic>{
@@ -28,12 +28,12 @@ Map<String, dynamic> _$EmailToJson(Email instance) => <String, dynamic>{
 
 ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
     ReadingInfoResponse(
-      readingId: (json['readingId'] as num).toInt(),
+      readingId: (json['readingId'] as num?)?.toInt(),
       previousReadingDate: json['previousReadingDate'] as String?,
       readingTime: json['readingTime'] as String?,
-      cadastralKey: json['cadastralKey'] as String,
-      cardId: json['cardId'] as String,
-      clientName: json['clientName'] as String,
+      cadastralKey: json['cadastralKey'] as String?,
+      cardId: json['cardId'] as String?,
+      clientName: json['clientName'] as String?,
       clientPhones:
           (json['clientPhones'] as List<dynamic>?)
               ?.map((e) => Phone.fromJson(e as Map<String, dynamic>))
@@ -44,20 +44,20 @@ ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
               ?.map((e) => Email.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      address: json['address'] as String,
-      previousReading: json['previousReading'] as String,
+      address: json['address'] as String?,
+      previousReading: json['previousReading'] as String?,
       currentReading: json['currentReading'] as String?,
-      sector: (json['sector'] as num).toInt(),
-      account: (json['account'] as num).toInt(),
+      sector: (json['sector'] as num?)?.toInt(),
+      account: (json['account'] as num?)?.toInt(),
       readingValue: json['readingValue'] as String? ?? '',
       averageConsumption: json['averageConsumption'] as String? ?? '',
       meterNumber: json['meterNumber'] as String?,
-      rateId: (json['rateId'] as num).toInt(),
-      rateName: json['rateName'] as String,
+      rateId: (json['rateId'] as num?)?.toInt(),
+      rateName: json['rateName'] as String?,
       hasCurrentReading: json['hasCurrentReading'] as bool? ?? false,
-      monthReading: json['monthReading'] as String,
-      startDatePeriod: json['startDatePeriod'] as String,
-      endDatePeriod: json['endDatePeriod'] as String,
+      monthReading: json['monthReading'] as String?,
+      startDatePeriod: json['startDatePeriod'] as String?,
+      endDatePeriod: json['endDatePeriod'] as String?,
     );
 
 Map<String, dynamic> _$ReadingInfoResponseToJson(
@@ -69,8 +69,8 @@ Map<String, dynamic> _$ReadingInfoResponseToJson(
   'cadastralKey': instance.cadastralKey,
   'cardId': instance.cardId,
   'clientName': instance.clientName,
-  'clientPhones': instance.clientPhones.map((e) => e.toJson()).toList(),
-  'clientEmails': instance.clientEmails.map((e) => e.toJson()).toList(),
+  'clientPhones': instance.clientPhones?.map((e) => e.toJson()).toList(),
+  'clientEmails': instance.clientEmails?.map((e) => e.toJson()).toList(),
   'address': instance.address,
   'previousReading': instance.previousReading,
   'currentReading': instance.currentReading,

@@ -7,8 +7,8 @@ part of 'connection_with_properties_response.dart';
 // **************************************************************************
 
 Phone _$PhoneFromJson(Map<String, dynamic> json) => Phone(
-  telefonoid: (json['telefonoid'] as num).toInt(),
-  numero: json['numero'] as String,
+  telefonoid: _toIntOrNull(json['telefonoid']),
+  numero: json['numero'] as String?,
 );
 
 Map<String, dynamic> _$PhoneToJson(Phone instance) => <String, dynamic>{
@@ -17,8 +17,8 @@ Map<String, dynamic> _$PhoneToJson(Phone instance) => <String, dynamic>{
 };
 
 Email _$EmailFromJson(Map<String, dynamic> json) => Email(
-  correoid: (json['correoid'] as num).toInt(),
-  email: json['email'] as String,
+  correoid: _toIntOrNull(json['correoid']),
+  email: json['email'] as String?,
 );
 
 Map<String, dynamic> _$EmailToJson(Email instance) => <String, dynamic>{
@@ -68,7 +68,7 @@ Company _$CompanyFromJson(Map<String, dynamic> json) => Company(
   country: json['country'] as String?,
   clientId: json['clientId'] as String,
   parishId: _toStringOrNull(json['parishId']),
-  companyId: (json['companyId'] as num).toInt(),
+  companyId: _toIntOrNull(json['companyId']),
   businessName: json['businessName'] as String?,
   commercialName: json['commercialName'] as String?,
   emails: (json['emails'] as List<dynamic>)

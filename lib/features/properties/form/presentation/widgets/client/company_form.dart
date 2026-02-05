@@ -49,7 +49,7 @@ class CompanyForm extends StatelessWidget {
                 label: 'RUC',
                 icon: Icons.credit_card,
                 keyboardType: TextInputType.number,
-                validator: numberValidator,
+                //validator: numberValidator,
               ),
               const SizedBox(height: 10),
               CustomTextField(
@@ -74,7 +74,7 @@ class CompanyForm extends StatelessWidget {
           hint: '+593 2 123 4567',
           icon: Icons.phone,
           keyboardType: TextInputType.phone,
-          validator: phoneValidator,
+          //validator: phoneValidator,
         ),
       ],
     );

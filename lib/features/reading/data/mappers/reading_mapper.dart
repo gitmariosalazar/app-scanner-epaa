@@ -14,39 +14,53 @@ extension ReadingInfoResponseX on dto.ReadingInfoResponse {
       cadastralKey: cadastralKey,
       cardId: cardId,
       clientName: clientName,
-      phones: clientPhones.map((p) => Phone(p.numero)).toList(),
-      emails: clientEmails.map((e) => Email(e.email)).toList(),
+      phones:
+          clientPhones
+              ?.where((p) => p.numero != null)
+              .map((p) => Phone(p.numero!))
+              .toList() ??
+          [],
+      emails:
+          clientEmails
+              ?.where((e) => e.email != null)
+              .map((e) => Email(e.email!))
+              .toList() ??
+          [],
       address: address,
-      previousReading: int.tryParse(previousReading.replaceAll('.00', '')) ?? 0,
-      currentReading: currentReading != null
-          ? int.tryParse(currentReading!.replaceAll('.00', ''))
-          : null,
+      // Mapping string to string as per updated Entity definition, or keep it raw?
+      // Entity definition in Step 255 has String? previousReading.
+      previousReading: previousReading,
+      currentReading: currentReading,
       sector: sector,
       account: account,
-      readingValue: double.tryParse(readingValue.replaceAll('.00', '')) ?? 0.0,
-      averageConsumption:
-          double.tryParse(averageConsumption.replaceAll('.00', '')) ?? 0.0,
-      meterNumber: meterNumber ?? '',
+      readingValue: readingValue,
+      averageConsumption: averageConsumption,
+      meterNumber: meterNumber,
       rateId: rateId,
       rateName: rateName,
       hasCurrentReading: hasCurrentReading,
       monthReading: monthReading,
-      startDatePeriod: DateTime.tryParse(startDatePeriod) ?? DateTime.now(),
-      endDatePeriod: DateTime.tryParse(endDatePeriod) ?? DateTime.now(),
+      startDatePeriod: startDatePeriod != null
+          ? DateTime.tryParse(startDatePeriod!)
+          : null,
+      endDatePeriod: endDatePeriod != null
+          ? DateTime.tryParse(endDatePeriod!)
+          : null,
     );
   }
 
   DateTime? _parseTime(String timeStr) {
     try {
       final parts = timeStr.split(':');
+      if (parts.length < 2) return null;
       final now = DateTime.now();
       return DateTime(
         now.year,
         now.month,
         now.day,
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-        int.parse(parts[2]),
+        int.tryParse(parts[0]) ?? 0,
+        int.tryParse(parts[1]) ?? 0,
+        parts.length > 2 ? (int.tryParse(parts[2]) ?? 0) : 0,
       );
     } catch (e) {
       return null;

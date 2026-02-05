@@ -1,4 +1,5 @@
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/properties/list/data/model/schemas/dto/response/connection_with_properties_response.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application/shared/api/response/api_response.dart';
@@ -12,19 +13,36 @@ abstract class RemoteConnectionWithPropertiesDataSource {
 class RemoteConnectionWithPropertiesDataSourceImpl
     implements RemoteConnectionWithPropertiesDataSource {
   final http.Client client;
+  final AuthLocalDataSource authLocalDataSource;
   final String baseUrl = Environment.apiUrl;
 
-  RemoteConnectionWithPropertiesDataSourceImpl(this.client);
+  RemoteConnectionWithPropertiesDataSourceImpl(
+    this.client,
+    this.authLocalDataSource,
+  );
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
 
   @override
   Future<ConnectionWithPropertiesResponse>
   fetchConnectionWithPropertiesByCadastralKey(String cadastralKey) async {
+    final headers = await _getHeaders();
     final response = await client.get(
       Uri.parse(
         '$baseUrl/connections/find-connection-with-property-by-cadastral-key/$cadastralKey',
       ),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
     );
+
+    if (response.statusCode == 401) {
+      throw Exception('Unauthorized: Please login again');
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Error HTTP ${response.statusCode}');

@@ -6,10 +6,13 @@ import 'package:flutter_application/features/form/presentation/blocs/photo-readi
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart';
 
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:flutter_application/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:flutter_application/features/auth/domain/repositories/auth_repository.dart';
+import 'package:flutter_application/features/auth/domain/usecases/check_auth_status_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/login_usecase.dart';
-import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:flutter_application/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
 import 'package:flutter_application/features/observations/data/repositories/observation_repository_impl.dart';
@@ -75,17 +78,30 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
   );
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl()),
+    () => AuthRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
   sl.registerLazySingleton<LoginUseCase>(() => LoginUseCase(sl()));
-  sl.registerFactory(() => AuthBloc(loginUseCase: sl()));
+  sl.registerLazySingleton<LogoutUseCase>(() => LogoutUseCase(sl()));
+  sl.registerLazySingleton<CheckAuthStatusUseCase>(
+    () => CheckAuthStatusUseCase(sl()),
+  );
+  sl.registerFactory(
+    () => LoginCubit(
+      loginUseCase: sl(),
+      logoutUseCase: sl(),
+      checkAuthStatusUseCase: sl(),
+    ),
+  );
 
   // ==========================
   // READING FEATURE
   // ==========================
   sl.registerLazySingleton<RemoteReadingDataSource>(
-    () => RemoteReadingDataSourceImpl(sl()),
+    () => RemoteReadingDataSourceImpl(sl(), sl()),
   );
   sl.registerLazySingleton<ReadingRepository>(
     () => ReadingRepositoryImpl(sl()),
@@ -98,7 +114,7 @@ Future<void> init() async {
   // FORM FEATURE
   // ==========================
   sl.registerLazySingleton<PhotoReadingDataSource>(
-    () => PhotoReadingDataSource(),
+    () => PhotoReadingDataSource(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<PhotoReadingRepository>(
     () => PhotoReadingRepositoryImpl(dataSource: sl()),
@@ -107,13 +123,17 @@ Future<void> init() async {
     () => CreatePhotoReadingUseCase(sl()),
   );
   sl.registerFactory(() => PhotoReadingBloc(sl()));
-  sl.registerFactory(() => FormBloc());
+  sl.registerFactory(
+    () => FormBloc(
+      token: sl<SharedPreferences>().getString(CACHED_AUTH_TOKEN) ?? '',
+    ),
+  );
 
   // ==========================
   // CONNECTION WITH PROPERTIES (para actualización)
   // ==========================
   sl.registerLazySingleton<RemoteConnectionWithPropertiesDataSourceImpl>(
-    () => RemoteConnectionWithPropertiesDataSourceImpl(sl<http.Client>()),
+    () => RemoteConnectionWithPropertiesDataSourceImpl(sl(), sl()),
   );
   sl.registerLazySingleton<ConnectionWithPropertiesRepositoryImpl>(
     () => ConnectionWithPropertiesRepositoryImpl(
@@ -136,7 +156,10 @@ Future<void> init() async {
   // PROPERTY IMAGES FEATURE
   // ==========================
   sl.registerLazySingleton<PropertyImageRemoteDataSource>(
-    () => PropertyImageRemoteDataSourceImpl(sl<http.Client>()),
+    () => PropertyImageRemoteDataSourceImpl(
+      client: sl(),
+      authLocalDataSource: sl(),
+    ),
   );
   sl.registerLazySingleton<PropertyImageRepository>(
     () => PropertyImageRepositoryImpl(sl<PropertyImageRemoteDataSource>()),
@@ -152,7 +175,7 @@ Future<void> init() async {
   // ACTUALIZACIÓN DE ACOMETIDA (UseCases directos)
   // ==========================
   sl.registerLazySingleton<CustomerRemoteDataSource>(
-    () => CustomerRemoteDataSource(client: sl()),
+    () => CustomerRemoteDataSource(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<CustomerRepository>(
     () => CustomerRepositoryImpl(remoteDataSource: sl()),
@@ -162,7 +185,7 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton<CompanyRemoteDataSource>(
-    () => CompanyRemoteDataSource(client: sl()),
+    () => CompanyRemoteDataSource(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<CompanyRepository>(
     () => CompanyRepositoryImpl(remoteDataSource: sl()),
@@ -172,7 +195,7 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton<ConnectionRemoteDataSource>(
-    () => ConnectionRemoteDataSource(client: sl()),
+    () => ConnectionRemoteDataSource(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<ConnectionRepository>(
     () => ConnectionRepositoryImpl(remoteDataSource: sl()),
@@ -186,7 +209,7 @@ Future<void> init() async {
   // ==========================
   // Data sources
   sl.registerLazySingleton<ObservationsDataSource>(
-    () => ObservationsDataSourceImpl(),
+    () => ObservationsDataSourceImpl(client: sl(), authLocalDataSource: sl()),
   );
 
   // Repository
@@ -219,7 +242,8 @@ Future<void> init() async {
 
   // === REPOSITORY ===
   sl.registerLazySingleton<WorkOrderRemoteDataSource>(
-    () => WorkOrderRemoteDataSourceImpl(client: sl()),
+    () =>
+        WorkOrderRemoteDataSourceImpl(client: sl(), authLocalDataSource: sl()),
   );
 
   sl.registerLazySingleton<WorkOrderRepository>(
