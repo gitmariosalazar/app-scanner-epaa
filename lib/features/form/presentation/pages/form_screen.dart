@@ -79,6 +79,10 @@ class _FormScreenState extends State<FormScreen>
   String? _errorMessage;
   String? _successMessage;
   bool hasCurrentReading = false;
+  String? connectionStateDescription;
+  String? connectionStateName;
+  bool? permitReading;
+  int? connectionStateId;
 
   @override
   void initState() {
@@ -109,6 +113,10 @@ class _FormScreenState extends State<FormScreen>
     _monthReadingController.text = r[0].monthReading.toString();
     _startDatePeriodController.text = r[0].startDatePeriod!.toIso8601String();
     _endDatePeriodController.text = r[0].endDatePeriod!.toIso8601String();
+    connectionStateDescription = r[0].connectionStateDescription;
+    connectionStateName = r[0].connectionStateName;
+    permitReading = r[0].permitReading;
+    connectionStateId = r[0].connectionStateId;
     _newCurrentReadingController.text = '';
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
@@ -214,60 +222,452 @@ class _FormScreenState extends State<FormScreen>
                           now: _now,
                         ),
                         ResponsiveUtils.vSpace(context, 0.03),
-                        if (hasCurrentReading == true) ...[
-                          ReadingFieldsRow(
-                            currentReadingController: _currentReadingController,
-                            newCurrentReadingController:
-                                _newCurrentReadingController,
-                            monthReadingController: _monthReadingController,
-                          ),
-                          ResponsiveUtils.vSpace(context, 0.015),
-                          DescriptionField(
-                            descriptionController: _descriptionController,
-                            mode: widget.mode,
-                          ),
-                          ResponsiveUtils.vSpace(context, 0.015),
-                          ImagesSection(
-                            attachedImages: _attachedImages,
-                            mode: widget.mode,
-                            onImageAdded: (file) {
-                              if (mounted) {
-                                setState(() {
-                                  _attachedImages.add(file);
-                                  // Ya no limpiamos error por falta de imagen
-                                });
-                              }
-                            },
-                            onImageRemoved: (index) {
-                              if (mounted)
-                                setState(() => _attachedImages.removeAt(index));
-                            },
-                          ),
-                          if (_errorMessage != null || _successMessage != null)
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: ResponsiveUtils.scaleHeight(context, 0.01),
-                                left: ResponsiveUtils.scaleWidth(context, 0.03),
-                                right: ResponsiveUtils.scaleWidth(
-                                  context,
-                                  0.03,
+                        if (permitReading == true) ...[
+                          if (hasCurrentReading == true) ...[
+                            ReadingFieldsRow(
+                              currentReadingController:
+                                  _currentReadingController,
+                              newCurrentReadingController:
+                                  _newCurrentReadingController,
+                              monthReadingController: _monthReadingController,
+                            ),
+                            ResponsiveUtils.vSpace(context, 0.015),
+                            DescriptionField(
+                              descriptionController: _descriptionController,
+                              mode: widget.mode,
+                            ),
+                            ResponsiveUtils.vSpace(context, 0.015),
+                            ImagesSection(
+                              attachedImages: _attachedImages,
+                              mode: widget.mode,
+                              onImageAdded: (file) {
+                                if (mounted) {
+                                  setState(() {
+                                    _attachedImages.add(file);
+                                    // Ya no limpiamos error por falta de imagen
+                                  });
+                                }
+                              },
+                              onImageRemoved: (index) {
+                                if (mounted) {
+                                  setState(
+                                    () => _attachedImages.removeAt(index),
+                                  );
+                                }
+                              },
+                            ),
+                            if (_errorMessage != null ||
+                                _successMessage != null)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: ResponsiveUtils.scaleHeight(
+                                    context,
+                                    0.01,
+                                  ),
+                                  left: ResponsiveUtils.scaleWidth(
+                                    context,
+                                    0.03,
+                                  ),
+                                  right: ResponsiveUtils.scaleWidth(
+                                    context,
+                                    0.03,
+                                  ),
+                                ),
+                                child: Text(
+                                  _errorMessage ?? _successMessage ?? "",
+                                  style: ResponsiveUtils.bodySmall(context)
+                                      .copyWith(
+                                        color: _errorMessage != null
+                                            ? AppColors.error
+                                            : AppColors.secondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                 ),
                               ),
-                              child: Text(
-                                _errorMessage ?? _successMessage ?? "",
-                                style: ResponsiveUtils.bodySmall(context)
-                                    .copyWith(
-                                      color: _errorMessage != null
-                                          ? AppColors.error
-                                          : AppColors.secondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                            ResponsiveUtils.vSpace(context, 0.02),
+                            ActionButtonsRow(
+                              state: state,
+                              onSavePressed: () =>
+                                  _onSavePressed(context, state),
+                              prefillData: {
+                                "connectionId": _connectionIdController.text
+                                    .trim(),
+                                "clientId": _cardIdController.text.trim(),
+                                "ownerName": _connectionOwnerController.text
+                                    .trim(),
+                                "address": _addressConnectionController.text
+                                    .trim(),
+                                "meterNumber": _meterNumberController.text
+                                    .trim(),
+                                "description":
+                                    _descriptionController.text.isEmpty
+                                    ? "Revisar medidor - lectura tomada manualmente"
+                                    : _descriptionController.text.trim(),
+                              },
+                              animationController: _animationController,
+                              scaleAnimation: _scaleAnimation,
+                            ),
+                          ] else ...[
+                            TitledCard(
+                              title: 'Lectura Ya Registrada',
+                              elevation: ResponsiveUtils.cardElevation(context),
+                              bottomRightIcon: Icon(
+                                Icons.check_circle_outline,
+                                color: AppColors.primary,
+                                size: ResponsiveUtils.iconSmall(context),
+                              ),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                255,
+                                255,
+                                255,
+                              ),
+                              children: [
+                                ReadingCurrentRow(reading: widget.reading),
+                                ResponsiveUtils.vSpace(context, 0.03),
+                                ActionButtonExitRow(
+                                  prefillData: {
+                                    "connectionId": _connectionIdController.text
+                                        .trim(),
+                                    "clientId": _cardIdController.text.trim(),
+                                    "ownerName": _connectionOwnerController.text
+                                        .trim(),
+                                    "address": _addressConnectionController.text
+                                        .trim(),
+                                    "meterNumber": _meterNumberController.text
+                                        .trim(),
+                                    "description":
+                                        _descriptionController.text.isEmpty
+                                        ? "Revisar medidor - lectura tomada manualmente"
+                                        : _descriptionController.text.trim(),
+                                  },
+                                  animationController: _animationController,
+                                  scaleAnimation: _scaleAnimation,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ] else ...[
+                          // ── Banner: Conexión bloqueada ──────────────────
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFB71C1C), Color(0xFFEF5350)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withValues(alpha: 0.30),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: ResponsiveUtils.scaleWidth(
+                                context,
+                                0.04,
+                              ),
+                              vertical: ResponsiveUtils.scaleHeight(
+                                context,
+                                0.018,
                               ),
                             ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  alignment: Alignment.center,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white24,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.block_rounded,
+                                    color: Colors.white,
+                                    size: ResponsiveUtils.iconSmall(context),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: ResponsiveUtils.scaleWidth(
+                                    context,
+                                    0.03,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Conexión bloqueada para lectura',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Esta conexión no puede recibir nuevas lecturas en su estado actual.',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.85,
+                                          ),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: ResponsiveUtils.scaleWidth(
+                                    context,
+                                    0.025,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.cancel_outlined,
+                                        color: Colors.white,
+                                        size: 11,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      const Text(
+                                        'Lectura no\npermitida',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ResponsiveUtils.vSpace(context, 0.018),
+                          // ── Tarjeta única: Estado + Info ──────────────────
+                          Card(
+                            elevation: ResponsiveUtils.cardElevation(context),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: AppColors.error.withValues(alpha: 0.18),
+                              ),
+                            ),
+                            color: const Color(0xFFFFF3E0),
+                            child: Padding(
+                              padding: EdgeInsets.all(
+                                ResponsiveUtils.scaleWidth(context, 0.045),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // ─ Estado ────────────────────────────────────
+                                  Text(
+                                    'ESTADO ACTUAL DE LA CONEXIÓN',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.4,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.01,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.bookmark_outline,
+                                        color: AppColors.error,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          connectionStateName?.toUpperCase() ??
+                                              'DESCONOCIDO',
+                                          style: const TextStyle(
+                                            color: AppColors.error,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.6,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.01,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFE0B2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(
+                                          Icons.description_outlined,
+                                          color: AppColors.textSecondary,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            connectionStateDescription ??
+                                                'Sin descripción disponible.',
+                                            style: const TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 12,
+                                              fontStyle: FontStyle.italic,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.018,
+                                    ),
+                                  ),
+                                  // ─ Divisor ─────────────────────────────────
+                                  Divider(
+                                    color: AppColors.textSecondary.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    height: 1,
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.018,
+                                    ),
+                                  ),
+                                  // ─ Fila 1: Cliente / Clave / Sector ─────────
+                                  Row(
+                                    children: [
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.person_outline,
+                                        label: 'CLIENTE',
+                                        value:
+                                            widget.reading[0].clientName ?? '-',
+                                      ),
+                                      _connInfoDivider(),
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.vpn_key_outlined,
+                                        label: 'CLAVE CATASTRAL',
+                                        value:
+                                            widget.reading[0].cadastralKey ??
+                                            '-',
+                                      ),
+                                      _connInfoDivider(),
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.location_on_outlined,
+                                        label: 'SECTOR',
+                                        value:
+                                            widget.reading[0].sector
+                                                ?.toString() ??
+                                            '-',
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.012,
+                                    ),
+                                  ),
+                                  Divider(
+                                    color: AppColors.textSecondary.withValues(
+                                      alpha: 0.10,
+                                    ),
+                                    height: 1,
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveUtils.scaleHeight(
+                                      context,
+                                      0.012,
+                                    ),
+                                  ),
+                                  // ─ Fila 2: Cuenta / Consumo / ID ───────────
+                                  Row(
+                                    children: [
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.tag,
+                                        label: 'CUENTA',
+                                        value:
+                                            widget.reading[0].account
+                                                ?.toString() ??
+                                            '-',
+                                      ),
+                                      _connInfoDivider(),
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.bar_chart_rounded,
+                                        label: 'CONSUMO PROMEDIO',
+                                        value:
+                                            '${(double.tryParse(widget.reading[0].averageConsumption ?? '0') ?? 0.0).toStringAsFixed(2)} m³',
+                                      ),
+                                      _connInfoDivider(),
+                                      _connInfoCell(
+                                        context,
+                                        icon: Icons.badge_outlined,
+                                        label: 'IDENTIFICACIÓN',
+                                        value:
+                                            widget.reading[0].cardId
+                                                ?.toString() ??
+                                            '-',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           ResponsiveUtils.vSpace(context, 0.02),
-                          ActionButtonsRow(
-                            state: state,
-                            onSavePressed: () => _onSavePressed(context, state),
+                          ActionButtonExitRow(
                             prefillData: {
                               "connectionId": _connectionIdController.text
                                   .trim(),
@@ -284,50 +684,11 @@ class _FormScreenState extends State<FormScreen>
                             animationController: _animationController,
                             scaleAnimation: _scaleAnimation,
                           ),
-                        ] else ...[
-                          TitledCard(
-                            title: 'Lectura Ya Registrada',
-                            elevation: ResponsiveUtils.cardElevation(context),
-                            bottomRightIcon: Icon(
-                              Icons.check_circle_outline,
-                              color: AppColors.primary,
-                              size: ResponsiveUtils.iconSmall(context),
-                            ),
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              255,
-                              255,
-                              255,
-                            ),
-                            children: [
-                              ReadingCurrentRow(reading: widget.reading),
-                              ResponsiveUtils.vSpace(context, 0.03),
-                              ActionButtonExitRow(
-                                prefillData: {
-                                  "connectionId": _connectionIdController.text
-                                      .trim(),
-                                  "clientId": _cardIdController.text.trim(),
-                                  "ownerName": _connectionOwnerController.text
-                                      .trim(),
-                                  "address": _addressConnectionController.text
-                                      .trim(),
-                                  "meterNumber": _meterNumberController.text
-                                      .trim(),
-                                  "description":
-                                      _descriptionController.text.isEmpty
-                                      ? "Revisar medidor - lectura tomada manualmente"
-                                      : _descriptionController.text.trim(),
-                                },
-                                animationController: _animationController,
-                                scaleAnimation: _scaleAnimation,
-                              ),
-                            ],
-                          ),
                         ],
                         ResponsiveUtils.vSpace(context, 0.03),
                         MinimalSectionDivider(
                           title: 'Información Adicional',
-                          color: AppColors.primary.withOpacity(0.8),
+                          color: AppColors.primary.withValues(alpha: 0.8),
                           children: [
                             ResponsiveUtils.vSpace(context, 0.015),
                             IdFieldsRow(
@@ -389,17 +750,17 @@ class _FormScreenState extends State<FormScreen>
               );
 
               if (!mounted) return;
-              Navigator.pop(context); // cerrar loading
+              Navigator.pop(this.context); // cerrar loading
 
               // Navegar a la pantalla de actualización
-              context.push(
+              this.context.push(
                 '/update-form',
                 extra: {'connection': connection, 'mode': 'manual'},
               );
             } catch (e) {
               if (!mounted) return;
-              Navigator.pop(context); // cerrar loading
-              ScaffoldMessenger.of(context).showSnackBar(
+              Navigator.pop(this.context); // cerrar loading
+              ScaffoldMessenger.of(this.context).showSnackBar(
                 SnackBar(
                   content: Text("Error al cargar datos: $e"),
                   backgroundColor: Colors.red,
@@ -419,6 +780,61 @@ class _FormScreenState extends State<FormScreen>
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
+    );
+  }
+
+  // ── Helpers: blocked-connection info grid ────────────────────────────────
+
+  Widget _connInfoCell(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.textSecondary, size: 13),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _connInfoDivider() {
+    return Container(
+      width: 1,
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: AppColors.textSecondary.withValues(alpha: 0.15),
     );
   }
 
@@ -447,8 +863,9 @@ class _FormScreenState extends State<FormScreen>
           });
         }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           setState(() => _errorMessage = 'Error al subir imágenes: $e');
+        }
       }
     }
   }

@@ -58,6 +58,10 @@ ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
       monthReading: json['monthReading'] as String?,
       startDatePeriod: json['startDatePeriod'] as String?,
       endDatePeriod: json['endDatePeriod'] as String?,
+      connectionStateId: (json['connectionStateId'] as num?)?.toInt(),
+      connectionStateName: json['connectionStateName'] as String?,
+      connectionStateDescription: json['connectionStateDescription'] as String?,
+      permitReading: json['permitReading'] as bool?,
     );
 
 Map<String, dynamic> _$ReadingInfoResponseToJson(
@@ -85,4 +89,8 @@ Map<String, dynamic> _$ReadingInfoResponseToJson(
   'monthReading': instance.monthReading,
   'startDatePeriod': instance.startDatePeriod,
   'endDatePeriod': instance.endDatePeriod,
+  'connectionStateId': instance.connectionStateId,
+  'connectionStateName': instance.connectionStateName,
+  'connectionStateDescription': instance.connectionStateDescription,
+  'permitReading': instance.permitReading,
 };

@@ -39,6 +39,10 @@ class Reading extends Equatable {
   final String? monthReading;
   final DateTime? startDatePeriod;
   final DateTime? endDatePeriod;
+  final int? connectionStateId;
+  final String? connectionStateName;
+  final String? connectionStateDescription;
+  final bool? permitReading;
 
   const Reading({
     this.readingId,
@@ -63,6 +67,10 @@ class Reading extends Equatable {
     this.monthReading,
     this.startDatePeriod,
     this.endDatePeriod,
+    this.connectionStateId,
+    this.connectionStateName,
+    this.connectionStateDescription,
+    this.permitReading,
   });
 
   @override
@@ -89,5 +97,9 @@ class Reading extends Equatable {
     monthReading,
     startDatePeriod,
     endDatePeriod,
+    connectionStateId,
+    connectionStateName,
+    connectionStateDescription,
+    permitReading,
   ];
 }

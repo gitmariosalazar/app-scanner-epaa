@@ -46,6 +46,10 @@ extension ReadingInfoResponseX on dto.ReadingInfoResponse {
       endDatePeriod: endDatePeriod != null
           ? DateTime.tryParse(endDatePeriod!)
           : null,
+      connectionStateId: connectionStateId,
+      connectionStateName: connectionStateName,
+      connectionStateDescription: connectionStateDescription,
+      permitReading: permitReading,
     );
   }
 

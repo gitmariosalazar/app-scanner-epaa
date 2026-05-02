@@ -27,7 +27,7 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> login(String usernameOrEmail, String password) async {
     emit(LoginLoading());
     final result = await loginUseCase(
-      LoginParams(username_or_email: usernameOrEmail, password: password),
+      LoginParams(usernameOrEmail: usernameOrEmail, password: password),
     );
     result.fold(
       (failure) => emit(LoginFailure(failure.message)),

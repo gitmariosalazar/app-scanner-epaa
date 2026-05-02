@@ -99,6 +99,18 @@ class ReadingInfoResponse {
   @JsonKey(name: 'endDatePeriod', defaultValue: null)
   final String? endDatePeriod;
 
+  @JsonKey(name: 'connectionStateId', defaultValue: null)
+  final int? connectionStateId;
+
+  @JsonKey(name: 'connectionStateName', defaultValue: null)
+  final String? connectionStateName;
+
+  @JsonKey(name: 'connectionStateDescription', defaultValue: null)
+  final String? connectionStateDescription;
+
+  @JsonKey(name: 'permitReading', defaultValue: null)
+  final bool? permitReading;
+
   ReadingInfoResponse({
     this.readingId,
     this.previousReadingDate,
@@ -122,6 +134,10 @@ class ReadingInfoResponse {
     this.monthReading,
     this.startDatePeriod,
     this.endDatePeriod,
+    this.connectionStateId,
+    this.connectionStateName,
+    this.connectionStateDescription,
+    this.permitReading,
   });
 
   factory ReadingInfoResponse.fromJson(Map<String, dynamic> json) =>
