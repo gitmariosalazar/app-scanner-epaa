@@ -84,7 +84,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                       vertical: verticalSpace * 1.1,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.98),
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(cardRadius),
                       boxShadow: [
                         BoxShadow(

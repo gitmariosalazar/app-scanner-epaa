@@ -63,11 +63,11 @@ class _LoginViewState extends State<LoginView> {
                   vertical: formVerticalPad * 0.6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.94),
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(cardRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.09),
+                      color: Colors.black.withValues(alpha: 0.09),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -151,7 +151,7 @@ class _LoginViewState extends State<LoginView> {
                     BlocConsumer<LoginCubit, LoginState>(
                       listener: (context, state) {
                         if (state is LoginSuccess) {
-                          context.go('/home');
+                          context.go('/inicio');
                         } else if (state is LoginFailure) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

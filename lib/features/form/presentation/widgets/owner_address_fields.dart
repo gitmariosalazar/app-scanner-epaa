@@ -21,9 +21,6 @@ class OwnerAddressFields extends StatelessWidget {
           controller: connectionOwnerController,
           label: 'Propietario de la Conexión',
           leftIcon: Icons.person_outline,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: const Color(0xFF212121)),
           isReadOnly: true,
         ),
         ResponsiveUtils.vSpace(context, 0.03),
@@ -31,9 +28,6 @@ class OwnerAddressFields extends StatelessWidget {
           controller: addressConnectionController,
           label: 'Dirección de la Conexión',
           leftIcon: Icons.location_on_outlined,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: const Color(0xFF212121)),
           isReadOnly: true,
         ),
       ],

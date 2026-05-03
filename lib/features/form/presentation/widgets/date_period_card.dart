@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
-class AppColors {
-  static const primary = Color(0xFF0288D1);
-  static const cardSecondaryBackground = Color(0xFFE3F2FD);
-  static const textPrimary = Color(0xFF212121);
-  static const textSecondary = Color(0xFF757575);
-}
-
 class DatePeriodCard extends StatelessWidget {
   final TextEditingController startDatePeriodController;
   final TextEditingController endDatePeriodController;
@@ -23,22 +16,23 @@ class DatePeriodCard extends StatelessWidget {
     BuildContext context,
     String date,
     String label,
-    Color color,
+    Color accentColor,
   ) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            border: Border.all(color: color, width: 2),
+            color: accentColor.withOpacity(0.15),
+            border: Border.all(color: accentColor, width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             date,
             style: ResponsiveUtils.titleSmall(context).copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: cs.onSurface,
             ),
           ),
         ),
@@ -47,7 +41,7 @@ class DatePeriodCard extends StatelessWidget {
           label,
           style: ResponsiveUtils.bodySmall(
             context,
-          ).copyWith(color: AppColors.textSecondary),
+          ).copyWith(color: cs.onSurfaceVariant),
         ),
       ],
     );
@@ -55,6 +49,7 @@ class DatePeriodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final String startDate = formatFromIsoDate(startDatePeriodController.text);
     final String endDate = formatFromIsoDate(endDatePeriodController.text);
 
@@ -62,13 +57,13 @@ class DatePeriodCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardSecondaryBackground,
+        color: cs.secondaryContainer,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 6,
-            offset: const Offset(0, 3),
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -79,7 +74,7 @@ class DatePeriodCard extends StatelessWidget {
             'Periodo de Lectura',
             style: ResponsiveUtils.titleMedium(context).copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: cs.onSecondaryContainer,
             ),
           ),
           const SizedBox(height: 12),
@@ -101,7 +96,7 @@ class DatePeriodCard extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             Colors.greenAccent,
-                            AppColors.primary,
+                            cs.primary,
                             Colors.orangeAccent,
                           ],
                         ),
@@ -113,7 +108,7 @@ class DatePeriodCard extends StatelessWidget {
                       'Periodo Activo',
                       style: ResponsiveUtils.bodySmall(
                         context,
-                      ).copyWith(color: AppColors.textSecondary),
+                      ).copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
                 ),

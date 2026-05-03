@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/features/audit/presentation/pages/audit_screen.dart';
+import 'package:flutter_application/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:flutter_application/features/form/presentation/pages/location_screen.dart';
+import 'package:flutter_application/features/home/presentation/pages/lecturas_screen.dart';
+import 'package:flutter_application/features/home/presentation/pages/shell_navigator.dart';
+import 'package:flutter_application/features/home/presentation/pages/welcome_screen.dart';
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
 import 'package:flutter_application/features/properties/form/presentation/screen/map_picker_screen.dart';
@@ -10,27 +15,66 @@ import 'package:flutter_application/features/properties/list/presentation/manual
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/features/reading/presentation/manually/blocs/index.dart';
 import 'package:flutter_application/features/reading/presentation/scan/bloc/index.dart';
+import 'package:flutter_application/features/settings/presentation/pages/settings_screen.dart';
 import 'package:flutter_application/features/work-orders/presentation/screen/add_work_order_form_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/features/auth/presentation/pages/login_screen.dart';
-import 'package:flutter_application/features/home/presentation/pages/home_screen.dart';
 import 'package:flutter_application/features/reading/presentation/scan/pages/scan_screen.dart';
 import 'package:flutter_application/features/reading/presentation/manually/pages/manually_screen.dart';
 import 'package:flutter_application/features/form/presentation/pages/form_screen.dart'
     as form;
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
-import 'package:flutter_application/main.dart'; // Importa routeObserver
+import 'package:flutter_application/main.dart';
 
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/login',
     observers: [routeObserver],
+    // GoRouter 16.x resolves the platform URI before initialLocation;
+    // redirect '/' to '/login' so unmatched root never throws.
+    redirect: (context, state) {
+      if (state.uri.path == '/') return '/login';
+      return null;
+    },
     routes: [
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      // ── Auth (no shell) ──────────────────────────────────────────
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+
+      // ── Shell: tabs con bottom nav ───────────────────────────────
+      ShellRoute(
+        builder: (context, state, child) =>
+            ShellNavigator(child: child),
+        routes: [
+          GoRoute(
+            path: '/inicio',
+            builder: (_, __) => const WelcomeScreen(),
+          ),
+          GoRoute(
+            path: '/home',
+            builder: (_, __) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/lecturas',
+            builder: (_, __) => const LecturasScreen(),
+          ),
+          GoRoute(
+            path: '/auditoria',
+            builder: (_, __) => const AuditScreen(),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (_, __) => const SettingsScreen(),
+          ),
+        ],
+      ),
+
+      // ── Full-screen routes (sin bottom nav) ──────────────────────
       GoRoute(
         path: '/location',
         builder: (context, state) => const LocationPage(),
@@ -53,7 +97,8 @@ class AppRouter {
             providers: [
               BlocProvider(create: (_) => di.sl<form_bloc.FormBloc>()),
               BlocProvider(
-                create: (_) => di.sl<ManuallyConnectionWithPropertiesBloc>(),
+                create: (_) =>
+                    di.sl<ManuallyConnectionWithPropertiesBloc>(),
               ),
             ],
             child: form.FormScreen(reading: reading, mode: mode),
@@ -70,7 +115,7 @@ class AppRouter {
       GoRoute(
         path: '/observations',
         builder: (context, state) {
-          final connectionId = state.extra as String?; // <-- opcional
+          final connectionId = state.extra as String?;
           final bloc = di.sl<ObservationBloc>();
           bloc.add(FindAllObservationsEvent());
           return BlocProvider.value(
@@ -83,7 +128,6 @@ class AppRouter {
         path: '/add-work-order',
         builder: (context, state) => const AddWorkOrderFormScreen(),
       ),
-
       GoRoute(
         path: '/update-form',
         builder: (context, state) {
@@ -99,7 +143,7 @@ class AppRouter {
                   backgroundColor: Colors.red,
                 ),
               );
-              context.go('/home');
+              context.go('/inicio');
             });
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
@@ -123,21 +167,23 @@ class AppRouter {
                   backgroundColor: Colors.red,
                 ),
               );
-              context.go('/home');
+              context.go('/inicio');
             });
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
 
-          return UpdateConnectionFormScreen(connection: connection, mode: mode);
+          return UpdateConnectionFormScreen(
+            connection: connection,
+            mode: mode,
+          );
         },
       ),
       GoRoute(
         path: '/map-picker',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-
           final initialLat = extra['initialLat'] as double;
           final initialLng = extra['initialLng'] as double;
 

@@ -5,52 +5,54 @@ import 'package:flutter_application/features/observations/domain/entities/observ
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
+// ── Semantic novelty colors (status indicators – intentionally fixed) ────────
+const _kGreen   = Color(0xFF2E7D32);
+const _kAmberLo = Color(0xFFF9A825);
+const _kAmberHi = Color(0xFFE65100);
+const _kRedLo   = Color(0xFFD32F2F);
+const _kRedHi   = Color(0xFFB71C1C);
+const _kPurple  = Color(0xFF6A1B9A);
+const _kGrey    = Color(0xFF546E7A);
+
 class ObservationPage extends StatelessWidget {
   final String? connectionId;
-
   const ObservationPage({super.key, required this.connectionId});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notifications, color: Colors.white, size: 26),
+            Icon(Icons.notifications, color: cs.onPrimary, size: 24),
             const SizedBox(width: 10),
             Text(
-              "Observaciones",
-              style: context.titleMedium.copyWith(
+              'Observaciones',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: cs.onPrimary,
                 letterSpacing: 0.5,
               ),
             ),
           ],
         ),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.primary.withOpacity(0.9),
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black38,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        elevation: 2,
       ),
       body: BlocBuilder<ObservationBloc, ObservationState>(
         builder: (context, state) {
           if (state is ObservationLoading) {
-            debugPrint(
-              'Cargando observaciones...${connectionId ?? 'sin connectionId'}',
-            );
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: cs.primary));
           } else if (state is ObservationError) {
             return _buildError(context, state.message);
           } else if (state is FindAllObservationLoaded) {
             final observations = state.observation;
-            if (observations.isEmpty) {
-              return _buildEmpty(context);
-            }
+            if (observations.isEmpty) return _buildEmpty(context);
             return AnimatedList(
               key: const ValueKey('observation_list'),
               initialItemCount: observations.length,
@@ -66,97 +68,76 @@ class ObservationPage extends StatelessWidget {
                 );
               },
             );
-          } else {
-            return Center(
-              child: _buildActionButton(
-                context,
-                label: "Cargar observaciones",
-                icon: Icons.refresh,
-                onPressed: () {
-                  context.read<ObservationBloc>().add(
-                    FindAllObservationsEvent(),
-                  );
-                },
-              ),
-            );
           }
+          return Center(
+            child: _buildActionButton(
+              context,
+              label: 'Cargar observaciones',
+              icon: Icons.refresh,
+              onPressed: () => context.read<ObservationBloc>().add(FindAllObservationsEvent()),
+            ),
+          );
         },
       ),
     );
   }
 
+  // ── Empty & Error states ─────────────────────────────────────────────────
+
   Widget _buildEmpty(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
-      child: FadeTransition(
-        opacity: AlwaysStoppedAnimation(1.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_off,
-              color: Colors.grey[500],
-              size: context.iconLarge * 1.2,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_off, color: cs.onSurfaceVariant, size: context.iconLarge * 1.2),
+          context.vSpace(0.02),
+          Text(
+            'No hay observaciones disponibles',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
             ),
-            context.vSpace(0.02),
-            Text(
-              "No hay observaciones disponibles",
-              style: context.bodyLarge.copyWith(
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-                fontSize: context.bodyLarge.fontSize! * 1.1,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            context.vSpace(0.025),
-            _buildActionButton(
-              context,
-              label: "Reintentar",
-              icon: Icons.refresh,
-              onPressed: () {
-                context.read<ObservationBloc>().add(FindAllObservationsEvent());
-              },
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          context.vSpace(0.025),
+          _buildActionButton(
+            context,
+            label: 'Reintentar',
+            icon: Icons.refresh,
+            onPressed: () => context.read<ObservationBloc>().add(FindAllObservationsEvent()),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildError(BuildContext context, String message) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
-      child: FadeTransition(
-        opacity: AlwaysStoppedAnimation(1.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red[400],
-              size: context.iconLarge * 1.2,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: cs.error, size: context.iconLarge * 1.2),
+          context.vSpace(0.02),
+          Text(
+            '❌ Error: $message',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: cs.error,
+              fontWeight: FontWeight.w700,
             ),
-            context.vSpace(0.02),
-            Text(
-              "❌ Error: $message",
-              style: context.bodyLarge.copyWith(
-                color: Colors.red[800],
-                fontWeight: FontWeight.w700,
-                fontSize: context.bodyLarge.fontSize! * 1.1,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            context.vSpace(0.025),
-            _buildActionButton(
-              context,
-              label: "Reintentar",
-              icon: Icons.refresh,
-              onPressed: () {
-                context.read<ObservationBloc>().add(FindAllObservationsEvent());
-              },
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          context.vSpace(0.025),
+          _buildActionButton(
+            context,
+            label: 'Reintentar',
+            icon: Icons.refresh,
+            onPressed: () => context.read<ObservationBloc>().add(FindAllObservationsEvent()),
+          ),
+        ],
       ),
     );
   }
@@ -167,19 +148,21 @@ class ObservationPage extends StatelessWidget {
     required IconData icon,
     required VoidCallback onPressed,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, color: Colors.white, size: context.iconMedium),
+      icon: Icon(icon, color: cs.onPrimary, size: context.iconMedium),
       label: Text(
         label,
-        style: context.buttonText.copyWith(
-          color: Colors.white,
+        style: TextStyle(
+          color: cs.onPrimary,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
         padding: EdgeInsets.symmetric(
           horizontal: context.largeSpacing * 1.2,
           vertical: context.mediumSpacing * 1.1,
@@ -187,26 +170,26 @@ class ObservationPage extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(context.mediumBorderRadiusValue),
         ),
-        elevation: 4,
-        shadowColor: Colors.black38,
+        elevation: 2,
       ),
     );
   }
 
+  // ── Observation Card ─────────────────────────────────────────────────────
+
   Widget _buildObservationCard(BuildContext context, ObservationEntity obs) {
-    final type = obs.noveltyTypeName.toUpperCase();
-    final color = _getColorForNovelty(type);
-    final icon = _getIconForNovelty(type);
-    final connectionIdText = obs.connectionId.isNotEmpty
-        ? obs.connectionId
-        : 'Sin ID de conexión';
+    final cs  = Theme.of(context).colorScheme;
+    final type  = obs.noveltyTypeName.toUpperCase();
+    final color = _colorForNovelty(type);
+    final icon  = _iconForNovelty(type);
+    final cidText = obs.connectionId.isNotEmpty ? obs.connectionId : 'Sin ID';
 
     return Padding(
       padding: EdgeInsets.only(bottom: context.mediumSpacing),
       child: Material(
-        elevation: context.cardElevation + 2,
+        elevation: 2,
         borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
-        color: Colors.white,
+        color: cs.surfaceContainerHigh,
         child: InkWell(
           borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
           onTap: () => _showDetailsDialog(context, obs, color, icon),
@@ -215,58 +198,49 @@ class ObservationPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Título ocupando todo el ancho
+                // ── Header row ──────────────────────────────────────
                 Row(
                   children: [
-                    Text(
-                      obs.observationTitle,
-                      style: context.titleSmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        fontSize: context.titleExtraSmall.fontSize!,
+                    Expanded(
+                      child: Text(
+                        obs.observationTitle,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: context.smallSpacing * 0.5,
-                          horizontal: context.mediumSpacing,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blueGrey[50],
-                          borderRadius: BorderRadius.circular(
-                            context.smallBorderRadiusValue,
-                          ),
-                        ),
-                        child: Text(
-                          'C.C: $connectionIdText',
-                          style: context.bodySmall.copyWith(
-                            color: Colors.blueGrey[800],
-                            fontWeight: FontWeight.w600,
-                            fontSize: context.bodySmall.fontSize! * 1.1,
-                          ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: context.smallSpacing * 0.5,
+                        horizontal: context.mediumSpacing,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                      ),
+                      child: Text(
+                        'C.C: $cidText',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: cs.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
                 context.vSpace(0.01),
-                // Contenido principal
+                // ── Content row ─────────────────────────────────────
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CircleAvatar(
                       radius: context.iconMedium,
-                      backgroundColor: color.withOpacity(0.2),
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: context.iconMedium * 0.85,
-                      ),
+                      backgroundColor: color.withValues(alpha: 0.15),
+                      child: Icon(icon, color: color, size: context.iconMedium * 0.85),
                     ),
                     SizedBox(width: context.mediumSpacing),
                     Expanded(
@@ -277,12 +251,12 @@ class ObservationPage extends StatelessWidget {
                             obs.observationDetail,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: context.bodyMedium.copyWith(
-                              color: Colors.grey[800],
-                              fontWeight: FontWeight.w400,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurface,
                             ),
                           ),
                           context.vSpace(0.01),
+                          // ── Date + type chips ──────────────────
                           Row(
                             children: [
                               Container(
@@ -291,25 +265,21 @@ class ObservationPage extends StatelessWidget {
                                   horizontal: context.mediumSpacing,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(
-                                    context.smallBorderRadiusValue,
-                                  ),
+                                  color: cs.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.calendar_today,
-                                      color: Colors.grey[700],
+                                      Icons.calendar_today_rounded,
+                                      color: cs.onSurfaceVariant,
                                       size: context.iconExtraSmall,
                                     ),
                                     context.hSpace(0.005),
                                     Text(
-                                      formatDateTime(
-                                        DateTime.parse(obs.registrationDate),
-                                      ),
-                                      style: context.bodySmall.copyWith(
-                                        color: Colors.grey[700],
+                                      safeFormatDateTime(obs.registrationDate),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: cs.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -323,14 +293,13 @@ class ObservationPage extends StatelessWidget {
                                   horizontal: context.mediumSpacing,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(
-                                    context.smallBorderRadiusValue,
-                                  ),
+                                  color: color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                                  border: Border.all(color: color.withValues(alpha: 0.3)),
                                 ),
                                 child: Text(
                                   type,
-                                  style: context.bodySmall.copyWith(
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: color,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -342,14 +311,9 @@ class ObservationPage extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(
-                        Icons.visibility,
-                        color: color,
-                        size: context.iconSmall,
-                      ),
-                      tooltip: "Ver detalles",
-                      onPressed: () =>
-                          _showDetailsDialog(context, obs, color, icon),
+                      icon: Icon(Icons.visibility_rounded, color: color, size: context.iconSmall),
+                      tooltip: 'Ver detalles',
+                      onPressed: () => _showDetailsDialog(context, obs, color, icon),
                     ),
                   ],
                 ),
@@ -361,187 +325,149 @@ class ObservationPage extends StatelessWidget {
     );
   }
 
+  // ── Details Dialog ───────────────────────────────────────────────────────
+
   void _showDetailsDialog(
     BuildContext context,
     ObservationEntity obs,
     Color color,
     IconData icon,
   ) {
-    final connectionIdText = obs.connectionId.isNotEmpty
-        ? obs.connectionId
-        : 'Sin ID de conexión';
-    showDialog(
+    final cidText = obs.connectionId.isNotEmpty ? obs.connectionId : 'Sin ID de conexión';
+    showDialog<void>(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: context.mediumSpacing,
-          vertical: context.largeSpacing,
-        ),
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
-            gradient: LinearGradient(
-              colors: [Colors.white, color.withOpacity(0.05)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return Dialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: context.mediumSpacing,
+            vertical: context.largeSpacing,
           ),
-          child: Padding(
-            padding: EdgeInsets.all(context.mediumSpacing * 1.2),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Título ocupando todo el ancho
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: context.iconMedium,
-                        backgroundColor: color.withOpacity(0.2),
-                        child: Icon(
-                          icon,
-                          color: color,
-                          size: context.iconMedium * 0.85,
+          backgroundColor: cs.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
+              gradient: LinearGradient(
+                colors: [cs.surfaceContainerHigh, color.withValues(alpha: 0.05)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(context.mediumSpacing * 1.2),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Title row ──────────────────────────────────
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: context.iconMedium,
+                          backgroundColor: color.withValues(alpha: 0.15),
+                          child: Icon(icon, color: color, size: context.iconMedium * 0.85),
                         ),
-                      ),
-                      SizedBox(width: context.mediumSpacing),
-                      Expanded(
-                        child: Text(
-                          obs.observationTitle,
-                          style: context.titleMedium.copyWith(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w700,
-                            fontSize: context.titleExtraSmall.fontSize!,
+                        SizedBox(width: context.mediumSpacing),
+                        Expanded(
+                          child: Text(
+                            obs.observationTitle,
+                            style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  context.vSpace(0.01),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: context.smallSpacing * 0.5,
-                        horizontal: context.mediumSpacing,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blueGrey[50],
-                        borderRadius: BorderRadius.circular(
-                          context.smallBorderRadiusValue,
-                        ),
-                      ),
-                      child: Text(
-                        'C.C: $connectionIdText',
-                        style: context.bodySmall.copyWith(
-                          color: Colors.blueGrey[800],
-                          fontWeight: FontWeight.w600,
-                          fontSize: context.bodySmall.fontSize! * 1.1,
-                        ),
-                      ),
+                      ],
                     ),
-                  ),
-                  Divider(
-                    height: context.mediumSpacing * 2,
-                    thickness: 1.2,
-                    color: Colors.grey[200],
-                  ),
-                  _infoRow(context, "📝 Detalle", obs.observationDetail),
-                  _infoRow(
-                    context,
-                    "📅 Fecha",
-                    formatDateTime(DateTime.parse(obs.registrationDate)),
-                  ),
-                  _infoRow(context, "📍 Dirección", obs.address),
-                  _infoRow(
-                    context,
-                    "👤 Cliente",
-                    "${obs.clientName} (${obs.clientId})",
-                  ),
-                  _infoRow(
-                    context,
-                    "🔢 Lectura anterior",
-                    obs.previousReading.toString(),
-                  ),
-                  _infoRow(
-                    context,
-                    "🔢 Lectura actual",
-                    obs.currentReading.toString(),
-                  ),
-                  _infoRow(context, "⚙️ Tipo de novedad", obs.noveltyTypeName),
-                  _infoRow(
-                    context,
-                    "📋 Descripción de novedad",
-                    obs.noveltyTypeDescription,
-                  ),
-                  if (obs.actionRecommended != null)
-                    _infoRow(
-                      context,
-                      "🛠️ Acción recomendada",
-                      obs.actionRecommended,
-                    ),
-                  context.vSpace(0.025),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: color,
+                    context.vSpace(0.01),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: context.mediumSpacing * 1.5,
-                          vertical: context.mediumSpacing,
+                          vertical: context.smallSpacing * 0.5,
+                          horizontal: context.mediumSpacing,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            context.mediumBorderRadiusValue,
+                        decoration: BoxDecoration(
+                          color: cs.secondaryContainer,
+                          borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                        ),
+                        child: Text(
+                          'C.C: $cidText',
+                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: cs.onSecondaryContainer,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        elevation: 2,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, size: 20),
-                      label: const Text(
-                        "Cerrar",
-                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-                  ),
-                ],
+                    Divider(height: context.mediumSpacing * 2, thickness: 1, color: cs.outlineVariant),
+                    _infoRow(ctx, '📝 Detalle', obs.observationDetail),
+                    _infoRow(ctx, '📅 Fecha', safeFormatDateTime(obs.registrationDate)),
+                    _infoRow(ctx, '📍 Dirección', obs.address),
+                    _infoRow(ctx, '👤 Cliente', '${obs.clientName} (${obs.clientId})'),
+                    _infoRow(ctx, '🔢 Lectura anterior', obs.previousReading.toString()),
+                    _infoRow(ctx, '🔢 Lectura actual', obs.currentReading.toString()),
+                    _infoRow(ctx, '⚙️ Tipo de novedad', obs.noveltyTypeName),
+                    _infoRow(ctx, '📋 Descripción', obs.noveltyTypeDescription),
+                    if (obs.actionRecommended != null)
+                      _infoRow(ctx, '🛠️ Acción recomendada', obs.actionRecommended),
+                    context.vSpace(0.025),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        label: const Text('Cerrar', style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: color,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.mediumSpacing * 1.5,
+                            vertical: context.mediumSpacing,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(context.mediumBorderRadiusValue),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
+  // ── Info row (dialog) ────────────────────────────────────────────────────
+
   Widget _infoRow(BuildContext context, String label, String? value) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.only(bottom: context.mediumSpacing),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "$label: ",
-            style: context.bodyMedium.copyWith(
+            '$label: ',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: cs.onSurface,
             ),
           ),
           Expanded(
             child: Text(
               value ?? '—',
-              style: context.bodyMedium.copyWith(
-                fontWeight: FontWeight.w400,
-                color: Colors.black87,
-                fontSize: context.bodyMedium.fontSize! * 0.95,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
               ),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
@@ -552,45 +478,31 @@ class ObservationPage extends StatelessWidget {
     );
   }
 
-  Color _getColorForNovelty(String type) {
-    switch (type.toUpperCase()) {
-      case 'NORMAL':
-        return Colors.green[600]!;
-      case 'CONSUMO BAJO':
-        return Colors.amber[500]!;
-      case 'CONSUMO ALTO':
-        return Colors.amber[700]!;
-      case 'CONSUMO MUY BAJO':
-        return Colors.red[600]!;
-      case 'CONSUMO EXCESIVO':
-        return Colors.red[800]!;
-      case 'LECTURA INVÁLIDA':
-        return Colors.purple[600]!;
-      case 'SIN LECTURA':
-        return Colors.grey[600]!;
-      default:
-        return Colors.grey[500]!;
+  // ── Novelty helpers ──────────────────────────────────────────────────────
+
+  Color _colorForNovelty(String type) {
+    switch (type) {
+      case 'NORMAL':             return _kGreen;
+      case 'CONSUMO BAJO':       return _kAmberLo;
+      case 'CONSUMO ALTO':       return _kAmberHi;
+      case 'CONSUMO MUY BAJO':   return _kRedLo;
+      case 'CONSUMO EXCESIVO':   return _kRedHi;
+      case 'LECTURA INVÁLIDA':   return _kPurple;
+      case 'SIN LECTURA':        return _kGrey;
+      default:                   return _kGrey;
     }
   }
 
-  IconData _getIconForNovelty(String type) {
-    switch (type.toUpperCase()) {
-      case 'NORMAL':
-        return Icons.check_circle;
-      case 'CONSUMO BAJO':
-        return Icons.trending_down;
-      case 'CONSUMO ALTO':
-        return Icons.trending_up;
-      case 'CONSUMO MUY BAJO':
-        return Icons.arrow_downward;
-      case 'CONSUMO EXCESIVO':
-        return Icons.arrow_upward;
-      case 'LECTURA INVÁLIDA':
-        return Icons.error;
-      case 'SIN LECTURA':
-        return Icons.block;
-      default:
-        return Icons.help;
+  IconData _iconForNovelty(String type) {
+    switch (type) {
+      case 'NORMAL':             return Icons.check_circle_rounded;
+      case 'CONSUMO BAJO':       return Icons.trending_down_rounded;
+      case 'CONSUMO ALTO':       return Icons.trending_up_rounded;
+      case 'CONSUMO MUY BAJO':   return Icons.arrow_downward_rounded;
+      case 'CONSUMO EXCESIVO':   return Icons.arrow_upward_rounded;
+      case 'LECTURA INVÁLIDA':   return Icons.error_rounded;
+      case 'SIN LECTURA':        return Icons.block_rounded;
+      default:                   return Icons.help_rounded;
     }
   }
 }

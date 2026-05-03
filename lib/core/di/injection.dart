@@ -1,3 +1,20 @@
+import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
+import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
+import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
+import 'package:flutter_application/features/audit/domain/usecases/close_sector.dart';
+import 'package:flutter_application/features/audit/domain/usecases/get_audit_by_month.dart';
+import 'package:flutter_application/features/audit/presentation/cubit/audit_cubit.dart';
+import 'package:flutter_application/features/theme/data/datasources/theme_local_datasource.dart';
+import 'package:flutter_application/features/theme/data/repositories/theme_repository_impl.dart';
+import 'package:flutter_application/features/theme/domain/repositories/theme_repository.dart';
+import 'package:flutter_application/features/theme/domain/usecases/get_theme_mode.dart';
+import 'package:flutter_application/features/theme/domain/usecases/save_theme_mode.dart';
+import 'package:flutter_application/features/theme/presentation/cubit/theme_cubit.dart';
+import 'package:flutter_application/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
+import 'package:flutter_application/features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import 'package:flutter_application/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:flutter_application/features/dashboard/domain/usecases/get_dashboard_stats.dart';
+import 'package:flutter_application/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:flutter_application/features/form/data/datasources/photo_reading_datasource.dart';
 import 'package:flutter_application/features/form/data/repositories/photo_reading_repository_impl.dart';
 import 'package:flutter_application/features/form/domain/repositories/photo_reading_repository.dart';
@@ -250,9 +267,72 @@ Future<void> init() async {
     () => WorkOrderRepositoryImpl(remoteDataSource: sl()),
   );
 
-  sl.registerLazySingleton(() => CreateWorkOrderUseCase(sl()));
+  sl.registerLazySingleton<CreateWorkOrderUseCase>(() => CreateWorkOrderUseCase(sl()));
 
   sl.registerFactory<CreateWorkOrderBloc>(
     () => CreateWorkOrderBloc(createWorkOrder: sl()),
   );
+
+  // ==========================
+  // DASHBOARD FEATURE
+  // ==========================
+  sl.registerLazySingleton<DashboardRemoteDataSource>(
+    () => DashboardRemoteDataSourceImpl(
+      client: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton<DashboardRepository>(
+    () => DashboardRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<GetDashboardStats>(
+    () => GetDashboardStats(sl()),
+  );
+  // Singleton: same instance persists across tab navigation
+  sl.registerLazySingleton<DashboardCubit>(
+    () => DashboardCubit(sl()),
+  );
+
+  // ==========================
+  // AUDIT FEATURE
+  // ==========================
+  sl.registerLazySingleton<AuditRemoteDataSource>(
+    () => AuditRemoteDataSourceImpl(
+      client: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton<AuditRepository>(
+    () => AuditRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<GetAuditByMonth>(
+    () => GetAuditByMonth(sl()),
+  );
+  sl.registerLazySingleton<CloseSector>(
+    () => CloseSector(sl()),
+  );
+  // Singleton: same instance persists across tab navigation
+  sl.registerLazySingleton<AuditCubit>(
+    () => AuditCubit(sl<GetAuditByMonth>(), sl<CloseSector>()),
+  );
+
+  // ==========================
+  // THEME FEATURE
+  // ==========================
+  sl.registerLazySingleton<ThemeLocalDataSource>(
+    () => ThemeLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<ThemeRepository>(
+    () => ThemeRepositoryImpl(dataSource: sl()),
+  );
+  sl.registerLazySingleton<GetThemeMode>(
+    () => GetThemeMode(sl()),
+  );
+  sl.registerLazySingleton<SaveThemeMode>(
+    () => SaveThemeMode(sl()),
+  );
+  sl.registerSingleton<ThemeCubit>(
+    ThemeCubit(getThemeMode: sl(), saveThemeMode: sl()),
+  );
 }
+

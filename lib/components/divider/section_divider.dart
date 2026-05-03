@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
-class AppColors {
-  static const primary = Color(0xFF0288D1);
-  static const textPrimary = Color(0xFF212121);
-}
 
 class MinimalSectionDivider extends StatefulWidget {
   final String title;
@@ -70,7 +66,8 @@ class _MinimalSectionDividerState extends State<MinimalSectionDivider>
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = widget.color ?? AppColors.primary.withOpacity(0.1);
+    final cs = Theme.of(context).colorScheme;
+    final effectiveColor = widget.color ?? cs.primaryContainer;
     final borderRadius = ResponsiveUtils.cardBorderRadius(context);
     // Ajusta este multiplicador si el texto sigue cortado, prueba con 2.6, 3.0, etc.
     final dividerHeight = ResponsiveUtils.sectionDividerHeight(context) * 2.8;
@@ -112,7 +109,7 @@ class _MinimalSectionDividerState extends State<MinimalSectionDivider>
                       widget.title,
                       style: ResponsiveUtils.titleSmall(context).copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: cs.onSurface,
                         shadows: [
                           Shadow(
                             color: Colors.black.withOpacity(0.15),
@@ -135,7 +132,7 @@ class _MinimalSectionDividerState extends State<MinimalSectionDivider>
                         child: Icon(
                           Icons.expand_more,
                           size: ResponsiveUtils.iconSmall(context),
-                          color: AppColors.textPrimary,
+                          color: cs.onSurface,
                         ),
                       );
                     },

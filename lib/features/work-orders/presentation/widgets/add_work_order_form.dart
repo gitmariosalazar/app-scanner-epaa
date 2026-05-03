@@ -181,7 +181,7 @@ class _AddWorkOrderResponsiveDialogState
 
                       MinimalSectionDivider(
                         title: 'Información de la Conexión',
-                        color: AppColors.primary.withOpacity(0.8),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
                         isExpanded: false,
                         children: [
                           ResponsiveUtils.vSpace(context, 0.015),
@@ -414,18 +414,12 @@ class _AddWorkOrderResponsiveDialogState
           controller: _clientIdController,
           label: 'Cédula de Ciudadanía',
           leftIcon: Icons.pin,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
           isReadOnly: true,
         ),
         CustomTextField(
           controller: _meterNumberController,
           label: 'Número de Medidor',
           leftIcon: Icons.water_damage_outlined,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
           isReadOnly: true,
         ),
       ],
@@ -440,9 +434,6 @@ class _AddWorkOrderResponsiveDialogState
           controller: _ownerNameController,
           label: 'Propietario de la Conexión',
           leftIcon: Icons.person_outline,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
           isReadOnly: true,
         ),
         ResponsiveUtils.vSpace(context, 0.03),
@@ -450,9 +441,6 @@ class _AddWorkOrderResponsiveDialogState
           controller: _addressController,
           label: 'Dirección de la Conexión',
           leftIcon: Icons.location_on_outlined,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
           isReadOnly: true,
         ),
         ResponsiveUtils.vSpace(context, 0.03),
@@ -460,9 +448,6 @@ class _AddWorkOrderResponsiveDialogState
           controller: _connectionIdController,
           label: 'Clave Catastral',
           leftIcon: Icons.cable,
-          textStyle: ResponsiveUtils.bodyMedium(
-            context,
-          ).copyWith(color: AppColors.textPrimary),
         ),
       ],
     );

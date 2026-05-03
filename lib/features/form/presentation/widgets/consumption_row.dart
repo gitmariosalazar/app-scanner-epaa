@@ -5,11 +5,7 @@ import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/utils/screen_type_layout.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 
-class AppColors {
-  static const cardSecondaryBackground = Color(0xFFE3F2FD);
-  static const textPrimary = Color(0xFF212121);
-  static const textSecondary = Color(0xFF757575);
-}
+
 
 class ConsumptionRow extends StatelessWidget {
   final TextEditingController previousConsumptionController;
@@ -31,6 +27,7 @@ class ConsumptionRow extends StatelessWidget {
     BuildContext context, {
     required bool isPrevious,
   }) {
+    final cs = Theme.of(context).colorScheme;
     final controller = isPrevious
         ? previousConsumptionController
         : currentConsumptionController;
@@ -40,13 +37,13 @@ class ConsumptionRow extends StatelessWidget {
               : formatFromIsoDate(previousReadingDate.text))
         : formatDate(now);
     final bgColor = isPrevious
-        ? AppColors.cardSecondaryBackground
+        ? cs.secondaryContainer
         : consumptionVisuals.backgroundColor;
     final textColor = isPrevious
-        ? AppColors.textPrimary
+        ? cs.onSecondaryContainer
         : consumptionVisuals.textColor;
     final dateTextColor = isPrevious
-        ? AppColors.textSecondary
+        ? cs.onSurfaceVariant
         : consumptionVisuals.textColor.withOpacity(0.8);
 
     return Column(
@@ -89,6 +86,7 @@ class ConsumptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       children: [
@@ -97,11 +95,11 @@ class ConsumptionRow extends StatelessWidget {
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.history,
-            color: AppColors.textSecondary,
+            color: cs.onSurfaceVariant,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardSecondaryBackground,
+          backgroundColor: cs.secondaryContainer,
           children: [_buildConsumptionCardContent(context, isPrevious: true)],
         ),
         TitledCard(

@@ -23,9 +23,6 @@ class DescriptionField extends StatelessWidget {
       hintText: mode == 'manual'
           ? 'Ingrese una descripción detallada...'
           : 'Ingrese una descripción o novedad...',
-      textStyle: ResponsiveUtils.bodyMedium(
-        context,
-      ).copyWith(color: const Color(0xFF212121)),
       validator: mode == 'manual'
           ? (value) {
               /*

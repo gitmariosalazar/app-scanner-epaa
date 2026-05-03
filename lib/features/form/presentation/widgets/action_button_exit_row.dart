@@ -31,7 +31,7 @@ class ActionButtonExitRow extends StatelessWidget {
       rowSpacing: ResponsiveUtils.largeSpacing(context),
       children: [
         ResponsiveButton(
-          onPressed: () => context.go('/home'), // Siempre funciona
+          onPressed: () => context.go('/lecturas'),
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,

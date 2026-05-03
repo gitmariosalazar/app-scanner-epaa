@@ -166,11 +166,11 @@ class _FormScreenState extends State<FormScreen>
     return WillPopScope(
       onWillPop: () async => true,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: const Text(
             'Detalle de La Acometida',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
@@ -178,9 +178,12 @@ class _FormScreenState extends State<FormScreen>
           automaticallyImplyLeading: false,
         ),
         body: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blueAccent, AppColors.background],
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                Theme.of(context).colorScheme.surface,
+              ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -278,8 +281,8 @@ class _FormScreenState extends State<FormScreen>
                                   style: ResponsiveUtils.bodySmall(context)
                                       .copyWith(
                                         color: _errorMessage != null
-                                            ? AppColors.error
-                                            : AppColors.secondary,
+                                            ? Theme.of(context).colorScheme.error
+                                            : Theme.of(context).colorScheme.secondary,
                                         fontWeight: FontWeight.w500,
                                       ),
                                 ),
@@ -313,15 +316,10 @@ class _FormScreenState extends State<FormScreen>
                               elevation: ResponsiveUtils.cardElevation(context),
                               bottomRightIcon: Icon(
                                 Icons.check_circle_outline,
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 size: ResponsiveUtils.iconSmall(context),
                               ),
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                255,
-                                255,
-                                255,
-                              ),
+                              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                               children: [
                                 ReadingCurrentRow(reading: widget.reading),
                                 ResponsiveUtils.vSpace(context, 0.03),
@@ -473,10 +471,10 @@ class _FormScreenState extends State<FormScreen>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
-                                color: AppColors.error.withValues(alpha: 0.18),
+                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.18),
                               ),
                             ),
-                            color: const Color(0xFFFFF3E0),
+                            color: Theme.of(context).colorScheme.errorContainer,
                             child: Padding(
                               padding: EdgeInsets.all(
                                 ResponsiveUtils.scaleWidth(context, 0.045),
@@ -488,7 +486,7 @@ class _FormScreenState extends State<FormScreen>
                                   Text(
                                     'ESTADO ACTUAL DE LA CONEXIÓN',
                                     style: TextStyle(
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.4,
@@ -502,9 +500,9 @@ class _FormScreenState extends State<FormScreen>
                                   ),
                                   Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.bookmark_outline,
-                                        color: AppColors.error,
+                                        color: Theme.of(context).colorScheme.error,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -512,8 +510,8 @@ class _FormScreenState extends State<FormScreen>
                                         child: Text(
                                           connectionStateName?.toUpperCase() ??
                                               'DESCONOCIDO',
-                                          style: const TextStyle(
-                                            color: AppColors.error,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.error,
                                             fontSize: 16,
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 1.6,
@@ -534,25 +532,25 @@ class _FormScreenState extends State<FormScreen>
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFFE0B2),
+                                      color: Theme.of(context).colorScheme.tertiaryContainer,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
-                                      children: [
-                                        const Icon(
-                                          Icons.description_outlined,
-                                          color: AppColors.textSecondary,
-                                          size: 14,
+                                        children: [
+                                          Icon(
+                                            Icons.description_outlined,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            size: 14,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             connectionStateDescription ??
                                                 'Sin descripción disponible.',
-                                            style: const TextStyle(
-                                              color: AppColors.textSecondary,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                               fontSize: 12,
                                               fontStyle: FontStyle.italic,
                                               height: 1.4,
@@ -570,9 +568,7 @@ class _FormScreenState extends State<FormScreen>
                                   ),
                                   // ─ Divisor ─────────────────────────────────
                                   Divider(
-                                    color: AppColors.textSecondary.withValues(
-                                      alpha: 0.15,
-                                    ),
+                                    color: Theme.of(context).colorScheme.outlineVariant,
                                     height: 1,
                                   ),
                                   SizedBox(
@@ -619,9 +615,7 @@ class _FormScreenState extends State<FormScreen>
                                     ),
                                   ),
                                   Divider(
-                                    color: AppColors.textSecondary.withValues(
-                                      alpha: 0.10,
-                                    ),
+                                    color: Theme.of(context).colorScheme.outlineVariant,
                                     height: 1,
                                   ),
                                   SizedBox(
@@ -688,7 +682,7 @@ class _FormScreenState extends State<FormScreen>
                         ResponsiveUtils.vSpace(context, 0.03),
                         MinimalSectionDivider(
                           title: 'Información Adicional',
-                          color: AppColors.primary.withValues(alpha: 0.8),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
                           children: [
                             ResponsiveUtils.vSpace(context, 0.015),
                             IdFieldsRow(
@@ -797,13 +791,13 @@ class _FormScreenState extends State<FormScreen>
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.textSecondary, size: 13),
+              Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 13),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
@@ -816,8 +810,8 @@ class _FormScreenState extends State<FormScreen>
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -834,7 +828,7 @@ class _FormScreenState extends State<FormScreen>
       width: 1,
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: AppColors.textSecondary.withValues(alpha: 0.15),
+      color: Theme.of(context).colorScheme.outlineVariant,
     );
   }
 

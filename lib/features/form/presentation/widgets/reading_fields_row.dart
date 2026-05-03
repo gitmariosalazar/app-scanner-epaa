@@ -25,9 +25,6 @@ class ReadingFieldsRow extends StatelessWidget {
           controller: currentReadingController,
           label: 'Lectura Anterior ${monthReadingController.text}',
           leftIcon: Icons.history_outlined,
-          textStyle: ResponsiveUtils.bodyLarge(
-            context,
-          ).copyWith(color: const Color(0xFF212121)),
           isReadOnly: true,
         ),
         CustomTextField(
@@ -46,9 +43,6 @@ class ReadingFieldsRow extends StatelessWidget {
             }
             return null;
           },
-          textStyle: ResponsiveUtils.bodyLarge(
-            context,
-          ).copyWith(color: const Color(0xFF212121)),
         ),
       ],
     );

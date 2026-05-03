@@ -82,7 +82,7 @@ class DialogUtils {
                     Navigator.of(dialogContext).pop();
                     Future.microtask(() {
                       if (Navigator.of(dialogContext).mounted) {
-                        dialogContext.go('/home');
+                        dialogContext.go('/lecturas');
                       }
                     });
                   },

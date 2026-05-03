@@ -3,12 +3,9 @@ import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/utils/screen_type_layout.dart';
 
-class AppColors {
-  static const primary = Color(0xFF0288D1);
-  static const secondary = Color(0xFF4CAF50);
-  static const cardBackground = Colors.white;
-  static const textPrimary = Color(0xFF212121);
-}
+// Brand color constants (unchanged across themes)
+const _kGreen = Color(0xFF4CAF50);
+const _kBlue = Color(0xFF0288D1);
 
 class HeaderRow extends StatelessWidget {
   final TextEditingController connectionIdController;
@@ -22,6 +19,7 @@ class HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       children: [
@@ -30,11 +28,10 @@ class HeaderRow extends StatelessWidget {
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.cable,
-            color: AppColors.secondary,
+            color: _kGreen,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground,
           children: [
             Text(
               connectionIdController.text.isEmpty
@@ -42,7 +39,7 @@ class HeaderRow extends StatelessWidget {
                   : connectionIdController.text,
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: cs.onSurface,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -54,11 +51,10 @@ class HeaderRow extends StatelessWidget {
           elevation: ResponsiveUtils.cardElevation(context),
           bottomRightIcon: Icon(
             Icons.water_drop,
-            color: AppColors.primary,
+            color: _kBlue,
             size: ResponsiveUtils.iconSmall(context),
           ),
           titleStyle: ResponsiveUtils.titleSmall(context),
-          backgroundColor: AppColors.cardBackground,
           children: [
             Text(
               connectionIdController.text.isEmpty
@@ -66,7 +62,7 @@ class HeaderRow extends StatelessWidget {
                   : '${double.tryParse(averageConsumptionController.text)?.toStringAsFixed(2) ?? '0.00'} m³',
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: cs.onSurface,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,

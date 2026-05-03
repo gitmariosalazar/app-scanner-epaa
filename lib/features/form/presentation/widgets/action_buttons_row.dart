@@ -47,7 +47,7 @@ class ActionButtonsRow extends StatelessWidget {
           scaleAnimation: scaleAnimation,
         ),
         ResponsiveButton(
-          onPressed: () => context.go('/home'), // Siempre habilitado
+          onPressed: () => context.go('/lecturas'),
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,

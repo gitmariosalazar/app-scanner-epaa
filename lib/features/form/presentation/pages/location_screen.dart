@@ -15,6 +15,9 @@ class LocationPage extends StatefulWidget {
 class _LocationPageState extends State<LocationPage> {
   bool _isTracking = false;
   bool _isLoading = true;
+  // Flag: set to true before dispose() to block all async map operations
+  bool _disposed = false;
+
   Position? _currentPosition;
   String _currentAddress = 'Cargando ubicación...';
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -24,7 +27,6 @@ class _LocationPageState extends State<LocationPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize map with user position tracking
     _mapController = MapController(
       initMapWithUserPosition: const UserTrackingOption(
         enableTracking: true,
@@ -32,6 +34,24 @@ class _LocationPageState extends State<LocationPage> {
       ),
     );
     _checkPermissions();
+  }
+
+  // ── Guard: prevents any map call after dispose ─────────────────────────────
+  bool get _canUseMap => !_disposed && mounted;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    // 1. Cancel stream first — stops any new position events
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+    // 2. Dispose map controller safely — plugin has a known timer bug in 1.4.x
+    try {
+      _mapController.dispose();
+    } catch (e) {
+      if (kDebugMode) debugPrint('OSM MapController dispose error (known bug): $e');
+    }
+    super.dispose();
   }
 
   Future<void> _checkPermissions() async {
@@ -65,7 +85,6 @@ class _LocationPageState extends State<LocationPage> {
         return;
       }
 
-      // If permissions are granted, get initial position
       await _getInitialPosition();
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -79,21 +98,17 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _setFallbackLocation() async {
+    if (!_canUseMap) return;
     try {
-      _geoPoint = GeoPoint(latitude: 51.5074, longitude: -0.1278); // London
+      _geoPoint = GeoPoint(latitude: -0.3385, longitude: -78.1757); // Antonio Ante
       await _mapController.goToLocation(_geoPoint!);
       if (mounted) {
         setState(
-          () => _currentAddress =
-              'Ubicación no disponible (usando Londres como predeterminado)',
+          () => _currentAddress = 'Otavalo, Imbabura, Ecuador (fallback)',
         );
       }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Error setting fallback location: $e');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      _showError('Error al establecer ubicación predeterminada: $e');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error setting fallback location: $e');
     }
   }
 
@@ -102,7 +117,7 @@ class _LocationPageState extends State<LocationPage> {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      if (!mounted) return;
+      if (!_canUseMap) return;
       setState(() {
         _currentPosition = position;
         _geoPoint = GeoPoint(
@@ -111,8 +126,10 @@ class _LocationPageState extends State<LocationPage> {
         );
         _isLoading = false;
       });
+      if (!_canUseMap) return;
       await _mapController.goToLocation(_geoPoint!);
       await _updateAddress(position);
+      if (!_canUseMap) return;
       await _updateMarker(position);
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -132,29 +149,29 @@ class _LocationPageState extends State<LocationPage> {
         position.longitude,
       );
       if (placemarks.isNotEmpty && mounted) {
-        Placemark place = placemarks.first;
-        String fullAddress =
-            "${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}, ${place.country ?? ''}";
+        final place = placemarks.first;
+        final fullAddress =
+            '${place.street ?? ''}, ${place.subLocality ?? ''}, '
+            '${place.locality ?? ''}, ${place.administrativeArea ?? ''}, '
+            '${place.country ?? ''}';
         setState(
           () => _currentAddress = fullAddress.trim().isEmpty
               ? 'Dirección no disponible'
               : fullAddress.trim(),
         );
       }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Error getting address: $e');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      _showError('Error al obtener dirección: $e');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error getting address: $e');
     }
   }
 
   Future<void> _updateMarker(Position position) async {
+    if (!_canUseMap) return;
     try {
       if (_geoPoint != null) {
         await _mapController.removeMarkers([_geoPoint!]);
       }
+      if (!_canUseMap) return;
       _geoPoint = GeoPoint(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -165,82 +182,56 @@ class _LocationPageState extends State<LocationPage> {
           icon: Icon(Icons.location_pin, color: Colors.red, size: 48),
         ),
       );
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Error updating marker: $e');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      _showError('Error al actualizar marcador: $e');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error updating marker: $e');
     }
   }
 
-  void _startTracking() async {
-    try {
-      if (!mounted) return;
-      setState(() => _isTracking = true);
-      _positionStreamSubscription =
-          Geolocator.getPositionStream(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.best,
-              distanceFilter: 5,
-            ),
-          ).listen(
-            (Position position) async {
-              if (!mounted) return;
-              setState(() {
-                _currentPosition = position;
-                _geoPoint = GeoPoint(
-                  latitude: position.latitude,
-                  longitude: position.longitude,
-                );
-              });
+  void _startTracking() {
+    if (!_canUseMap) return;
+    setState(() => _isTracking = true);
 
-              await _mapController.goToLocation(_geoPoint!);
-              await _updateAddress(position);
-              await _updateMarker(position);
-
-              if (kDebugMode) {
-                debugPrint(
-                  "📍 Posición actual: ${position.latitude}, ${position.longitude} => $_currentAddress",
-                );
-              }
-            },
-            onError: (e, stackTrace) {
-              if (kDebugMode) {
-                debugPrint('Error in position stream: $e');
-                debugPrintStack(stackTrace: stackTrace);
-              }
-              if (mounted) {
-                _showError('Error en el seguimiento de ubicación: $e');
-                setState(() => _isTracking = false);
-              }
-            },
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 5,
+      ),
+    ).listen(
+      (Position position) async {
+        if (!_canUseMap) return;
+        setState(() {
+          _currentPosition = position;
+          _geoPoint = GeoPoint(
+            latitude: position.latitude,
+            longitude: position.longitude,
           );
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Error starting tracking: $e');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      _showError('Error al iniciar seguimiento: $e');
-      if (mounted) setState(() => _isTracking = false);
-    }
+        });
+        if (!_canUseMap) return;
+        await _mapController.goToLocation(_geoPoint!);
+        await _updateAddress(position);
+        if (!_canUseMap) return;
+        await _updateMarker(position);
+        if (kDebugMode) {
+          debugPrint(
+            '📍 ${position.latitude}, ${position.longitude} => $_currentAddress',
+          );
+        }
+      },
+      onError: (e) {
+        if (kDebugMode) debugPrint('Error in position stream: $e');
+        if (mounted) {
+          _showError('Error en el seguimiento de ubicación: $e');
+          setState(() => _isTracking = false);
+        }
+      },
+    );
   }
 
   void _stopTracking() {
     if (!mounted) return;
-    setState(() {
-      _isTracking = false;
-    });
+    setState(() => _isTracking = false);
     _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;
-  }
-
-  @override
-  void dispose() {
-    _positionStreamSubscription?.cancel();
-    _positionStreamSubscription = null;
-    _mapController.dispose();
-    super.dispose();
   }
 
   @override
@@ -248,8 +239,6 @@ class _LocationPageState extends State<LocationPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ubicación en Tiempo Real'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Stack(
@@ -288,7 +277,7 @@ class _LocationPageState extends State<LocationPage> {
               ),
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -303,11 +292,12 @@ class _LocationPageState extends State<LocationPage> {
                     const SizedBox(height: 8),
                     if (_currentPosition != null)
                       Text(
-                        'Lat: ${_currentPosition!.latitude.toStringAsFixed(6)} | Lon: ${_currentPosition!.longitude.toStringAsFixed(6)}',
+                        'Lat: ${_currentPosition!.latitude.toStringAsFixed(6)} | '
+                        'Lon: ${_currentPosition!.longitude.toStringAsFixed(6)}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     const SizedBox(height: 12),
@@ -319,16 +309,6 @@ class _LocationPageState extends State<LocationPage> {
                             : 'Iniciar Seguimiento',
                       ),
                       onPressed: _isTracking ? _stopTracking : _startTracking,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        textStyle: const TextStyle(fontSize: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                     ),
                   ],
                 ),
