@@ -56,9 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Icon(
                     isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                     size: 20,
-                    color: isDark
-                        ? const Color(0xFFF59E0B) // amber sun — visible on dark bg
-                        : const Color(0xFF1A2035), // navy moon — visible on light bg
+                    color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF1A2035),
                   ),
                 ),
                 title: Text(
@@ -71,13 +69,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 value: isDark,
                 onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
+                // Track activo: ámbar en dark, azul marino en light
+                activeTrackColor: isDark ? const Color(0xFFF59E0B) : const Color(0xFF1A2035),
+                // Thumb SIEMPRE blanco — máximo contraste sobre cualquier track
+                activeThumbColor: Colors.white,
+                // Track inactivo: neutro sutil
+                inactiveTrackColor: isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.15),
+                inactiveThumbColor: Colors.white,
               ),
               const Divider(height: 1, indent: 56),
               SwitchListTile(
                 secondary: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.08),
+                    color: const Color(0xFF1565C0).withValues(alpha: isDark ? 0.20 : 0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -96,7 +103,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 value: _notifications,
                 onChanged: (v) => setState(() => _notifications = v),
-                activeThumbColor: const Color(0xFF1565C0),
+                // Track activo: azul primario
+                activeTrackColor: const Color(0xFF1565C0),
+                // Thumb blanco — claramente visible sobre el track azul
+                activeThumbColor: Colors.white,
+                // Track inactivo: neutro sutil
+                inactiveTrackColor: isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.15),
+                inactiveThumbColor: Colors.white,
               ),
               const Divider(height: 1, indent: 56),
               _SettingsTile(

@@ -37,10 +37,7 @@ class LecturasScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF0A1628),
-                    theme.colorScheme.primary,
-                  ],
+                  colors: [const Color(0xFF0A1628), theme.colorScheme.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -83,10 +80,7 @@ class LecturasScreen extends StatelessWidget {
                         SizedBox(height: 3),
                         Text(
                           'Escanea QR o ingresa lecturas manualmente.',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
                     ),
@@ -103,7 +97,8 @@ class LecturasScreen extends StatelessWidget {
             _ActionCard(
               icon: Icons.qr_code_scanner_rounded,
               title: 'Escanear QR',
-              subtitle: 'Captura la lectura escaneando el código QR del medidor',
+              subtitle:
+                  'Captura la lectura escaneando el código QR del medidor',
               gradient: LinearGradient(
                 colors: [
                   theme.colorScheme.primary,
@@ -118,7 +113,8 @@ class LecturasScreen extends StatelessWidget {
             _ActionCard(
               icon: Icons.edit_note_rounded,
               title: 'Ingreso Manual',
-              subtitle: 'Busca la acometida por clave catastral e ingresa la lectura',
+              subtitle:
+                  'Busca la acometida por clave catastral e ingresa la lectura',
               gradient: const LinearGradient(
                 colors: [Color(0xFF5E35B1), Color(0xFF7C4DFF)],
                 begin: Alignment.topLeft,
@@ -144,7 +140,9 @@ class LecturasScreen extends StatelessWidget {
             _ActionCard(
               icon: Icons.engineering_rounded,
               title: 'Orden de Trabajo',
-              subtitle: 'Registra una nueva orden de trabajo para el área técnica',
+              enable: false,
+              subtitle:
+                  'Registra una nueva orden de trabajo para el área técnica',
               gradient: const LinearGradient(
                 colors: [Color(0xFF1B5E20), Color(0xFF43A047)],
                 begin: Alignment.topLeft,
@@ -157,6 +155,7 @@ class LecturasScreen extends StatelessWidget {
             const SizedBox(height: 14),
             _ActionCard(
               icon: Icons.home_work_rounded,
+              enable: false,
               title: 'Actualizar Coordenadas',
               subtitle: 'Actualiza la ubicación geográfica de una acometida',
               gradient: const LinearGradient(
@@ -223,6 +222,7 @@ class _ActionCard extends StatefulWidget {
   final String subtitle;
   final Gradient gradient;
   final VoidCallback onTap;
+  final bool enable;
 
   const _ActionCard({
     required this.icon,
@@ -230,6 +230,7 @@ class _ActionCard extends StatefulWidget {
     required this.subtitle,
     required this.gradient,
     required this.onTap,
+    this.enable = true,
   });
 
   @override
@@ -259,70 +260,146 @@ class _ActionCardState extends State<_ActionCard>
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled = widget.enable;
+
     return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
+      // Block all gestures when disabled
+      onTapDown: isEnabled ? (_) => _ctrl.forward() : null,
+      onTapUp: isEnabled
+          ? (_) {
+              _ctrl.reverse();
+              widget.onTap();
+            }
+          : null,
+      onTapCancel: isEnabled ? () => _ctrl.reverse() : null,
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (_, child) =>
-            Transform.scale(scale: _scale.value, child: child),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: widget.gradient,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
+        builder: (_, child) => Transform.scale(
+          scale: isEnabled ? _scale.value : 1.0,
+          child: child,
+        ),
+        child: Opacity(
+          // Fade disabled cards
+          opacity: isEnabled ? 1.0 : 0.45,
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
+              // ── Card body ──────────────────────────────────────────
+              ColorFiltered(
+                // Desaturate completely when disabled
+                colorFilter: isEnabled
+                    ? const ColorFilter.mode(
+                        Colors.transparent,
+                        BlendMode.color,
+                      )
+                    : const ColorFilter.matrix(<double>[
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0.2126,
+                        0.7152,
+                        0.0722,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                      ]),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: widget.gradient,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(widget.icon, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.subtitle,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.80),
+                                fontSize: 12,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white.withValues(alpha: 0.6),
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 28),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
+
+              // ── "Próximamente" badge (only when disabled) ──────────
+              if (!isEnabled)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.40),
+                        width: 0.8,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.subtitle,
+                    child: const Text(
+                      'Próximamente',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.80),
-                        fontSize: 12,
-                        height: 1.3,
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.6),
-                size: 20,
-              ),
             ],
           ),
         ),

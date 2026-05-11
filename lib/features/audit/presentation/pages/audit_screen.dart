@@ -58,10 +58,11 @@ class _AuditViewState extends State<_AuditView> {
   @override
   void initState() {
     super.initState();
-    // Carga automática al entrar a la pantalla con el mes actual
+    // Inicia el stream reactivo con el mes actual.
+    // El cubit maneja el polling automático y el ciclo de vida de la app.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<AuditCubit>().loadAudit(month: _selectedMonth);
+        context.read<AuditCubit>().startWatching(month: _selectedMonth);
       }
     });
   }
@@ -72,7 +73,7 @@ class _AuditViewState extends State<_AuditView> {
       backgroundColor: context._surface,
       appBar: AppBar(
         title: const Text(
-          'Auditoría de Lecturas',
+          'Avance de Lecturas',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: false,
@@ -228,7 +229,8 @@ class _AuditViewState extends State<_AuditView> {
     );
     if (picked != null && mounted) {
       setState(() => _selectedMonth = picked);
-      cubit.loadAudit(month: picked);
+      // Cambia el mes observado: cancela el stream anterior e inicia uno nuevo.
+      cubit.startWatching(month: picked);
     }
   }
 
@@ -250,16 +252,7 @@ class _AuditViewState extends State<_AuditView> {
     return null;
   }
 
-  String _formatMonthLabel(String month) {
-    try {
-      // month may be "yyyy-MM" or "yyyy-MM-dd"
-      final normalized = month.length == 7 ? '$month-01' : month;
-      final dt = DateTime.parse(normalized);
-      return DateFormat('MMMM yyyy', 'es_ES').format(dt);
-    } catch (_) {
-      return month;
-    }
-  }
+  String _formatMonthLabel(String month) => _formatMonth(month);
 }
 
 // ── Custom Month Picker Dialog ────────────────────────────────────────────────
@@ -346,7 +339,10 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
                 IconButton(
                   icon: const Icon(Icons.chevron_left_rounded),
                   onPressed: _year > 2024
-                      ? () => setState(() => _year--)
+                      ? () => setState(() {
+                          _year--;
+                          if (_year != widget.initialYear) _selectedMonth = 0;
+                        })
                       : null,
                   color: _C.accent,
                 ),
@@ -361,7 +357,10 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
                 IconButton(
                   icon: const Icon(Icons.chevron_right_rounded),
                   onPressed: _year < widget.maxYear
-                      ? () => setState(() => _year++)
+                      ? () => setState(() {
+                          _year++;
+                          if (_year != widget.initialYear) _selectedMonth = 0;
+                        })
                       : null,
                   color: _C.accent,
                 ),
@@ -379,8 +378,7 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
               physics: const NeverScrollableScrollPhysics(),
               children: List.generate(12, (i) {
                 final month = i + 1;
-                final isSelected =
-                    _selectedMonth == month && _year == widget.initialYear;
+                final isSelected = _selectedMonth == month;
                 final disabled = _isDisabled(month);
                 return GestureDetector(
                   onTap: disabled ? null : () => _confirm(month),
@@ -426,6 +424,21 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
         ),
       ),
     );
+  }
+}
+
+// ── Shared helpers ───────────────────────────────────────────────────────────
+
+/// Formats a "yyyy-MM" or "yyyy-MM-dd" string to a capitalized Spanish month label.
+/// Example: "2026-01" → "Enero 2026"
+String _formatMonth(String m) {
+  try {
+    final normalized = m.length == 7 ? '$m-01' : m;
+    final dt = DateTime.parse(normalized);
+    final raw = DateFormat('MMMM yyyy', 'es_ES').format(dt);
+    return raw[0].toUpperCase() + raw.substring(1);
+  } catch (_) {
+    return m;
   }
 }
 
@@ -519,7 +532,7 @@ class _LoadedView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${(_globalProgress * 100).toStringAsFixed(1)}% avance global',
+                      'Avance global: ${(_globalProgress * 100).toStringAsFixed(2)}%',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
@@ -594,9 +607,17 @@ class _LoadedView extends StatelessWidget {
                   children: [
                     Icon(Icons.inbox_rounded, color: context._muted, size: 48),
                     const SizedBox(height: 12),
-                    Text(
-                      'No hay datos de auditoría para este período.',
-                      style: TextStyle(color: context._muted, fontSize: 13),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Text(
+                        'No hay datos de seguimiento de lecturas en el período seleccionado, por favor, registre sus lecturas o comuníquese con su administrador.',
+                        style: TextStyle(
+                          color: context._muted,
+                          fontSize: 14,
+                          fontFamily: 'OpenSans',
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ],
                 ),
@@ -631,15 +652,6 @@ class _LoadedView extends StatelessWidget {
     if (p >= 0.3) return const Color(0xFFFF9800);
     return const Color(0xFFFF5252);
   }
-
-  String _formatMonth(String m) {
-    try {
-      final dt = DateTime.parse(m);
-      return DateFormat('MMMM yyyy', 'es_ES').format(dt);
-    } catch (_) {
-      return m;
-    }
-  }
 }
 
 // ── Sector audit card ────────────────────────────────────────────────────────
@@ -673,9 +685,7 @@ class _SectorAuditCard extends StatelessWidget {
     // Alternating row colors: even → subtle primary tint, odd → base surface
     final cs = Theme.of(context).colorScheme;
     final isEven = index % 2 == 0;
-    final cardColor = isEven
-        ? cs.primaryContainer
-        : context._cardBg;
+    final cardColor = isEven ? cs.primaryContainer : context._cardBg;
 
     return Container(
       decoration: BoxDecoration(
@@ -730,7 +740,7 @@ class _SectorAuditCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _formatMonth(sector.readingMonth),
+                        _formatMonth(month),
                         style: TextStyle(fontSize: 11, color: context._muted),
                       ),
                     ],
@@ -782,7 +792,7 @@ class _SectorAuditCard extends StatelessWidget {
                 ),
                 _StatItem(
                   label: 'Avance',
-                  value: '${sector.progressPercentage.toStringAsFixed(1)}%',
+                  value: '${sector.progressPercentage.toStringAsFixed(2)}%',
                   color: progressColor,
                   bold: true,
                 ),
@@ -821,7 +831,7 @@ class _SectorAuditCard extends StatelessWidget {
           ],
 
           // ── Close sector button (only when ≥ 90% and not yet closed) ────
-          if (sector.progressPercentage >= 00.01 && !sector.isComplete)
+          if (sector.progressPercentage >= 90.00 && !sector.isComplete)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: isClosing
@@ -843,14 +853,6 @@ class _SectorAuditCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatMonth(DateTime dt) {
-    try {
-      return DateFormat('MMMM yyyy', 'es_ES').format(dt);
-    } catch (_) {
-      return '—';
-    }
   }
 }
 
@@ -1031,7 +1033,7 @@ class _CloseSectorDialogState extends State<_CloseSectorDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${progress.toStringAsFixed(1)}% de avance registrado',
+                            '${progress.toStringAsFixed(2)}% de avance registrado',
                             style: const TextStyle(
                               color: _C.green,
                               fontWeight: FontWeight.w700,
@@ -1052,8 +1054,8 @@ class _CloseSectorDialogState extends State<_CloseSectorDialog> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Esta acción cierra el período de auditoría para este sector. '
-                  'Una vez cerrado por supervisión, el sistema no podrá reabrirlo automáticamente.',
+                  'Esta acción cierra el período de lectura para este sector. '
+                  'Una vez cerrado por el supervisor, el sistema no podrá reabrirlo automáticamente.',
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontSize: 12,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
 /// Widget unificado para campos de texto editables y de solo lectura.
@@ -13,6 +14,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextStyle? textStyle;
   final bool isReadOnly;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextField({
     super.key,
@@ -25,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.textStyle,
     this.isReadOnly = false,
+    this.inputFormatters,
   });
 
   @override
@@ -68,6 +71,7 @@ class CustomTextField extends StatelessWidget {
             TextFormField(
               controller: controller,
               keyboardType: keyboardType,
+              inputFormatters: inputFormatters,
               maxLines: maxLines ?? 1,
               readOnly: isReadOnly,
               enabled: isEnabled,

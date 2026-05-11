@@ -24,6 +24,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
 import 'package:go_router/go_router.dart';
+import 'package:flutter_application/components/button/epaa_extended_fab.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 
 class AppColors {
@@ -281,8 +282,12 @@ class _FormScreenState extends State<FormScreen>
                                   style: ResponsiveUtils.bodySmall(context)
                                       .copyWith(
                                         color: _errorMessage != null
-                                            ? Theme.of(context).colorScheme.error
-                                            : Theme.of(context).colorScheme.secondary,
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.error
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.secondary,
                                         fontWeight: FontWeight.w500,
                                       ),
                                 ),
@@ -319,7 +324,9 @@ class _FormScreenState extends State<FormScreen>
                                 color: Theme.of(context).colorScheme.primary,
                                 size: ResponsiveUtils.iconSmall(context),
                               ),
-                              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                               children: [
                                 ReadingCurrentRow(reading: widget.reading),
                                 ResponsiveUtils.vSpace(context, 0.03),
@@ -471,7 +478,9 @@ class _FormScreenState extends State<FormScreen>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
-                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.18),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.error.withValues(alpha: 0.18),
                               ),
                             ),
                             color: Theme.of(context).colorScheme.errorContainer,
@@ -486,7 +495,9 @@ class _FormScreenState extends State<FormScreen>
                                   Text(
                                     'ESTADO ACTUAL DE LA CONEXIÓN',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.4,
@@ -502,7 +513,9 @@ class _FormScreenState extends State<FormScreen>
                                     children: [
                                       Icon(
                                         Icons.bookmark_outline,
-                                        color: Theme.of(context).colorScheme.error,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -511,7 +524,9 @@ class _FormScreenState extends State<FormScreen>
                                           connectionStateName?.toUpperCase() ??
                                               'DESCONOCIDO',
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.error,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
                                             fontSize: 16,
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 1.6,
@@ -532,17 +547,21 @@ class _FormScreenState extends State<FormScreen>
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.tertiaryContainer,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.tertiaryContainer,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.description_outlined,
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            size: 14,
+                                      children: [
+                                        Icon(
+                                          Icons.description_outlined,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                          size: 14,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
@@ -550,7 +569,9 @@ class _FormScreenState extends State<FormScreen>
                                             connectionStateDescription ??
                                                 'Sin descripción disponible.',
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                               fontSize: 12,
                                               fontStyle: FontStyle.italic,
                                               height: 1.4,
@@ -568,7 +589,9 @@ class _FormScreenState extends State<FormScreen>
                                   ),
                                   // ─ Divisor ─────────────────────────────────
                                   Divider(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outlineVariant,
                                     height: 1,
                                   ),
                                   SizedBox(
@@ -615,7 +638,9 @@ class _FormScreenState extends State<FormScreen>
                                     ),
                                   ),
                                   Divider(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outlineVariant,
                                     height: 1,
                                   ),
                                   SizedBox(
@@ -682,7 +707,9 @@ class _FormScreenState extends State<FormScreen>
                         ResponsiveUtils.vSpace(context, 0.03),
                         MinimalSectionDivider(
                           title: 'Información Adicional',
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.25),
                           children: [
                             ResponsiveUtils.vSpace(context, 0.015),
                             IdFieldsRow(
@@ -713,22 +740,27 @@ class _FormScreenState extends State<FormScreen>
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: EpaaExtendedFab(
+          enable: false,
+          disabledTooltip: 'Conexión bloqueada — no disponible',
+          icon: const Icon(Icons.edit_note_rounded),
+          label: const Text(
+            'Actualizar Coordenadas',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           onPressed: () async {
-            // Obtener el ID de acometida del campo de texto
             final acometidaId = _connectionIdController.text.trim();
 
             if (acometidaId.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text("ID de acometida no válido"),
+                  content: Text('ID de acometida no válido'),
                   backgroundColor: Colors.red,
                 ),
               );
               return;
             }
 
-            // Mostrar loading
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -738,39 +770,28 @@ class _FormScreenState extends State<FormScreen>
             );
 
             try {
-              // Llamada directa al UseCase
               final connection = await di.sl<GetConnectionWithProperties>()(
                 acometidaId,
               );
 
               if (!mounted) return;
-              Navigator.pop(this.context); // cerrar loading
+              Navigator.pop(this.context);
 
-              // Navegar a la pantalla de actualización
               this.context.push(
                 '/update-form',
                 extra: {'connection': connection, 'mode': 'manual'},
               );
             } catch (e) {
               if (!mounted) return;
-              Navigator.pop(this.context); // cerrar loading
+              Navigator.pop(this.context);
               ScaffoldMessenger.of(this.context).showSnackBar(
                 SnackBar(
-                  content: Text("Error al cargar datos: $e"),
+                  content: Text('Error al cargar datos: $e'),
                   backgroundColor: Colors.red,
                 ),
               );
             }
           },
-          label: const Text(
-            "Actualizar Coordenadas",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          enableFeedback: false,
-          icon: const Icon(Icons.edit_note_rounded),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 8.0,
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
@@ -791,7 +812,11 @@ class _FormScreenState extends State<FormScreen>
         children: [
           Row(
             children: [
-              Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 13),
+              Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 13,
+              ),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(

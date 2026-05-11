@@ -31,21 +31,42 @@ extension _T on BuildContext {
   Color get _muted => Theme.of(this).colorScheme.onSurfaceVariant;
 }
 
-
+/// Pantalla de Dashboard: provee el cubit singleton y monta la vista.
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: di.sl<DashboardCubit>()..loadStats(),
+      value: di.sl<DashboardCubit>(),
       child: const _DashboardView(),
     );
   }
 }
 
-class _DashboardView extends StatelessWidget {
+/// Vista interna como StatefulWidget para poder llamar startWatching()
+/// en initState → addPostFrameCallback, igual que AuditScreen.
+/// Esto garantiza que el BlocProvider ya está en el árbol cuando se
+/// inicia el stream, evitando el problema de emit durante build().
+class _DashboardView extends StatefulWidget {
   const _DashboardView();
+
+  @override
+  State<_DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<_DashboardView> {
+  @override
+  void initState() {
+    super.initState();
+    // Inicia el stream reactivo después del primer frame, asegurando que
+    // BlocProvider ya está en el árbol de widgets (igual que AuditScreen).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<DashboardCubit>().startWatching();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +221,22 @@ class _DashboardView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel('RESUMEN DEL PERÍODO'),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const _SectionLabel('RESUMEN DEL PERÍODO'),
+              Text(
+                s.period.toUpperCase(),
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -251,7 +287,7 @@ class _DashboardView extends StatelessWidget {
                   icon: Icons.trending_up_rounded,
                   iconColor: _progressColor(cs, s.overallProgress),
                   title: 'Avance',
-                  value: '${s.completionPercent.toStringAsFixed(1)}%',
+                  value: '${s.completionPercent.toStringAsFixed(2)}%',
                   subtitle: 'del total',
                   trendLabel: _progressLabel(s.overallProgress),
                   trendUp: s.overallProgress >= 0.8,
@@ -571,9 +607,7 @@ class _SectorProgressCard extends StatelessWidget {
 
     // Alternating row colors: even → primaryContainer (visible), odd → base surface
     final isEven = index % 2 == 0;
-    final cardColor = isEven
-        ? cs.primaryContainer
-        : cs.surfaceContainerHigh;
+    final cardColor = isEven ? cs.primaryContainer : cs.surfaceContainerHigh;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -616,7 +650,7 @@ class _SectorProgressCard extends StatelessWidget {
               SizedBox(
                 width: 44,
                 child: Text(
-                  '${(pct * 100).toStringAsFixed(0)}%',
+                  '${(pct * 100).toStringAsFixed(2)}%',
                   style: TextStyle(
                     color: color,
                     fontSize: 13,
@@ -666,7 +700,7 @@ class _SectorProgressCard extends StatelessWidget {
               ),
               _StatItem(
                 label: 'Avance',
-                value: '${(pct * 100).toStringAsFixed(1)}%',
+                value: '${(pct * 100).toStringAsFixed(2)}%',
                 color: color,
                 bold: true,
               ),

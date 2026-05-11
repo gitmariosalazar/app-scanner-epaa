@@ -43,3 +43,10 @@ flutter build apk --release --flavor prod
 # App Bundle de producción (Google Play Store)
 flutter build appbundle --release --flavor prod
 ```
+
+## Crear 2do APK
+
+```shell
+flutter build apk --release --flavor prod --split-per-abi
+flutter build apk --release --flavor prod
+```

@@ -29,3 +29,18 @@ class LoginFailure extends LoginState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Emitted when the cached session belongs to a user who no longer exists
+/// or is inactive in the backend. The app must clear the local session
+/// and redirect to the login screen.
+class LoginUserNotFound extends LoginState {
+  final String message;
+
+  const LoginUserNotFound(
+    this.message,
+  );
+
+  @override
+  List<Object?> get props => [message];
+}
+

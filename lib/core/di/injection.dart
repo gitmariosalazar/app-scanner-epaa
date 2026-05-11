@@ -3,6 +3,7 @@ import 'package:flutter_application/features/audit/data/repositories/audit_repos
 import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
 import 'package:flutter_application/features/audit/domain/usecases/close_sector.dart';
 import 'package:flutter_application/features/audit/domain/usecases/get_audit_by_month.dart';
+import 'package:flutter_application/features/audit/domain/usecases/watch_audit_by_month.dart';
 import 'package:flutter_application/features/audit/presentation/cubit/audit_cubit.dart';
 import 'package:flutter_application/features/theme/data/datasources/theme_local_datasource.dart';
 import 'package:flutter_application/features/theme/data/repositories/theme_repository_impl.dart';
@@ -14,7 +15,10 @@ import 'package:flutter_application/features/dashboard/data/datasources/dashboar
 import 'package:flutter_application/features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import 'package:flutter_application/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:flutter_application/features/dashboard/domain/usecases/get_dashboard_stats.dart';
+import 'package:flutter_application/features/dashboard/domain/usecases/watch_dashboard_stats.dart';
 import 'package:flutter_application/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:flutter_application/core/services/websocket_service.dart';
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/features/form/data/datasources/photo_reading_datasource.dart';
 import 'package:flutter_application/features/form/data/repositories/photo_reading_repository_impl.dart';
 import 'package:flutter_application/features/form/domain/repositories/photo_reading_repository.dart';
@@ -29,6 +33,7 @@ import 'package:flutter_application/features/auth/domain/repositories/auth_repos
 import 'package:flutter_application/features/auth/domain/usecases/check_auth_status_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:flutter_application/features/auth/domain/usecases/verify_user_usecase.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
@@ -90,6 +95,19 @@ Future<void> init() async {
   sl.registerLazySingleton<http.Client>(() => http.Client());
 
   // ==========================
+  // WEBSOCKET (Global singleton)
+  // ==========================
+  final wsService = SocketIOWebSocketService();
+  // La conexión inicial (app startup) la manejaremos explícitamente
+  // si el token guardado es válido. Si no hay token, no conectamos
+  // para evitar la conexión "without authentication" en backend.
+  final savedToken = sharedPreferences.getString('auth_token');
+  if (savedToken != null && savedToken.isNotEmpty) {
+    wsService.connect(Environment.apiUrl, token: savedToken);
+  }
+  sl.registerLazySingleton<WebSocketService>(() => wsService);
+
+  // ==========================
   // AUTH FEATURE
   // ==========================
   sl.registerLazySingleton<AuthLocalDataSource>(
@@ -99,18 +117,24 @@ Future<void> init() async {
     () => AuthRemoteDataSourceImpl(client: sl()),
   );
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
+    () => AuthRepositoryImpl(
+      localDataSource: sl(), 
+      remoteDataSource: sl(),
+      webSocketService: sl<WebSocketService>(),
+    ),
   );
   sl.registerLazySingleton<LoginUseCase>(() => LoginUseCase(sl()));
   sl.registerLazySingleton<LogoutUseCase>(() => LogoutUseCase(sl()));
   sl.registerLazySingleton<CheckAuthStatusUseCase>(
     () => CheckAuthStatusUseCase(sl()),
   );
+  sl.registerLazySingleton<VerifyUserUseCase>(() => VerifyUserUseCase(sl()));
   sl.registerFactory(
     () => LoginCubit(
       loginUseCase: sl(),
       logoutUseCase: sl(),
       checkAuthStatusUseCase: sl(),
+      verifyUserUseCase: sl(),
     ),
   );
 
@@ -283,14 +307,22 @@ Future<void> init() async {
     ),
   );
   sl.registerLazySingleton<DashboardRepository>(
-    () => DashboardRepositoryImpl(remoteDataSource: sl()),
+    () => DashboardRepositoryImpl(
+      remoteDataSource: sl(),
+      webSocketService: sl<WebSocketService>(),
+      // ⏱️ Polling de respaldo: 60 s (el WS entregará cambios instantáneos)
+      pollingFallbackInterval: const Duration(seconds: 60),
+    ),
   );
   sl.registerLazySingleton<GetDashboardStats>(
     () => GetDashboardStats(sl()),
   );
+  sl.registerLazySingleton<WatchDashboardStats>(
+    () => WatchDashboardStats(sl()),
+  );
   // Singleton: same instance persists across tab navigation
   sl.registerLazySingleton<DashboardCubit>(
-    () => DashboardCubit(sl()),
+    () => DashboardCubit(sl<GetDashboardStats>(), sl<WatchDashboardStats>()),
   );
 
   // ==========================
@@ -303,7 +335,12 @@ Future<void> init() async {
     ),
   );
   sl.registerLazySingleton<AuditRepository>(
-    () => AuditRepositoryImpl(remoteDataSource: sl()),
+    () => AuditRepositoryImpl(
+      remoteDataSource: sl(),
+      webSocketService: sl<WebSocketService>(),
+      // ⏱️ Polling de respaldo: 60 s
+      pollingFallbackInterval: const Duration(seconds: 60),
+    ),
   );
   sl.registerLazySingleton<GetAuditByMonth>(
     () => GetAuditByMonth(sl()),
@@ -311,9 +348,16 @@ Future<void> init() async {
   sl.registerLazySingleton<CloseSector>(
     () => CloseSector(sl()),
   );
+  sl.registerLazySingleton<WatchAuditByMonth>(
+    () => WatchAuditByMonth(sl()),
+  );
   // Singleton: same instance persists across tab navigation
   sl.registerLazySingleton<AuditCubit>(
-    () => AuditCubit(sl<GetAuditByMonth>(), sl<CloseSector>()),
+    () => AuditCubit(
+      sl<GetAuditByMonth>(),
+      sl<CloseSector>(),
+      sl<WatchAuditByMonth>(),
+    ),
   );
 
   // ==========================

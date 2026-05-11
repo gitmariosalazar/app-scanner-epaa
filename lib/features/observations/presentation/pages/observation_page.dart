@@ -178,144 +178,195 @@ class ObservationPage extends StatelessWidget {
   // ── Observation Card ─────────────────────────────────────────────────────
 
   Widget _buildObservationCard(BuildContext context, ObservationEntity obs) {
-    final cs  = Theme.of(context).colorScheme;
-    final type  = obs.noveltyTypeName.toUpperCase();
-    final color = _colorForNovelty(type);
-    final icon  = _iconForNovelty(type);
+    final cs      = Theme.of(context).colorScheme;
+    final type    = obs.noveltyTypeName.toUpperCase();
+    final color   = _colorForNovelty(type);
+    final icon    = _iconForNovelty(type);
     final cidText = obs.connectionId.isNotEmpty ? obs.connectionId : 'Sin ID';
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: EdgeInsets.only(bottom: context.mediumSpacing),
-      child: Material(
-        elevation: 2,
-        borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
-        color: cs.surfaceContainerHigh,
-        child: InkWell(
+      child: Container(
+        decoration: BoxDecoration(
+          // Fondo tintado — claramente distinto del scaffold en light y dark
+          color: isDark
+              ? Color.lerp(cs.surfaceContainerHighest, color, 0.07)
+              : Color.lerp(Colors.white, color, 0.04),
           borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
-          onTap: () => _showDetailsDialog(context, obs, color, icon),
-          child: Padding(
-            padding: EdgeInsets.all(context.mediumSpacing * 1.2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Borde visible usando el color semántico de la novedad
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.55 : 0.30),
+            width: 1.5,
+          ),
+          boxShadow: [
+            // Sombra tintada con el color de la novedad
+            BoxShadow(
+              color: color.withValues(alpha: isDark ? 0.22 : 0.14),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+            // Sombra neutra para profundidad
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.38 : 0.09),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(context.largeBorderRadiusValue),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Header row ──────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        obs.observationTitle,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: context.smallSpacing * 0.5,
-                        horizontal: context.mediumSpacing,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.secondaryContainer,
-                        borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
-                      ),
-                      child: Text(
-                        'C.C: $cidText',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSecondaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                context.vSpace(0.01),
-                // ── Content row ─────────────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: context.iconMedium,
-                      backgroundColor: color.withValues(alpha: 0.15),
-                      child: Icon(icon, color: color, size: context.iconMedium * 0.85),
-                    ),
-                    SizedBox(width: context.mediumSpacing),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            obs.observationDetail,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          context.vSpace(0.01),
-                          // ── Date + type chips ──────────────────
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: context.smallSpacing * 0.6,
-                                  horizontal: context.mediumSpacing,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: cs.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_rounded,
-                                      color: cs.onSurfaceVariant,
-                                      size: context.iconExtraSmall,
+                // ── Franja de acento izquierda (5 px del color semántico) ──
+                Container(width: 5, color: color),
+
+                // ── Contenido principal ──────────────────────────────────
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showDetailsDialog(context, obs, color, icon),
+                      child: Padding(
+                        padding: EdgeInsets.all(context.mediumSpacing * 1.2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Header row ──────────────────────────────
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    obs.observationTitle,
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.onSurface,
                                     ),
-                                    context.hSpace(0.005),
-                                    Text(
-                                      safeFormatDateTime(obs.registrationDate),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: cs.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: context.smallSpacing * 0.6,
-                                  horizontal: context.mediumSpacing,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
-                                  border: Border.all(color: color.withValues(alpha: 0.3)),
-                                ),
-                                child: Text(
-                                  type,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: color,
-                                    fontWeight: FontWeight.w700,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: context.smallSpacing * 0.5,
+                                    horizontal: context.mediumSpacing,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: cs.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                                  ),
+                                  child: Text(
+                                    'C.C: $cidText',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: cs.onSecondaryContainer,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            context.vSpace(0.01),
+                            // ── Content row ─────────────────────────────
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: context.iconMedium,
+                                  backgroundColor: color.withValues(alpha: 0.18),
+                                  child: Icon(icon, color: color, size: context.iconMedium * 0.85),
+                                ),
+                                SizedBox(width: context.mediumSpacing),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        obs.observationDetail,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: cs.onSurface,
+                                        ),
+                                      ),
+                                      context.vSpace(0.01),
+                                      // ── Date + type chips ──────────────
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: context.smallSpacing * 0.6,
+                                              horizontal: context.mediumSpacing,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? cs.surfaceContainerHighest
+                                                  : cs.surfaceContainerHigh,
+                                              borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                                              border: Border.all(
+                                                color: cs.outlineVariant,
+                                                width: 0.8,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.calendar_today_rounded,
+                                                  color: cs.onSurfaceVariant,
+                                                  size: context.iconExtraSmall,
+                                                ),
+                                                context.hSpace(0.005),
+                                                Text(
+                                                  safeFormatDateTime(obs.registrationDate),
+                                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                    color: cs.onSurfaceVariant,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: context.smallSpacing * 0.6,
+                                              horizontal: context.mediumSpacing,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: color.withValues(alpha: isDark ? 0.20 : 0.12),
+                                              borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+                                              border: Border.all(
+                                                color: color.withValues(alpha: isDark ? 0.60 : 0.40),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              type,
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: color,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.visibility_rounded, color: color, size: context.iconSmall),
+                                  tooltip: 'Ver detalles',
+                                  onPressed: () => _showDetailsDialog(context, obs, color, icon),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.visibility_rounded, color: color, size: context.iconSmall),
-                      tooltip: 'Ver detalles',
-                      onPressed: () => _showDetailsDialog(context, obs, color, icon),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

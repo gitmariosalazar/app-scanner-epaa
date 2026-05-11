@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/components/text/text_field.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/utils/screen_type_layout.dart';
@@ -32,7 +33,10 @@ class ReadingFieldsRow extends StatelessWidget {
           label: 'Lectura Actual (Obligatorio)',
           leftIcon: Icons.speed_outlined,
           hintText: '0.00',
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Por favor, ingrese la lectura actual';

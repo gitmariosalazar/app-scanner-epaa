@@ -24,10 +24,8 @@ void showSectorBrowser({
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _SectorBrowserSheet(
-      sectors: sectors,
-      displayMonth: displayMonth,
-    ),
+    builder: (_) =>
+        _SectorBrowserSheet(sectors: sectors, displayMonth: displayMonth),
   );
 }
 
@@ -325,7 +323,7 @@ class _SectorTile extends StatelessWidget {
             const SizedBox(height: 5),
             // Progress %
             Text(
-              audit != null ? '${pct.toStringAsFixed(0)}%' : '—',
+              audit != null ? '${pct.toStringAsFixed(2)}%' : '—',
               style: TextStyle(
                 color: color,
                 fontSize: 10,
@@ -366,9 +364,7 @@ class _SectorDetailSheet extends StatelessWidget {
     final color = audit != null ? _progressColor(pct) : cs.outlineVariant;
 
     // Gradient based on progress color + theme
-    final gradientStart = isDark
-        ? color.withValues(alpha: 0.7)
-        : color;
+    final gradientStart = isDark ? color.withValues(alpha: 0.7) : color;
     final gradientEnd = isDark
         ? color.withValues(alpha: 0.45)
         : color.withValues(alpha: 0.75);
@@ -486,7 +482,7 @@ class _SectorDetailSheet extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${pct.toStringAsFixed(1)}%',
+                            '${pct.toStringAsFixed(2)}%',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -504,8 +500,9 @@ class _SectorDetailSheet extends StatelessWidget {
                           curve: Curves.easeOutCubic,
                           builder: (_, v, __) => LinearProgressIndicator(
                             value: v.clamp(0.0, 1.0),
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.25),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.25,
+                            ),
                             valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.white,
                             ),
@@ -515,7 +512,7 @@ class _SectorDetailSheet extends StatelessWidget {
                       ),
                     ] else
                       Text(
-                        'Sin datos de auditoría para este período',
+                        'Sin datos de lectura para este período',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.75),
                           fontSize: 12,
@@ -583,8 +580,10 @@ class _SectorDetailSheet extends StatelessWidget {
                         _InfoRow(
                           icon: Icons.calendar_today_rounded,
                           label: 'Período',
-                          value: DateFormat('MMMM yyyy', 'es_ES')
-                              .format(audit!.readingMonth),
+                          value: DateFormat(
+                            'MMMM yyyy',
+                            'es_ES',
+                          ).format(audit!.readingMonth),
                           color: cs.primary,
                         ),
                         _InfoRow(
@@ -644,7 +643,7 @@ class _SectorDetailSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Sin auditoría registrada',
+                        'Sin lecturas registradas',
                         style: TextStyle(
                           color: cs.onSurface,
                           fontSize: 15,
@@ -653,7 +652,7 @@ class _SectorDetailSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Este sector no tiene datos de auditoría\npara el período seleccionado.',
+                        'Este sector no tiene datos de lecturas\npara el período seleccionado.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: cs.onSurfaceVariant,

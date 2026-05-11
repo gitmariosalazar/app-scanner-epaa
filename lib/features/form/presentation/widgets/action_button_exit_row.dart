@@ -62,6 +62,7 @@ class ActionButtonExitRow extends StatelessWidget {
             );
           },
           icon: Icons.work_outline,
+          enable: false,
           label: 'O. Trabajo',
           color: AppColors.primary,
           loading: false,

@@ -185,10 +185,9 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors =
-        isDark
-            ? [const Color(0xFF0D2137), const Color(0xFF0A3D62)]
-            : [const Color(0xFF1565C0), const Color(0xFF0288D1)];
+    final gradientColors = isDark
+        ? [const Color(0xFF0D2137), const Color(0xFF0A3D62)]
+        : [const Color(0xFF1565C0), const Color(0xFF0288D1)];
 
     final dateStr = DateFormat('EEEE, d MMM yyyy', 'es_ES').format(now);
     final timeStr = DateFormat('HH:mm').format(now);
@@ -332,14 +331,13 @@ class _HeroHeader extends StatelessWidget {
                 children: const [
                   _HighlightPill(icon: Icons.speed_rounded, text: 'Rápido'),
                   _HighlightPill(icon: Icons.security_rounded, text: 'Seguro'),
-                  _HighlightPill(
-                    icon: Icons.sync_rounded,
-                    text: 'Tiempo real',
-                  ),
-                  _HighlightPill(
-                    icon: Icons.offline_bolt_rounded,
-                    text: 'Eficiente',
-                  ),
+                  _HighlightPill(icon: Icons.sync_rounded, text: 'Tiempo real'),
+                  /**
+                   * _HighlightPill(
+                      icon: Icons.offline_bolt_rounded,
+                      text: 'Eficiente',
+                    ),
+                    */
                 ],
               ),
             ],
@@ -484,11 +482,11 @@ class _SystemInfoCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? cs.surfaceContainer : cs.primaryContainer.withValues(alpha: 0.3),
+        color: isDark
+            ? cs.surfaceContainer
+            : cs.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.15)),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -539,11 +537,7 @@ class _SystemInfoCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.lightbulb_rounded,
-                  color: cs.primary,
-                  size: 16,
-                ),
+                Icon(Icons.lightbulb_rounded, color: cs.primary, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -597,10 +591,7 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: cs.onSurface, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
           ),

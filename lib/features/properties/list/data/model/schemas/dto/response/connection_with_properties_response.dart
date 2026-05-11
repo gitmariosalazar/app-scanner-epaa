@@ -49,6 +49,19 @@ DateTime? _toDateTimeOrNull(dynamic value) {
   return null;
 }
 
+/// Convierte a bool? — acepta bool, String ('true','false','1','0') e int (1, 0)
+bool? _toBoolOrNull(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is int) return value != 0;
+  if (value is String) {
+    final lower = value.toLowerCase();
+    if (lower == 'true' || lower == '1') return true;
+    if (lower == 'false' || lower == '0') return false;
+  }
+  return null;
+}
+
 /// ===================================================
 /// MODELOS
 /// ===================================================
@@ -107,7 +120,7 @@ class Person {
   @JsonKey(name: 'birthDate')
   final String? birthDate;
 
-  @JsonKey(name: 'isDeceased')
+  @JsonKey(name: 'isDeceased', fromJson: _toBoolOrNull)
   final bool? isDeceased;
 
   @JsonKey(name: 'professionId', fromJson: _toIntOrNull)
@@ -279,10 +292,10 @@ class ConnectionWithPropertiesResponse {
   @JsonKey(name: 'connectionContractNumber', fromJson: _toStringOrNull)
   final String? connectionContractNumber;
 
-  @JsonKey(name: 'connectionSewerage')
+  @JsonKey(name: 'connectionSewerage', fromJson: _toBoolOrNull)
   final bool? connectionSewerage;
 
-  @JsonKey(name: 'connectionStatus')
+  @JsonKey(name: 'connectionStatus', fromJson: _toBoolOrNull)
   final bool? connectionStatus;
 
   @JsonKey(name: 'connectionAddress')

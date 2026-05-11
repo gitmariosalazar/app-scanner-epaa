@@ -18,10 +18,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     defaultConfig {
         applicationId = "com.example.flutter_application"
         minSdk = flutter.minSdkVersion
@@ -95,6 +91,13 @@ fun googleMapsApiKey(flavor: String): String {
     } catch (e: Exception) {
         println("Error inesperado: ${e.message}")
         "MISSING_KEY"
+    }
+}
+
+// Configure Kotlin compiler options (required for Kotlin 2.3.x - replaces deprecated kotlinOptions DSL)
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
