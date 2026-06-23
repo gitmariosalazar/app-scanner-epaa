@@ -35,13 +35,12 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDataSource.cacheToken(authResponse.accessToken);
       await localDataSource.cacheUser(authResponse.user);
 
-      // ── Reconectar WebSocket con el token del usuario autenticado ──────────────
-      // disconnect() limpia el socket anterior (sin token o con token viejo)
-      // y connect() crea uno nuevo autenticado.
       webSocketService.disconnect();
       webSocketService.connect(Environment.apiUrl, token: authResponse.accessToken);
 
       return Right(authResponse.user);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, code: e.code));
     } catch (e) {
@@ -51,22 +50,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> logout() async {
-    // ── Desconectar WebSocket limpiamente ANTES de limpiar la sesión ─────────
-    // disconnect() detiene la reconexion automática de socket.io.
-    // Sin esto, el socket se reconectaría sin token mostrando
-    // "Client connected without authentication" en el backend.
     webSocketService.disconnect();
 
     try {
       await remoteDataSource.logout();
-    } catch (e) {
-      // Ignore remote logout failure, ensure local cleanup
+    } catch (_) {
+      // Ignore remote logout failure
     }
     try {
       await localDataSource.clearToken();
       await localDataSource.clearUser();
       return const Right(null);
-    } catch (e) {
+    } catch (_) {
       return Left(CacheFailure(message: 'Could not safe logout'));
     }
   }
@@ -80,7 +75,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return Right(user);
       }
       return Left(CacheFailure(message: 'No active session'));
-    } catch (e) {
+    } catch (_) {
       return Left(CacheFailure(message: 'Error checking session'));
     }
   }
@@ -91,7 +86,6 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     try {
       final result = await remoteDataSource.verifyUser(usernameOrEmail);
-      // Treat inactive accounts as non-existent for security
       if (!result.exists || result.isActive == false) {
         return Right(
           VerifyUserResult(
@@ -104,6 +98,10 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
       return Right(result);
+    } on NetworkException catch (e) {
+      // Device is offline — propagate as NetworkFailure so the cubit
+      // can keep the session alive instead of clearing it.
+      return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, code: e.code));
     } catch (e) {
@@ -111,4 +109,3 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 }
-

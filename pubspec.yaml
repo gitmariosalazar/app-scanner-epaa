@@ -25,7 +25,7 @@ dependencies:
   mime: ^2.0.0
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  flutter_osm_plugin: 1.4.3
+  flutter_osm_plugin: ^1.4.6
   json_annotation: ^4.9.0
   meta: ^1.17.0
   bloc_concurrency: ^0.3.0
