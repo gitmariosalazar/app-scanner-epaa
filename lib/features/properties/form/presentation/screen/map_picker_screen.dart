@@ -1,6 +1,5 @@
 // lib/features/properties/form/presentation/screen/map_picker_screen.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/core/theme/app_colors.dart';
@@ -53,7 +52,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             icon: const Icon(Icons.check),
             onPressed: () {
               final pos = _marker.position;
-              context.pop({'lat': pos.latitude, 'lng': pos.longitude});
+              Navigator.pop(context, {'lat': pos.latitude, 'lng': pos.longitude});
             },
           ),
         ],

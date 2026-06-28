@@ -33,42 +33,38 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> checkAuthStatus() async {
     final localResult = await checkAuthStatusUseCase(NoParams());
 
-    await localResult.fold(
-      (_) async => emit(LoginInitial()),
+    await localResult.fold((_) async => emit(LoginInitial()), (user) async {
+      final verifyResult = await verifyUserUseCase(
+        VerifyUserParams(usernameOrEmail: user.username),
+      );
 
-      (user) async {
-        final verifyResult = await verifyUserUseCase(
-          VerifyUserParams(usernameOrEmail: user.username),
-        );
+      verifyResult.fold(
+        (failure) {
+          if (failure is NetworkFailure) {
+            // ✅ No internet — keep cached session, work offline
+            emit(LoginSuccess(user));
+          } else {
+            // ⛔ Unexpected server error → force re-login
+            _clearLocalSession();
+            emit(LoginInitial());
+          }
+        },
 
-        verifyResult.fold(
-          (failure) {
-            if (failure is NetworkFailure) {
-              // ✅ No internet — keep cached session, work offline
-              emit(LoginSuccess(user));
-            } else {
-              // ⛔ Unexpected server error → force re-login
-              _clearLocalSession();
-              emit(LoginInitial());
-            }
-          },
-
-          (verifyData) {
-            if (verifyData.exists) {
-              emit(LoginSuccess(user));
-            } else {
-              _clearLocalSession();
-              emit(
-                const LoginUserNotFound(
-                  'Tu cuenta ya no existe o fue desactivada. '
-                  'Por favor inicia sesión nuevamente.',
-                ),
-              );
-            }
-          },
-        );
-      },
-    );
+        (verifyData) {
+          if (verifyData.exists) {
+            emit(LoginSuccess(user));
+          } else {
+            _clearLocalSession();
+            emit(
+              const LoginUserNotFound(
+                'Tu cuenta ya no existe o fue desactivada. '
+                'Por favor inicia sesión nuevamente.',
+              ),
+            );
+          }
+        },
+      );
+    });
   }
 
   Future<void> login(String usernameOrEmail, String password) async {

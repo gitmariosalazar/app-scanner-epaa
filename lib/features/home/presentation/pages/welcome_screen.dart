@@ -7,6 +7,9 @@ import 'package:flutter_application/features/auth/data/models/user_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:package_info_plus/package_info_plus.dart';
+
+
 /// Welcome / Home screen — SRP: only handles the welcome UI.
 /// DIP: depends on [AuthLocalDataSource] abstraction, not a concrete class.
 class WelcomeScreen extends StatefulWidget {
@@ -20,15 +23,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   UserModel? _user;
   DateTime _now = DateTime.now();
   late final Timer _clockTimer;
+  String _version = '1.0.1';
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadVersion();
     // Refresh time every minute to keep greeting/clock up to date.
     _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = packageInfo.version;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadUser() async {
@@ -115,7 +131,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           // ── System info card ──────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-            sliver: SliverToBoxAdapter(child: _SystemInfoCard(isDark: isDark)),
+            sliver: SliverToBoxAdapter(
+              child: _SystemInfoCard(
+                isDark: isDark,
+                version: _version,
+              ),
+            ),
           ),
         ],
       ),
@@ -157,6 +178,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       subtitle: 'Novedades y\nreportes de campo',
       color: const Color(0xFFE65100),
       onTap: () => context.push('/observations'),
+    ),
+    _FeatureCard(
+      icon: Icons.history_rounded,
+      title: 'Historial Incidentes',
+      subtitle: 'Consulta y filtra\nreportes de campo',
+      color: const Color(0xFF0D47A1),
+      onTap: () => context.push('/incidents-history'),
+    ),
+    _FeatureCard(
+      icon: Icons.report,
+      title: 'Reportar Incidente',
+      subtitle: 'Registra novedades o\ndaños de red',
+      color: const Color(0xFFB71C1C),
+      onTap: () => context.push('/create-incident'),
     ),
     _FeatureCard(
       icon: Icons.person_rounded,
@@ -473,8 +508,9 @@ class _FeatureCard extends StatelessWidget {
 
 class _SystemInfoCard extends StatelessWidget {
   final bool isDark;
+  final String version;
 
-  const _SystemInfoCard({required this.isDark});
+  const _SystemInfoCard({required this.isDark, required this.version});
 
   @override
   Widget build(BuildContext context) {
@@ -510,12 +546,13 @@ class _SystemInfoCard extends StatelessWidget {
           _InfoRow(
             icon: Icons.business_rounded,
             label: 'Empresa',
-            value: 'EPAA-AA',
+            value:
+                'Empresa Pública de Agua Potable y Alcantarillado de Antonio Ante (EPAA-AA)',
           ),
           _InfoRow(
             icon: Icons.water_drop_rounded,
             label: 'Sistema',
-            value: 'Gestión de Lecturas de Agua',
+            value: 'Gestión de Lecturas de Agua Potable',
           ),
           _InfoRow(
             icon: Icons.smartphone_rounded,
@@ -525,7 +562,7 @@ class _SystemInfoCard extends StatelessWidget {
           _InfoRow(
             icon: Icons.verified_rounded,
             label: 'Versión',
-            value: '1.0.0',
+            value: version,
           ),
           const SizedBox(height: 12),
           Container(

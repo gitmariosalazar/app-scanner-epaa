@@ -36,11 +36,8 @@ class LoginFailure extends LoginState {
 class LoginUserNotFound extends LoginState {
   final String message;
 
-  const LoginUserNotFound(
-    this.message,
-  );
+  const LoginUserNotFound(this.message);
 
   @override
   List<Object?> get props => [message];
 }
-

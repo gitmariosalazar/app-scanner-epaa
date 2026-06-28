@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/features/theme/presentation/cubit/theme_cubit.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,6 +16,20 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
+  String _version = '1.0.1';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = packageInfo.version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +53,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.only(bottom: 40),
         children: [
           // ── Profile banner ───────────────────────────────────────
-          if (user != null) _buildProfileCard(user.firstName, user.lastName, user.email, user.roles),
+          if (user != null)
+            _buildProfileCard(
+              user.firstName,
+              user.lastName,
+              user.email,
+              user.roles,
+            ),
 
           // ── General section ──────────────────────────────────────
           _SectionHeader('General'),
@@ -56,7 +77,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Icon(
                     isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                     size: 20,
-                    color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF1A2035),
+                    color: isDark
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF1A2035),
                   ),
                 ),
                 title: Text(
@@ -70,7 +93,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: isDark,
                 onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
                 // Track activo: ámbar en dark, azul marino en light
-                activeTrackColor: isDark ? const Color(0xFFF59E0B) : const Color(0xFF1A2035),
+                activeTrackColor: isDark
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF1A2035),
                 // Thumb SIEMPRE blanco — máximo contraste sobre cualquier track
                 activeThumbColor: Colors.white,
                 // Track inactivo: neutro sutil
@@ -84,7 +109,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 secondary: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1565C0).withValues(alpha: isDark ? 0.20 : 0.10),
+                    color: const Color(
+                      0xFF1565C0,
+                    ).withValues(alpha: isDark ? 0.20 : 0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -143,7 +170,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 iconColor: const Color(0xFF6A1B9A),
                 iconBg: const Color(0xFFF3E5F5),
                 title: 'EPAA-AA',
-                subtitle: 'Empresa de Agua Potable y Alcantarillado de Antonio Ante',
+                subtitle:
+                    'Empresa de Agua Potable y Alcantarillado de Antonio Ante',
                 trailing: null,
                 onTap: () {},
               ),
@@ -219,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 iconColor: const Color(0xFF607D8B),
                 iconBg: const Color(0xFFECEFF1),
                 title: 'Acerca de la aplicación',
-                subtitle: 'Versión 1.0.0 · EPAA-AA © 2026',
+                subtitle: 'Versión $_version · EPAA-AA © 2026',
                 onTap: () => _showAbout(context),
               ),
             ],
@@ -376,7 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: 'Scanner EPAA-AA',
-      applicationVersion: '1.0.0',
+      applicationVersion: _version,
       applicationLegalese: '© 2026 EPAA-AA · Antonio Ante, Ecuador',
       children: const [
         SizedBox(height: 12),
@@ -452,9 +480,7 @@ class _SettingsCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outlineVariant),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -463,7 +489,15 @@ class _SettingsCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(children: children),
+      child: Material(
+        color: cs.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: children),
+      ),
     );
   }
 }
@@ -514,7 +548,8 @@ class _SettingsTile extends StatelessWidget {
         subtitle,
         style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
       ),
-      trailing: trailing ??
+      trailing:
+          trailing ??
           Icon(
             Icons.chevron_right_rounded,
             color: cs.onSurfaceVariant,
@@ -541,9 +576,7 @@ class _SecurityItem extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 18),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(label, style: const TextStyle(fontSize: 13)),
-        ),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
       ],
     );
   }

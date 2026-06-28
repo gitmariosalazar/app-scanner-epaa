@@ -3,13 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
-class AppColors {
-  static const primary = Color(0xFF0288D1);
-  static const error = Color(0xFFE57373);
-  static const cardSecondaryBackground = Color(0xFFE3F2FD);
-  static const textPrimary = Color(0xFF212121);
-}
-
 class ImagesSection extends StatelessWidget {
   final List<File> attachedImages;
   final String mode;
@@ -37,7 +30,7 @@ class ImagesSection extends StatelessWidget {
     }
   }
 
-  Widget _buildAddImageButton(BuildContext context, double size) {
+  Widget _buildAddImageButton(BuildContext context, ColorScheme colors, double size) {
     return GestureDetector(
       onTap: _pickImage,
       child: Container(
@@ -45,16 +38,16 @@ class ImagesSection extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: AppColors.cardSecondaryBackground.withOpacity(0.75),
+          color: colors.primaryContainer.withOpacity(0.15),
           border: Border.all(
-            color: AppColors.primary.withOpacity(0.45),
+            color: colors.primary.withOpacity(0.45),
             width: 2,
           ),
         ),
         child: Icon(
           Icons.add_a_photo_rounded,
           size: size * 0.48,
-          color: AppColors.primary.withOpacity(0.82),
+          color: colors.primary.withOpacity(0.82),
         ),
       ),
     );
@@ -62,16 +55,20 @@ class ImagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final double imageSize = ResponsiveUtils.isTablet(context) ? 90.0 : 55.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Cargar Imágenes',
+          'Cargar Imágenes *',
           style: ResponsiveUtils.bodyLarge(
             context,
-          ).copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          ).copyWith(
+            fontWeight: FontWeight.w600,
+            color: colors.onSurface,
+          ),
         ),
         ResponsiveUtils.vSpace(context, 0.01),
         SizedBox(
@@ -83,7 +80,7 @@ class ImagesSection extends StatelessWidget {
                 SizedBox(width: ResponsiveUtils.smallSpacing(context)),
             itemBuilder: (context, index) {
               if (index == attachedImages.length) {
-                return _buildAddImageButton(context, imageSize);
+                return _buildAddImageButton(context, colors, imageSize);
               } else {
                 final file = attachedImages[index];
                 return Stack(
@@ -97,13 +94,15 @@ class ImagesSection extends StatelessWidget {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            color: AppColors.error.withOpacity(0.3),
+                            width: imageSize,
+                            height: imageSize,
+                            color: colors.error.withOpacity(0.3),
                             child: Center(
                               child: Text(
-                                'Error al cargar imagen',
+                                'Error',
                                 style: ResponsiveUtils.bodySmall(
                                   context,
-                                ).copyWith(color: AppColors.error),
+                                ).copyWith(color: colors.error),
                               ),
                             ),
                           );
@@ -138,3 +137,4 @@ class ImagesSection extends StatelessWidget {
     );
   }
 }
+

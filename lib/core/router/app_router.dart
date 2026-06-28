@@ -5,6 +5,9 @@ import 'package:flutter_application/features/form/presentation/pages/location_sc
 import 'package:flutter_application/features/home/presentation/pages/lecturas_screen.dart';
 import 'package:flutter_application/features/home/presentation/pages/shell_navigator.dart';
 import 'package:flutter_application/features/home/presentation/pages/welcome_screen.dart';
+import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
+import 'package:flutter_application/features/incidents/presentation/page/create_incident_form.dart';
+import 'package:flutter_application/features/incidents/presentation/page/incident_history_page.dart';
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
 import 'package:flutter_application/features/observations/presentation/pages/observation_page.dart';
 import 'package:flutter_application/features/properties/form/presentation/screen/map_picker_screen.dart';
@@ -41,32 +44,19 @@ class AppRouter {
     },
     routes: [
       // ── Auth (no shell) ──────────────────────────────────────────
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
       // ── Shell: tabs con bottom nav ───────────────────────────────
       ShellRoute(
-        builder: (context, state, child) =>
-            ShellNavigator(child: child),
+        builder: (context, state, child) => ShellNavigator(child: child),
         routes: [
-          GoRoute(
-            path: '/inicio',
-            builder: (_, __) => const WelcomeScreen(),
-          ),
-          GoRoute(
-            path: '/home',
-            builder: (_, __) => const DashboardScreen(),
-          ),
+          GoRoute(path: '/inicio', builder: (_, __) => const WelcomeScreen()),
+          GoRoute(path: '/home', builder: (_, __) => const DashboardScreen()),
           GoRoute(
             path: '/lecturas',
             builder: (_, __) => const LecturasScreen(),
           ),
-          GoRoute(
-            path: '/auditoria',
-            builder: (_, __) => const AuditScreen(),
-          ),
+          GoRoute(path: '/auditoria', builder: (_, __) => const AuditScreen()),
           GoRoute(
             path: '/settings',
             builder: (_, __) => const SettingsScreen(),
@@ -97,8 +87,7 @@ class AppRouter {
             providers: [
               BlocProvider(create: (_) => di.sl<form_bloc.FormBloc>()),
               BlocProvider(
-                create: (_) =>
-                    di.sl<ManuallyConnectionWithPropertiesBloc>(),
+                create: (_) => di.sl<ManuallyConnectionWithPropertiesBloc>(),
               ),
             ],
             child: form.FormScreen(reading: reading, mode: mode),
@@ -174,10 +163,7 @@ class AppRouter {
             );
           }
 
-          return UpdateConnectionFormScreen(
-            connection: connection,
-            mode: mode,
-          );
+          return UpdateConnectionFormScreen(connection: connection, mode: mode);
         },
       ),
       GoRoute(
@@ -199,6 +185,25 @@ class AppRouter {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+
+      // INCIDENTS
+      GoRoute(
+        path: '/create-incident',
+        builder: (context, state) {
+          final connectionId = state.extra as String?;
+          return BlocProvider(
+            create: (_) => di.sl<IncidentCubit>(),
+            child: CreateIncidentForm(connectionId: connectionId ?? ''),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/incidents-history',
+        builder: (context, state) => BlocProvider(
+          create: (_) => di.sl<IncidentCubit>(),
+          child: const IncidentHistoryPage(),
+        ),
       ),
     ],
   );

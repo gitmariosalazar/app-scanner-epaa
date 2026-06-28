@@ -23,10 +23,8 @@ class AuditRepositoryImpl implements AuditRepository {
   final Duration pollingFallbackInterval;
 
   // Controladores híbridos por mes
-  final _hybridControllers =
-      <String, StreamController<List<AuditSector>>>{};
-  final _pollingServices =
-      <String, PeriodicPollingService<List<AuditSector>>>{};
+  final _hybridControllers = <String, StreamController<List<AuditSector>>>{};
+  final _pollingServices = <String, PollingService<List<AuditSector>>>{};
 
   AuditRepositoryImpl({
     required this.remoteDataSource,
@@ -56,8 +54,9 @@ class AuditRepositoryImpl implements AuditRepository {
         pendingTotal: dto.pendingTotal,
         progressPercentage: dto.progressPercentage,
         isComplete: dto.isComplete,
-        closureDate:
-            dto.closureDate != null ? _parseDate(dto.closureDate!) : null,
+        closureDate: dto.closureDate != null
+            ? _parseDate(dto.closureDate!)
+            : null,
         supervisorId: dto.supervisorId,
         observations: dto.observations,
         createdAt: _parseDate(dto.createdAt),
@@ -165,8 +164,9 @@ class AuditRepositoryImpl implements AuditRepository {
           sectorId: dto.sectorId,
           readingMonth: dto.readingMonth,
           isComplete: dto.isComplete,
-          closureDate:
-              dto.closureDate != null ? _parseDate(dto.closureDate!) : null,
+          closureDate: dto.closureDate != null
+              ? _parseDate(dto.closureDate!)
+              : null,
           supervisorId: dto.supervisorId,
           observations: dto.observations,
         ),

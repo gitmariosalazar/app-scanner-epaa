@@ -1211,28 +1211,32 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
   ) => Expanded(
     child: Container(
       margin: EdgeInsets.symmetric(horizontal: context.smallSpacing * 0.5),
-      decoration: BoxDecoration(
+      child: Material(
         color: AppColors.surface.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
-          width: 0.5,
-        ),
-      ),
-      child: SwitchListTile(
-        title: Text(
-          title,
-          style: context.bodyMedium.copyWith(fontWeight: FontWeight.w500),
-        ),
-        value: value,
-        onChanged: onChanged,
-        activeColor: AppColors.primary,
-        contentPadding: EdgeInsets.symmetric(horizontal: context.smallSpacing),
-        dense: true,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+          side: BorderSide(
+            color: AppColors.primary.withOpacity(0.2),
+            width: 0.5,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: SwitchListTile(
+          title: Text(
+            title,
+            style: context.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+          ),
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppColors.primary,
+          contentPadding: EdgeInsets.symmetric(horizontal: context.smallSpacing),
+          dense: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
+          ),
         ),
       ),
     ),
   );
 }
+

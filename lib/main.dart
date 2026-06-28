@@ -9,6 +9,7 @@ import 'package:flutter_application/features/auth/presentation/cubit/login_cubit
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ← Agrega esto
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -18,9 +19,14 @@ void main() async {
   await initializeDateFormatting('es_ES', null);
   await dotenv.load(fileName: ".env");
   await di.init();
-  // Init persisted theme before first frame
   await di.sl<ThemeCubit>().init();
-  runApp(const MyApp());
+
+  runApp(
+    const ProviderScope(
+      // ← Agrega esto
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

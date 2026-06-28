@@ -416,9 +416,13 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
               }),
             ),
             const SizedBox(height: 12),
-            TextButton(
+            TextButton.icon(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
+              icon: const Icon(Icons.cancel_rounded, size: 18),
+              style: TextButton.styleFrom(
+                foregroundColor: _C.accent,
+              ),
+              label: const Text('Cancelar'),
             ),
           ],
         ),

@@ -26,6 +26,83 @@ class ActionButtonExitRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (ResponsiveUtils.isMobile(context)) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ResponsiveButton(
+                  onPressed: () async {
+                    final bloc = sl<CreateWorkOrderBloc>();
+
+                    await showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => AddWorkOrderResponsiveDialog(
+                        prefillData: prefillData,
+                        bloc: bloc,
+                      ),
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Orden de trabajo creada con éxito"),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  },
+                  icon: Icons.work_outline,
+                  enable: false,
+                  label: 'O. Trabajo',
+                  color: AppColors.primary,
+                  loading: false,
+                  height: ResponsiveUtils.buttonSmall(context),
+                  animationController: animationController,
+                  scaleAnimation: scaleAnimation,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ResponsiveButton(
+                  onPressed: () => context.push(
+                    '/create-incident',
+                    extra: prefillData['connectionId'] ?? '',
+                  ),
+                  icon: Icons.report,
+                  label: 'Reportar',
+                  color: AppColors.primary,
+                  loading: false,
+                  height: ResponsiveUtils.buttonSmall(context),
+                  animationController: animationController,
+                  scaleAnimation: scaleAnimation,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: ResponsiveButton(
+                  onPressed: () => context.go('/lecturas'),
+                  icon: Icons.cancel,
+                  label: 'Cancelar',
+                  color: AppColors.error,
+                  loading: false,
+                  height: ResponsiveUtils.buttonSmall(context),
+                  animationController: animationController,
+                  scaleAnimation: scaleAnimation,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return ResponsiveRow(
       forceRow: true,
       rowSpacing: ResponsiveUtils.largeSpacing(context),
@@ -64,6 +141,20 @@ class ActionButtonExitRow extends StatelessWidget {
           icon: Icons.work_outline,
           enable: false,
           label: 'O. Trabajo',
+          color: AppColors.primary,
+          loading: false,
+          height: ResponsiveUtils.buttonSmall(context),
+          animationController: animationController,
+          scaleAnimation: scaleAnimation,
+        ),
+        // report button
+        ResponsiveButton(
+          onPressed: () => context.push(
+            '/create-incident',
+            extra: prefillData['connectionId'] ?? '',
+          ),
+          icon: Icons.report,
+          label: 'Reportar',
           color: AppColors.primary,
           loading: false,
           height: ResponsiveUtils.buttonSmall(context),

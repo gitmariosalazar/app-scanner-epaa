@@ -22,9 +22,9 @@ class ShellNavigator extends StatelessWidget {
       route: '/home',
     ),
     _NavItem(
-      icon: Icons.water_drop_outlined,
-      activeIcon: Icons.water_drop_rounded,
-      label: 'Lecturas',
+      icon: Icons.menu_open_outlined,
+      activeIcon: Icons.menu_open_rounded,
+      label: 'Operaciones',
       route: '/lecturas',
     ),
     _NavItem(

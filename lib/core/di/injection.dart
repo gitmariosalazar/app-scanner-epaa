@@ -1,6 +1,16 @@
 import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
 import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
 import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
+import 'package:flutter_application/features/incidents/data/datasources/incident_remote_datasource.dart';
+import 'package:flutter_application/features/incidents/data/repositories/incident_repository_impl.dart';
+import 'package:flutter_application/features/incidents/domain/repositories/incident_repository.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/create_incident.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/resolve_incident.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/find_incidents_by_connection.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/find_incident_by_id.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/find_incidents.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/find_incident_categories.dart';
+import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
 import 'package:flutter_application/features/audit/domain/usecases/close_sector.dart';
 import 'package:flutter_application/features/audit/domain/usecases/get_audit_by_month.dart';
 import 'package:flutter_application/features/audit/domain/usecases/watch_audit_by_month.dart';
@@ -357,6 +367,36 @@ Future<void> init() async {
       sl<GetAuditByMonth>(),
       sl<CloseSector>(),
       sl<WatchAuditByMonth>(),
+    ),
+  );
+
+  // ==========================
+  // INCIDENTS FEATURE
+  // ==========================
+  sl.registerLazySingleton<IncidentRemoteDataSource>(
+    () => IncidentRemoteDataSourceImpl(client: sl(), authLocalDataSource: sl()),
+  );
+  sl.registerLazySingleton<IncidentRepository>(
+    () => IncidentRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<CreateIncidentUseCase>(() => CreateIncidentUseCase(sl()));
+  sl.registerLazySingleton<ResolveIncidentUseCase>(() => ResolveIncidentUseCase(sl()));
+  sl.registerLazySingleton<FindIncidentsByConnectionUseCase>(
+    () => FindIncidentsByConnectionUseCase(sl()),
+  );
+  sl.registerLazySingleton<FindIncidentByIdUseCase>(() => FindIncidentByIdUseCase(sl()));
+  sl.registerLazySingleton<FindIncidentsUseCase>(() => FindIncidentsUseCase(sl()));
+  sl.registerLazySingleton<FindIncidentCategoriesUseCase>(
+    () => FindIncidentCategoriesUseCase(sl()),
+  );
+  sl.registerFactory(
+    () => IncidentCubit(
+      createIncidentUseCase: sl(),
+      resolveIncidentUseCase: sl(),
+      findIncidentsByConnectionUseCase: sl(),
+      findIncidentByIdUseCase: sl(),
+      findIncidentsUseCase: sl(),
+      findIncidentCategoriesUseCase: sl(),
     ),
   );
 

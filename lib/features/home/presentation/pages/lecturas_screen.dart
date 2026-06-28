@@ -13,7 +13,7 @@ class LecturasScreen extends StatelessWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text(
-          'Lecturas',
+          'Operaciones de Campo',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: false,
@@ -164,6 +164,35 @@ class LecturasScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               onTap: () => context.push('/location'),
+            ),
+            const SizedBox(height: 28),
+            const _SectionTitle('Gestión de Incidencias'),
+            const SizedBox(height: 14),
+            _ActionCard(
+              icon: Icons.report,
+              enable: true,
+              title: 'Reportar Incidencia',
+              subtitle:
+                  'Registra anomalías en la acometida o medidor y alcantarillado',
+              gradient: const LinearGradient(
+                colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/create-incident'),
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.history_toggle_off_rounded,
+              enable: true,
+              title: 'Historial de Incidencias',
+              subtitle: 'Consulta el estado de los incidentes reportados',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF37474F), Color(0xFF78909C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/incidents-history'),
             ),
             const SizedBox(height: 32),
             const Center(
