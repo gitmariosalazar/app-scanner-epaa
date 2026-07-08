@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
 import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
 import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
@@ -128,7 +129,7 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      localDataSource: sl(), 
+      localDataSource: sl(),
       remoteDataSource: sl(),
       webSocketService: sl<WebSocketService>(),
     ),
@@ -301,7 +302,9 @@ Future<void> init() async {
     () => WorkOrderRepositoryImpl(remoteDataSource: sl()),
   );
 
-  sl.registerLazySingleton<CreateWorkOrderUseCase>(() => CreateWorkOrderUseCase(sl()));
+  sl.registerLazySingleton<CreateWorkOrderUseCase>(
+    () => CreateWorkOrderUseCase(sl()),
+  );
 
   sl.registerFactory<CreateWorkOrderBloc>(
     () => CreateWorkOrderBloc(createWorkOrder: sl()),
@@ -311,10 +314,8 @@ Future<void> init() async {
   // DASHBOARD FEATURE
   // ==========================
   sl.registerLazySingleton<DashboardRemoteDataSource>(
-    () => DashboardRemoteDataSourceImpl(
-      client: sl(),
-      authLocalDataSource: sl(),
-    ),
+    () =>
+        DashboardRemoteDataSourceImpl(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<DashboardRepository>(
     () => DashboardRepositoryImpl(
@@ -324,9 +325,7 @@ Future<void> init() async {
       pollingFallbackInterval: const Duration(seconds: 60),
     ),
   );
-  sl.registerLazySingleton<GetDashboardStats>(
-    () => GetDashboardStats(sl()),
-  );
+  sl.registerLazySingleton<GetDashboardStats>(() => GetDashboardStats(sl()));
   sl.registerLazySingleton<WatchDashboardStats>(
     () => WatchDashboardStats(sl()),
   );
@@ -339,10 +338,7 @@ Future<void> init() async {
   // AUDIT FEATURE
   // ==========================
   sl.registerLazySingleton<AuditRemoteDataSource>(
-    () => AuditRemoteDataSourceImpl(
-      client: sl(),
-      authLocalDataSource: sl(),
-    ),
+    () => AuditRemoteDataSourceImpl(client: sl(), authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<AuditRepository>(
     () => AuditRepositoryImpl(
@@ -352,15 +348,9 @@ Future<void> init() async {
       pollingFallbackInterval: const Duration(seconds: 60),
     ),
   );
-  sl.registerLazySingleton<GetAuditByMonth>(
-    () => GetAuditByMonth(sl()),
-  );
-  sl.registerLazySingleton<CloseSector>(
-    () => CloseSector(sl()),
-  );
-  sl.registerLazySingleton<WatchAuditByMonth>(
-    () => WatchAuditByMonth(sl()),
-  );
+  sl.registerLazySingleton<GetAuditByMonth>(() => GetAuditByMonth(sl()));
+  sl.registerLazySingleton<CloseSector>(() => CloseSector(sl()));
+  sl.registerLazySingleton<WatchAuditByMonth>(() => WatchAuditByMonth(sl()));
   // Singleton: same instance persists across tab navigation
   sl.registerLazySingleton<AuditCubit>(
     () => AuditCubit(
@@ -379,13 +369,21 @@ Future<void> init() async {
   sl.registerLazySingleton<IncidentRepository>(
     () => IncidentRepositoryImpl(remoteDataSource: sl()),
   );
-  sl.registerLazySingleton<CreateIncidentUseCase>(() => CreateIncidentUseCase(sl()));
-  sl.registerLazySingleton<ResolveIncidentUseCase>(() => ResolveIncidentUseCase(sl()));
+  sl.registerLazySingleton<CreateIncidentUseCase>(
+    () => CreateIncidentUseCase(sl()),
+  );
+  sl.registerLazySingleton<ResolveIncidentUseCase>(
+    () => ResolveIncidentUseCase(sl()),
+  );
   sl.registerLazySingleton<FindIncidentsByConnectionUseCase>(
     () => FindIncidentsByConnectionUseCase(sl()),
   );
-  sl.registerLazySingleton<FindIncidentByIdUseCase>(() => FindIncidentByIdUseCase(sl()));
-  sl.registerLazySingleton<FindIncidentsUseCase>(() => FindIncidentsUseCase(sl()));
+  sl.registerLazySingleton<FindIncidentByIdUseCase>(
+    () => FindIncidentByIdUseCase(sl()),
+  );
+  sl.registerLazySingleton<FindIncidentsUseCase>(
+    () => FindIncidentsUseCase(sl()),
+  );
   sl.registerLazySingleton<FindIncidentCategoriesUseCase>(
     () => FindIncidentCategoriesUseCase(sl()),
   );
@@ -409,14 +407,9 @@ Future<void> init() async {
   sl.registerLazySingleton<ThemeRepository>(
     () => ThemeRepositoryImpl(dataSource: sl()),
   );
-  sl.registerLazySingleton<GetThemeMode>(
-    () => GetThemeMode(sl()),
-  );
-  sl.registerLazySingleton<SaveThemeMode>(
-    () => SaveThemeMode(sl()),
-  );
+  sl.registerLazySingleton<GetThemeMode>(() => GetThemeMode(sl()));
+  sl.registerLazySingleton<SaveThemeMode>(() => SaveThemeMode(sl()));
   sl.registerSingleton<ThemeCubit>(
     ThemeCubit(getThemeMode: sl(), saveThemeMode: sl()),
   );
 }
-

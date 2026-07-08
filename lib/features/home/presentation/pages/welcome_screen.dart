@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
-
 /// Welcome / Home screen — SRP: only handles the welcome UI.
 /// DIP: depends on [AuthLocalDataSource] abstraction, not a concrete class.
 class WelcomeScreen extends StatefulWidget {
@@ -49,8 +48,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Future<void> _loadUser() async {
     try {
-      final user = await di.sl<AuthLocalDataSource>().getUser();
-      if (mounted) setState(() => _user = user);
+      final authResponse = await di.sl<AuthLocalDataSource>().getAuthResponse();
+      if (mounted) setState(() => _user = authResponse?.user);
     } catch (_) {}
   }
 
@@ -132,10 +131,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
             sliver: SliverToBoxAdapter(
-              child: _SystemInfoCard(
-                isDark: isDark,
-                version: _version,
-              ),
+              child: _SystemInfoCard(isDark: isDark, version: _version),
             ),
           ),
         ],

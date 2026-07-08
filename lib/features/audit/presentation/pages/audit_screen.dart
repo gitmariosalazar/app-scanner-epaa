@@ -419,9 +419,7 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
             TextButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.cancel_rounded, size: 18),
-              style: TextButton.styleFrom(
-                foregroundColor: _C.accent,
-              ),
+              style: TextButton.styleFrom(foregroundColor: _C.accent),
               label: const Text('Cancelar'),
             ),
           ],
@@ -935,10 +933,14 @@ class _CloseSectorDialogState extends State<_CloseSectorDialog> {
 
   Future<void> _loadSupervisor() async {
     try {
-      final user = await di.sl<AuthLocalDataSource>().getUser();
-      if (mounted) setState(() => _supervisorId = user?.id ?? 'supervisor');
+      final user = await di.sl<AuthLocalDataSource>().getAuthResponse();
+      if (mounted) {
+        setState(() => _supervisorId = user?.user.id ?? 'supervisor');
+      }
     } catch (_) {
-      if (mounted) setState(() => _supervisorId = 'supervisor');
+      if (mounted) {
+        setState(() => _supervisorId = 'supervisor');
+      }
     }
   }
 

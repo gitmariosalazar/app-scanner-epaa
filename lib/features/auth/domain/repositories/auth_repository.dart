@@ -1,16 +1,16 @@
 // lib/features/auth/domain/repositories/auth_repository.dart
 import 'package:dartz/dartz.dart';
 import 'package:flutter_application/core/error/failure.dart';
-import 'package:flutter_application/features/auth/domain/entities/user.dart';
+import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
 import 'package:flutter_application/features/auth/domain/entities/verify_user_result.dart';
 
 abstract class AuthRepository {
-  Future<Either<Failure, User>> login(
+  Future<Either<Failure, AuthResponseModel>> login(
     String username_or_email,
     String password,
   );
   Future<Either<Failure, void>> logout();
-  Future<Either<Failure, User>> checkAuthStatus();
+  Future<Either<Failure, AuthResponseModel>> checkAuthStatus();
 
   /// Verifies whether a user with the given identifier exists in the remote system.
   /// Used to guard token-cached sessions against deleted/deactivated accounts.

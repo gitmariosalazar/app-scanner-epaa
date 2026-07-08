@@ -1,6 +1,5 @@
 // lib/features/incidents/presentation/widgets/incident_card.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_application/features/incidents/domain/entities/incident.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
 import 'package:intl/intl.dart';
 

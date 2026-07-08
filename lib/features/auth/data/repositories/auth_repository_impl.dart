@@ -4,7 +4,7 @@ import 'package:flutter_application/core/error/exception.dart';
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:flutter_application/features/auth/domain/entities/user.dart';
+import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
 import 'package:flutter_application/features/auth/domain/entities/verify_user_result.dart';
 import 'package:flutter_application/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_application/core/services/websocket_service.dart';
@@ -22,7 +22,7 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<Either<Failure, User>> login(
+  Future<Either<Failure, AuthResponseModel>> login(
     String username_or_email,
     String password,
   ) async {
@@ -36,9 +36,14 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDataSource.cacheUser(authResponse.user);
 
       webSocketService.disconnect();
-      webSocketService.connect(Environment.apiUrl, token: authResponse.accessToken);
+      webSocketService.connect(
+        Environment.apiUrl,
+        token: authResponse.accessToken,
+      );
+      print('✅✅✅✅✅✅ Token Repository Impl: ${authResponse.accessToken}');
+      print('✅✅✅✅✅✅ URL Repository Impl: ${Environment.apiUrl}');
 
-      return Right(authResponse.user);
+      return Right(authResponse);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
@@ -67,12 +72,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> checkAuthStatus() async {
+  Future<Either<Failure, AuthResponseModel>> checkAuthStatus() async {
     try {
       final token = await localDataSource.getToken();
-      final user = await localDataSource.getUser();
-      if (token != null && token.isNotEmpty && user != null) {
-        return Right(user);
+      final authResponse = await localDataSource.getAuthResponse();
+      if (token != null && token.isNotEmpty && authResponse != null) {
+        return Right(authResponse);
       }
       return Left(CacheFailure(message: 'No active session'));
     } catch (_) {

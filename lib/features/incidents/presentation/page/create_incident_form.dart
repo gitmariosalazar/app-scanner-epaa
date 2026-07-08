@@ -598,7 +598,7 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
       priority: 'MEDIA',
       latitude: _latitude!,
       longitude: _longitude!,
-      images: _photoFiles.map((file) => file.path).toList(),
+      images: _photoFiles,
     );
 
     if (!mounted) return;

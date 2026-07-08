@@ -81,24 +81,81 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
   Future<IncidentModel> createIncident({
     required CreateIncidentRequest request,
   }) async {
-    final headers = await _getHeaders();
-    final uri = Uri.parse('$_baseUrl/incidents/create-incident');
-    final response = await client.post(
-      uri,
-      headers: headers,
-      body: jsonEncode(request.toJson()),
-    );
+    try {
+      final token = await authLocalDataSource.getToken();
 
-    _checkHttpStatus(response.statusCode, response.body);
+      final uri = Uri.parse('$_baseUrl/incidents/create-incident');
 
-    final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = jsonResponse['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw ServerException(
-        'La respuesta no contiene datos válidos del incidente.',
-      );
+      var requestMultipart = http.MultipartRequest('POST', uri);
+
+      requestMultipart.headers.addAll({'Authorization': 'Bearer $token'});
+
+      // Campos de texto
+      if (request.connectionId != null) {
+        requestMultipart.fields['connectionId'] = request.connectionId!;
+      }
+      if (request.readingId != null) {
+        requestMultipart.fields['readingId'] = request.readingId.toString();
+      }
+      requestMultipart.fields['incidentTypeId'] = request.incidentTypeId
+          .toString();
+      requestMultipart.fields['reportDescription'] = request.reportDescription;
+      requestMultipart.fields['referenceAddress'] = request.referenceAddress;
+      requestMultipart.fields['reportOrigin'] = request.reportOrigin;
+      requestMultipart.fields['priority'] = request.priority;
+      requestMultipart.fields['latitude'] = request.latitude.toString();
+      requestMultipart.fields['longitude'] = request.longitude.toString();
+
+      // Archivos (imágenes) - Soporta JPG, PNG, WEBP, GIF, etc.
+      for (var file in request.images) {
+        final fileBytes = await file.readAsBytes();
+        final extension = file.path.split('.').last.toLowerCase();
+
+        http.MediaType contentType;
+        switch (extension) {
+          case 'png':
+            contentType = http.MediaType('image', 'png');
+            break;
+          case 'webp':
+            contentType = http.MediaType('image', 'webp');
+            break;
+          case 'gif':
+            contentType = http.MediaType('image', 'gif');
+            break;
+          case 'jpg':
+          case 'jpeg':
+          default:
+            contentType = http.MediaType('image', 'jpeg');
+        }
+
+        final multipartFile = http.MultipartFile.fromBytes(
+          'images',
+          fileBytes,
+          filename: file.path.split('/').last,
+          contentType: contentType,
+        );
+
+        requestMultipart.files.add(multipartFile);
+      }
+
+      final streamedResponse = await requestMultipart.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      _checkHttpStatus(response.statusCode, response.body);
+
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = jsonResponse['data'] as Map<String, dynamic>?;
+
+      if (data == null) {
+        throw ServerException(
+          'La respuesta no contiene datos válidos del incidente.',
+        );
+      }
+
+      return IncidentModel.fromJson(data);
+    } catch (e) {
+      throw ServerException(e.toString());
     }
-    return IncidentModel.fromJson(data);
   }
 
   @override

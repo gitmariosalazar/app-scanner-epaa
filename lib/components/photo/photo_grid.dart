@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_application/shared/files/presentation/use_file_preview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_application/shared/files/domain/repositories/file_repository.dart';
-import 'package:flutter_application/shared/files/presentation/use_file_preview.dart';
 
 class PhotoGallery extends ConsumerStatefulWidget {
-  final List<String>
-  imagePaths; // Rutas relativas (ej: "images/incidents/xxx.jpg")
+  final List<String> imagePaths;
   final String? title;
 
   const PhotoGallery({super.key, required this.imagePaths, this.title});
@@ -22,16 +20,7 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
   @override
   Widget build(BuildContext context) {
     if (widget.imagePaths.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.photo_library_outlined, size: 80, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No hay fotos disponibles'),
-          ],
-        ),
-      );
+      return _buildEmptyState();
     }
 
     final cs = Theme.of(context).colorScheme;
@@ -44,53 +33,28 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Text(
               widget.title!,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
             ),
           ),
 
         SizedBox(
-          height: 340,
+          height: 380,
           child: PageView.builder(
+            controller: PageController(initialPage: _currentIndex),
             onPageChanged: (index) => setState(() => _currentIndex = index),
             itemCount: widget.imagePaths.length,
-
             itemBuilder: (context, index) {
               final path = widget.imagePaths[index];
-              print('📸 Intentando cargar: $path');
+              final cleanPath = path.startsWith('/') ? path.substring(1) : path;
 
               return GestureDetector(
                 onTap: () => _showFullScreen(context, index),
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final previewState = ref.watch(useFilePreviewProvider);
-
-                    if (previewState.blobUrl == null && !previewState.loading) {
-                      print('🔄 Iniciando load para: $path');
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        ref
-                            .read(useFilePreviewProvider.notifier)
-                            .load(FileCategory.incidents, path);
-                      });
-                    }
-
-                    print(
-                      'Blob URL: ${previewState.blobUrl} | Loading: ${previewState.loading} | Error: ${previewState.error}',
-                    );
-
-                    return CachedNetworkImage(
-                      imageUrl: previewState.blobUrl ?? '',
-                      fit: BoxFit.contain,
-                      placeholder: (_, __) =>
-                          const Center(child: CircularProgressIndicator()),
-                      errorWidget: (_, __, ___) => const Icon(
-                        Icons.broken_image_rounded,
-                        size: 60,
-                        color: Colors.red,
-                      ),
-                    );
-                  },
+                child: _PhotoItem(
+                  key: ValueKey(cleanPath), // ← Clave única
+                  path: cleanPath,
                 ),
               );
             },
@@ -99,18 +63,20 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
 
         // Indicadores
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               widget.imagePaths.length,
               (index) => AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _currentIndex == index ? 24 : 8,
+                duration: const Duration(milliseconds: 400),
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                width: _currentIndex == index ? 32 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _currentIndex == index ? cs.primary : cs.outline,
+                  color: _currentIndex == index
+                      ? cs.primary
+                      : cs.outline.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -118,6 +84,26 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.photo_library_outlined,
+            size: 96,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No hay fotos disponibles',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -134,8 +120,54 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
   }
 }
 
-// ==================== FULL SCREEN GALLERY ====================
+// ==================== WIDGET POR FOTO ====================
+class _PhotoItem extends ConsumerWidget {
+  final String path;
 
+  const _PhotoItem({super.key, required this.path});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final previewState = ref.watch(useFilePreviewFamilyProvider(path));
+
+    if (previewState.bytes == null && !previewState.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(useFilePreviewFamilyProvider(path).notifier)
+            .load(FileCategory.incidents, path);
+      });
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: previewState.bytes != null
+          ? Image.memory(
+              previewState.bytes!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildErrorWidget(),
+            )
+          : _buildLoadingWidget(),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 3)),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: const Center(
+        child: Icon(Icons.broken_image_rounded, size: 64, color: Colors.grey),
+      ),
+    );
+  }
+}
+
+// ==================== FULL SCREEN ====================
 class FullScreenPhotoGallery extends ConsumerStatefulWidget {
   final List<String> imagePaths;
   final int initialIndex;
@@ -168,11 +200,11 @@ class _FullScreenPhotoGalleryState
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.85),
+        backgroundColor: Colors.black.withOpacity(0.9),
         title: Text('${_currentIndex + 1} / ${widget.imagePaths.length}'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close, size: 28),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -183,24 +215,8 @@ class _FullScreenPhotoGalleryState
         itemCount: widget.imagePaths.length,
         itemBuilder: (context, index) {
           final path = widget.imagePaths[index];
-
-          return Consumer(
-            builder: (context, ref, child) {
-              final previewState = ref.watch(useFilePreviewProvider);
-
-              return InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 5,
-                child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: previewState.blobUrl ?? '',
-                    fit: BoxFit.contain,
-                    placeholder: (_, __) => const CircularProgressIndicator(),
-                  ),
-                ),
-              );
-            },
-          );
+          final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+          return _PhotoItem(path: cleanPath);
         },
       ),
     );

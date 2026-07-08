@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/components/empty/EmptyData.dart';
 import 'package:flutter_application/components/photo/photo_grid.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
-import 'package:flutter_application/shared/files/domain/repositories/file_repository.dart';
-import 'package:flutter_application/shared/files/presentation/use_file_preview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -484,12 +482,11 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                       'FOTOS DE LA RESOLUCIÓN - EVIDENCIA',
                     ),
                     const SizedBox(height: 8),
-
                     PhotoGallery(
                       imagePaths: widget.incident.photosResolution
                           .map((p) => p.filePath)
                           .toList(),
-                      title: 'Fotos del Reporte',
+                      title: 'Fotos de Resolución',
                     ),
                     const SizedBox(height: 16),
                   ] else ...[

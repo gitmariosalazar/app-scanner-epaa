@@ -33,16 +33,18 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> checkAuthStatus() async {
     final localResult = await checkAuthStatusUseCase(NoParams());
 
-    await localResult.fold((_) async => emit(LoginInitial()), (user) async {
+    await localResult.fold((_) async => emit(LoginInitial()), (
+      authResponse,
+    ) async {
       final verifyResult = await verifyUserUseCase(
-        VerifyUserParams(usernameOrEmail: user.username),
+        VerifyUserParams(usernameOrEmail: authResponse.user.username),
       );
 
       verifyResult.fold(
         (failure) {
           if (failure is NetworkFailure) {
             // ✅ No internet — keep cached session, work offline
-            emit(LoginSuccess(user));
+            emit(LoginSuccess(authResponse.user, authResponse.accessToken));
           } else {
             // ⛔ Unexpected server error → force re-login
             _clearLocalSession();
@@ -52,7 +54,7 @@ class LoginCubit extends Cubit<LoginState> {
 
         (verifyData) {
           if (verifyData.exists) {
-            emit(LoginSuccess(user));
+            emit(LoginSuccess(authResponse.user, authResponse.accessToken));
           } else {
             _clearLocalSession();
             emit(
@@ -72,9 +74,12 @@ class LoginCubit extends Cubit<LoginState> {
     final result = await loginUseCase(
       LoginParams(usernameOrEmail: usernameOrEmail, password: password),
     );
+
+    print('✅✅✅✅✅✅ Token Login Cubit: ${result}');
     result.fold(
       (failure) => emit(LoginFailure(failure.message)),
-      (user) => emit(LoginSuccess(user)),
+      (authResponse) =>
+          emit(LoginSuccess(authResponse.user, authResponse.accessToken)),
     );
   }
 

@@ -2,16 +2,16 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/core/usecases/usecase.dart';
-import 'package:flutter_application/features/auth/domain/entities/user.dart';
+import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
 import 'package:flutter_application/features/auth/domain/repositories/auth_repository.dart';
 
-class LoginUseCase implements UseCase<User, LoginParams> {
+class LoginUseCase implements UseCase<AuthResponseModel, LoginParams> {
   final AuthRepository repository;
 
   LoginUseCase(this.repository);
 
   @override
-  Future<Either<Failure, User>> call(LoginParams params) {
+  Future<Either<Failure, AuthResponseModel>> call(LoginParams params) {
     return repository.login(params.usernameOrEmail, params.password);
   }
 }

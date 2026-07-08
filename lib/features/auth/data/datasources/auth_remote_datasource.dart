@@ -38,8 +38,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final json = jsonDecode(response.body);
         final data = json['data'];
-        if (data == null) throw ServerException('Invalid response: missing data');
-        if (data is Map<String, dynamic>) return AuthResponseModel.fromJson(data);
+        if (data == null) {
+          throw ServerException('Invalid response: missing data');
+        }
+        if (data is Map<String, dynamic>) {
+          print('✅✅✅✅✅✅ Data: ${data}');
+          return AuthResponseModel.fromJson(data);
+        }
         throw ServerException('Invalid response: data is not an object');
       } else {
         try {

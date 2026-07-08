@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
-import 'package:flutter_application/features/incidents/domain/entities/incident.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
 import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
 import 'package:flutter_application/features/incidents/presentation/cubit/incident_state.dart';

@@ -1,15 +1,17 @@
 // lib/shared/files/presentation/providers/file_providers.dart
-import 'package:flutter_application/core/di/injection.dart' as di;
-import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
-import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/shared/files/domain/repositories/file_repository.dart';
 import 'package:flutter_application/shared/files/data/repositories/file_repository_impl.dart';
 import 'package:flutter_application/shared/files/usecases/preview_file_use_case.dart';
-import 'package:flutter_riverpod/legacy.dart';
+
+// ==================== PROVIDERS BASE ====================
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
@@ -20,14 +22,19 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // Interceptor JWT
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _getAuthToken();
+        print('🔄 Interceptor activado para: ${options.uri}');
+
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('CACHED_AUTH_TOKEN');
+
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-          print('🔑 Token JWT agregado a la petición');
+          print('✅ Token agregado correctamente');
+        } else {
+          print('⚠️ No se encontró token');
         }
         return handler.next(options);
       },
@@ -55,20 +62,25 @@ final previewFileUseCaseProvider = Provider<PreviewFileUseCase>((ref) {
   return PreviewFileUseCase(repo);
 });
 
-// ==================== USE FILE PREVIEW ====================
+// ==================== USE FILE PREVIEW (FAMILY) ====================
 
-final useFilePreviewProvider =
-    StateNotifierProvider<UseFilePreviewNotifier, UseFilePreviewResult>((ref) {
+// Provider familiar: uno por cada filename (evita que todas las fotos compartan el mismo estado)
+final useFilePreviewFamilyProvider =
+    StateNotifierProvider.family<
+      UseFilePreviewNotifier,
+      UseFilePreviewResult,
+      String
+    >((ref, filename) {
       final useCase = ref.watch(previewFileUseCaseProvider);
       return UseFilePreviewNotifier(useCase);
     });
 
 class UseFilePreviewResult {
-  final String? blobUrl;
+  final Uint8List? bytes;
   final bool loading;
   final String? error;
 
-  const UseFilePreviewResult({this.blobUrl, this.loading = false, this.error});
+  const UseFilePreviewResult({this.bytes, this.loading = false, this.error});
 }
 
 class UseFilePreviewNotifier extends StateNotifier<UseFilePreviewResult> {
@@ -80,32 +92,15 @@ class UseFilePreviewNotifier extends StateNotifier<UseFilePreviewResult> {
     state = const UseFilePreviewResult(loading: true);
     try {
       final bytes = await _useCase.execute(type: type, filename: filename);
-      final url = Uri.dataFromBytes(bytes, mimeType: 'image/jpeg').toString();
-      state = UseFilePreviewResult(blobUrl: url);
+      state = UseFilePreviewResult(bytes: bytes);
+      print('✅ Preview cargado: ${bytes.length} bytes para $filename');
     } catch (e) {
       state = UseFilePreviewResult(error: e.toString());
+      print('❌ Error preview $filename: $e');
     }
   }
 
   void clear() {
     state = const UseFilePreviewResult();
   }
-}
-
-// ==================== HELPER TOKEN ====================
-
-Future<String?> _getAuthToken() async {
-  try {
-    final loginCubit = di.sl<LoginCubit>();
-    final state = loginCubit.state;
-
-    if (state is LoginSuccess) {
-      // Ajusta según cómo tengas el token en LoginSuccess
-      return state.user.firstName; // Si tienes token en el state
-      // return state.user.token; // Si el token está dentro de User
-    }
-  } catch (e) {
-    print('Error obteniendo token: $e');
-  }
-  return null;
 }

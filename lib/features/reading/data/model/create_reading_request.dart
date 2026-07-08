@@ -3,6 +3,18 @@ import 'package:json_annotation/json_annotation.dart';
 part 'create_reading_request.g.dart';
 
 @JsonSerializable()
+class LocationCapture {
+  final double lat;
+  final double lng;
+
+  const LocationCapture({required this.lat, required this.lng});
+
+  factory LocationCapture.fromJson(Map<String, dynamic> json) =>
+      _$LocationCaptureFromJson(json);
+  Map<String, dynamic> toJson() => _$LocationCaptureToJson(this);
+}
+
+@JsonSerializable()
 class CreateReadingRequest {
   final String connectionId;
   final int sector;
@@ -20,6 +32,7 @@ class CreateReadingRequest {
 
   final double averageConsumption;
   final String previousMonthReading;
+  final LocationCapture? readingLocation;
 
   CreateReadingRequest({
     required this.connectionId,
@@ -35,6 +48,7 @@ class CreateReadingRequest {
     this.novelty,
     required this.averageConsumption,
     required this.previousMonthReading,
+    this.readingLocation,
   });
 
   Map<String, dynamic> toJson() => _$CreateReadingRequestToJson(this);

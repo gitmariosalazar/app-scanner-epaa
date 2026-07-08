@@ -6,7 +6,7 @@ import '../../domain/repositories/file_repository.dart';
 class FileRepositoryImpl implements FileRepository {
   final Dio _dio;
 
-  FileRepositoryImpl(this._dio);
+  FileRepositoryImpl(this._dio); // ← Usa el Dio inyectado
 
   @override
   Future<Uint8List> preview({

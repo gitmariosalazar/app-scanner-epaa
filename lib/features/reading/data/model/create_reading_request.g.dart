@@ -6,6 +6,15 @@ part of 'create_reading_request.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+LocationCapture _$LocationCaptureFromJson(Map<String, dynamic> json) =>
+    LocationCapture(
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$LocationCaptureToJson(LocationCapture instance) =>
+    <String, dynamic>{'lat': instance.lat, 'lng': instance.lng};
+
 CreateReadingRequest _$CreateReadingRequestFromJson(
   Map<String, dynamic> json,
 ) => CreateReadingRequest(
@@ -22,6 +31,11 @@ CreateReadingRequest _$CreateReadingRequestFromJson(
   novelty: json['novelty'] as String?,
   averageConsumption: (json['averageConsumption'] as num).toDouble(),
   previousMonthReading: json['previousMonthReading'] as String,
+  readingLocation: json['readingLocation'] == null
+      ? null
+      : LocationCapture.fromJson(
+          json['readingLocation'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$CreateReadingRequestToJson(
@@ -40,4 +54,5 @@ Map<String, dynamic> _$CreateReadingRequestToJson(
   'novelty': instance.novelty,
   'averageConsumption': instance.averageConsumption,
   'previousMonthReading': instance.previousMonthReading,
+  'readingLocation': instance.readingLocation,
 };
