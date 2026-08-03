@@ -41,7 +41,7 @@ assets/.env.dev
 .pub/
 /build/
 /coverage/
-.env
+.env.*
 .env.dev
 test.md
 # Symbolication related

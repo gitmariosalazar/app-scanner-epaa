@@ -61,7 +61,10 @@ class _ProfileBody extends StatelessWidget {
             delegate: SliverChildListDelegate([
               _ProfileStatsRow(user: user),
               const SizedBox(height: 24),
-              _SectionHeader(icon: Icons.person_outline_rounded, title: 'Información Personal'),
+              _SectionHeader(
+                icon: Icons.person_outline_rounded,
+                title: 'Información Personal',
+              ),
               const SizedBox(height: 12),
               _InfoTile(
                 icon: Icons.badge_rounded,
@@ -81,11 +84,17 @@ class _ProfileBody extends StatelessWidget {
                 value: user.email,
               ),
               const SizedBox(height: 24),
-              _SectionHeader(icon: Icons.shield_rounded, title: 'Roles y Permisos'),
+              _SectionHeader(
+                icon: Icons.shield_rounded,
+                title: 'Roles y Permisos',
+              ),
               const SizedBox(height: 12),
               _RolesCard(roles: user.roles),
               const SizedBox(height: 24),
-              _SectionHeader(icon: Icons.business_rounded, title: 'Organización'),
+              _SectionHeader(
+                icon: Icons.business_rounded,
+                title: 'Organización',
+              ),
               const SizedBox(height: 12),
               _OrgCard(),
               const SizedBox(height: 32),
@@ -111,7 +120,16 @@ class _ProfileHeroSliver extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isTablet = context.isTablet;
     final avatarR = isTablet ? 48.0 : 40.0;
-    final bannerH = isTablet ? 220.0 : 195.0;
+    final bannerH = isTablet
+        ? 250.0
+        : 225.0; // Aumentado para evitar overflow en SafeArea
+
+    final isSuperAdmin = user.roles.any(
+      (r) => r.toUpperCase() == 'SUPER ADMINISTRADOR',
+    );
+    final dotColor = user.isActive
+        ? (isSuperAdmin ? const Color(0xFFFFC107) : const Color(0xFF1EB980))
+        : Colors.grey;
 
     return SliverAppBar(
       expandedHeight: bannerH,
@@ -140,25 +158,32 @@ class _ProfileHeroSliver extends StatelessWidget {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 52, 20, 18),
+              padding: const EdgeInsets.fromLTRB(20, 45, 20, 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── EPAA badge ────────────────────────────────
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: cs.onPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: cs.onPrimary.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: cs.onPrimary.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 6, height: 6,
+                          width: 6,
+                          height: 6,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF1EB980), shape: BoxShape.circle,
+                            color: Color(0xFF1EB980),
+                            shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -185,19 +210,41 @@ class _ProfileHeroSliver extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: cs.onPrimary.withValues(alpha: 0.2),
                         ),
-                        child: CircleAvatar(
-                          radius: avatarR,
-                          backgroundColor: cs.onPrimary,
-                          child: Text(
-                            user.firstName.isNotEmpty
-                                ? user.firstName[0].toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              fontSize: avatarR * 0.85,
-                              fontWeight: FontWeight.w900,
-                              color: cs.primary,
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: avatarR,
+                              backgroundColor: cs.onPrimary,
+                              child: Text(
+                                user.firstName.isNotEmpty
+                                    ? user.firstName[0].toUpperCase() +
+                                          user.lastName[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  fontSize: avatarR * 0.85,
+                                  fontWeight: FontWeight.w900,
+                                  color: cs.primary,
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 2,
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: dotColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: cs
+                                        .primary, // Simula el recorte haciendo match con el fondo
+                                    width: 3.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -207,7 +254,7 @@ class _ProfileHeroSliver extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '${user.firstName} ${user.lastName}',
+                              '${user.firstName.split(' ').first} ${user.lastName.split(' ').first}',
                               style: TextStyle(
                                 color: cs.onPrimary,
                                 fontSize: isTablet ? 20 : 17,
@@ -264,7 +311,8 @@ class _ActiveBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 7, height: 7,
+            width: 7,
+            height: 7,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
@@ -310,9 +358,9 @@ class _ProfileStatsRow extends StatelessWidget {
           ),
           _StatDivider(),
           _StatItem(
-            icon: Icons.location_city_rounded,
-            value: '7',
-            label: 'Sectores',
+            icon: Icons.security_rounded,
+            value: user.permissions.length.toString(),
+            label: 'Permisos',
             color: const Color(0xFF1EB980),
           ),
           _StatDivider(),
@@ -574,7 +622,11 @@ class _OrgCard extends StatelessWidget {
               color: cs.primaryContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.water_drop_rounded, color: cs.onPrimaryContainer, size: 24),
+            child: Icon(
+              Icons.water_drop_rounded,
+              color: cs.onPrimaryContainer,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -592,19 +644,24 @@ class _OrgCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   'Empresa Pública de Agua y Alcantarillado',
-                  style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.location_on_rounded, color: cs.primary, size: 12),
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: cs.primary,
+                      size: 12,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       'Antonio Ante, Ecuador',
-                      style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: cs.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -637,7 +694,9 @@ class _LogoutButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: cs.error,
           side: BorderSide(color: cs.error.withValues(alpha: 0.5), width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           backgroundColor: cs.errorContainer.withValues(alpha: 0.15),
         ),
       ),
@@ -658,10 +717,17 @@ class _LogoutButton extends StatelessWidget {
                 color: cs.errorContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.logout_rounded, color: cs.onErrorContainer, size: 20),
+              child: Icon(
+                Icons.logout_rounded,
+                color: cs.onErrorContainer,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            const Text('Cerrar Sesión', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text(
+              'Cerrar Sesión',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ],
         ),
         content: const Text('¿Seguro que deseas cerrar tu sesión actual?'),

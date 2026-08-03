@@ -11,6 +11,7 @@ class CreateIncidentRequest {
   final double latitude;
   final double longitude;
   final List<File> images;
+  final ReportClient? reportClient;
 
   const CreateIncidentRequest({
     this.connectionId,
@@ -23,5 +24,20 @@ class CreateIncidentRequest {
     required this.latitude,
     required this.longitude,
     required this.images,
+    this.reportClient,
+  });
+}
+
+class ReportClient {
+  final String firstName;
+  final String lastName;
+  final String? email;
+  final String? cellPhone;
+
+  const ReportClient({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.cellPhone,
   });
 }

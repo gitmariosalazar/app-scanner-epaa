@@ -32,7 +32,27 @@ class AuthRepositoryImpl implements AuthRepository {
         password,
       );
       debugPrint('AuthResponse: $authResponse');
+
+      // Validar si el usuario tiene el rol permitido para usar esta aplicación móvil.
+      // Permitimos acceso a 'LECTURISTA CAMPO' y opcionalmente a 'SUPER ADMINISTRADOR'.
+      final hasAccess = authResponse.user.roles.any((role) {
+        final upperRole = role.toUpperCase();
+        return upperRole == 'LECTURISTA CAMPO' ||
+            upperRole == 'SUPER ADMINISTRADOR';
+      });
+
+      if (!hasAccess) {
+        // No almacenamos el token ni sesión si no tiene el rol necesario.
+        return Left(
+          ServerFailure(
+            message:
+                'Acceso denegado. Esta aplicación es exclusiva para el personal de toma de lecturas.',
+          ),
+        );
+      }
+
       await localDataSource.cacheToken(authResponse.accessToken);
+      await localDataSource.cacheRefreshToken(authResponse.refreshToken);
       await localDataSource.cacheUser(authResponse.user);
 
       webSocketService.disconnect();
@@ -42,6 +62,36 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       print('✅✅✅✅✅✅ Token Repository Impl: ${authResponse.accessToken}');
       print('✅✅✅✅✅✅ URL Repository Impl: ${Environment.apiUrl}');
+
+      return Right(authResponse);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AuthResponseModel>> refreshToken(
+    String refreshToken,
+  ) async {
+    try {
+      final authResponse = await remoteDataSource.refreshToken(refreshToken);
+      debugPrint('RefreshTokenResponse: $authResponse');
+
+      await localDataSource.cacheToken(authResponse.accessToken);
+      // Backend rotates refresh tokens (single-use) — persist the new one.
+      await localDataSource.cacheRefreshToken(authResponse.refreshToken);
+      await localDataSource.cacheUser(authResponse.user);
+
+      // Update WebSocket with new token
+      webSocketService.disconnect();
+      webSocketService.connect(
+        Environment.apiUrl,
+        token: authResponse.accessToken,
+      );
 
       return Right(authResponse);
     } on NetworkException catch (e) {
@@ -64,6 +114,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
     try {
       await localDataSource.clearToken();
+      await localDataSource.clearRefreshToken();
       await localDataSource.clearUser();
       return const Right(null);
     } catch (_) {

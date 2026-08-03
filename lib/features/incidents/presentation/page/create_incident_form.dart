@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/components/text/acometida_id_input_formatter.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
@@ -35,6 +37,7 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
 
   int? _selectedCategoryId;
   String _selectedCategoryName = 'Seleccionar tipo de incidencia';
+  String _selectedCategoryPriority = 'MEDIA';
   final List<File> _photoFiles = [];
   bool _isSubmitting = false;
 
@@ -57,10 +60,21 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
   bool _isGettingLocation = false;
   bool _isGeocoding = false;
 
+  // Guest Form State
+  bool _isGuest = false;
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _cellPhoneController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _connectionIdController.text = widget.connectionId;
+
+    // Check if user is logged out (guest)
+    final loginState = context.read<LoginCubit>().state;
+    _isGuest = loginState is! LoginSuccess;
 
     _connectionIdController.addListener(() {
       if (_searchedReading != null &&
@@ -116,6 +130,11 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
         _isSearchingConnection = false;
         if (results.isNotEmpty) {
           _searchedReading = results.first;
+          if (_searchedReading!.connectionLocation?.lat != null &&
+              _searchedReading!.connectionLocation?.lng != null) {
+            _latitude = _searchedReading!.connectionLocation!.lat;
+            _longitude = _searchedReading!.connectionLocation!.lng;
+          }
         } else {
           _connectionSearchError = 'Código de conexión no encontrado';
         }
@@ -433,6 +452,35 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
               ),
             ],
           ),
+          if (_searchedReading?.connectionLocation?.lat != null &&
+              _searchedReading?.connectionLocation?.lng != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.tertiaryContainer,
+                  foregroundColor: colors.onTertiaryContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _latitude = _searchedReading!.connectionLocation!.lat;
+                    _longitude = _searchedReading!.connectionLocation!.lng;
+                  });
+                },
+                icon: const Icon(Icons.location_on, size: 16),
+                label: const Text(
+                  'Usar ubicación de acometida',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -587,6 +635,21 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
     }
 
     final connectionIdVal = _connectionIdController.text.trim();
+
+    ReportClient? clientData;
+    if (_isGuest) {
+      clientData = ReportClient(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
+        cellPhone: _cellPhoneController.text.trim().isEmpty
+            ? null
+            : _cellPhoneController.text.trim(),
+      );
+    }
+
     final request = CreateIncidentRequest(
       connectionId: connectionIdVal.isEmpty ? null : connectionIdVal,
       incidentTypeId: _selectedCategoryId!,
@@ -594,11 +657,12 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
       referenceAddress: _referenceAddressController.text.trim().isEmpty
           ? (_searchedReading?.address ?? '')
           : _referenceAddressController.text.trim(),
-      reportOrigin: 'LECTURISTA',
-      priority: 'MEDIA',
+      reportOrigin: 'WEB_USUARIO',
+      priority: _selectedCategoryPriority,
       latitude: _latitude!,
       longitude: _longitude!,
       images: _photoFiles,
+      reportClient: clientData,
     );
 
     if (!mounted) return;
@@ -607,6 +671,10 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _cellPhoneController.dispose();
     _descriptionController.dispose();
     _connectionIdController.dispose();
     super.dispose();
@@ -668,6 +736,12 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
                 // 1. Código de Conexión
                 _buildConnectionIdField(context, colors),
                 const SizedBox(height: 24),
+
+                // 1.5. Datos del Usuario (Solo si es Invitado)
+                if (_isGuest) ...[
+                  _buildGuestSection(context, colors),
+                  const SizedBox(height: 24),
+                ],
 
                 // 2. Foto de Evidencia (Obligatorio)
                 _buildPhotoSection(context),
@@ -921,6 +995,36 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
                       'Tarifa',
                       reading.rateName ?? 'Sin tarifa',
                       colors,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoRow(
+                      Icons.north,
+                      'Latitud',
+                      reading.connectionLocation?.lat?.toString() ??
+                          'No disponible',
+                      colors,
+                      valueColor: reading.permitReading == false
+                          ? colors.error
+                          : colors.onTertiaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildInfoRow(
+                      Icons.south,
+                      'Longitud',
+                      reading.connectionLocation?.lng?.toString() ??
+                          'No disponible',
+                      colors,
+                      valueColor: reading.permitReading == false
+                          ? colors.error
+                          : colors.onTertiaryContainer,
                     ),
                   ),
                 ],
@@ -1306,6 +1410,8 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
                                         setState(() {
                                           _selectedCategoryId = type.typeCode;
                                           _selectedCategoryName = type.typeName;
+                                          _selectedCategoryPriority =
+                                              type.suggestedPriority;
                                         });
                                         Navigator.pop(context);
                                       },
@@ -1436,6 +1542,153 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGuestSection(BuildContext context, ColorScheme colors) {
+    return Container(
+      padding: const EdgeInsets.all(0),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.outlineVariant.withOpacity(0.0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'DATOS DEL SOLICITANTE (OBLIGATORIO)',
+            style: TextStyle(
+              color: colors.onSurfaceVariant,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _firstNameController,
+                  enabled: !_isSubmitting,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Requerido'
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'Nombres *',
+                    hintText: 'Ej. Juan',
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                      color: colors.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _lastNameController,
+                  enabled: !_isSubmitting,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Requerido'
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'Apellidos *',
+                    hintText: 'Ej. Pérez',
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                      color: colors.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _emailController,
+                  enabled: !_isSubmitting,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    final emailEmpty = value == null || value.trim().isEmpty;
+                    final phoneEmpty = _cellPhoneController.text.trim().isEmpty;
+
+                    if (emailEmpty && phoneEmpty) {
+                      return 'Obligatorio si\nno hay teléfono';
+                    }
+                    if (!emailEmpty &&
+                        !RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
+                      return 'Correo inválido';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Correo',
+                    hintText: 'Ej. a@a.com',
+                    prefixIcon: Icon(
+                      Icons.email_outlined,
+                      color: colors.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _cellPhoneController,
+                  enabled: !_isSubmitting,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    final phoneEmpty = value == null || value.trim().isEmpty;
+                    final emailEmpty = _emailController.text.trim().isEmpty;
+
+                    if (phoneEmpty && emailEmpty) {
+                      return 'Obligatorio si\nno hay correo';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Teléfono',
+                    hintText: 'Ej. 098...',
+                    prefixIcon: Icon(
+                      Icons.phone_outlined,
+                      color: colors.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

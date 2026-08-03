@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-
+/*
 class ReadingBasicInfo extends Equatable {
   final int? readingId;
   final DateTime? previousReadingDate;
@@ -54,3 +54,4 @@ class ReadingBasicInfo extends Equatable {
     rateName,
   ];
 }
+*/

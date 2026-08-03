@@ -31,6 +31,21 @@ class Email {
   Map<String, dynamic> toJson() => _$EmailToJson(this);
 }
 
+@JsonSerializable()
+class ConnectionLocationDto {
+  @JsonKey(name: 'lat')
+  final double? lat;
+
+  @JsonKey(name: 'lng')
+  final double? lng;
+
+  ConnectionLocationDto({this.lat, this.lng});
+
+  factory ConnectionLocationDto.fromJson(Map<String, dynamic> json) =>
+      _$ConnectionLocationDtoFromJson(json);
+  Map<String, dynamic> toJson() => _$ConnectionLocationDtoToJson(this);
+}
+
 @JsonSerializable(explicitToJson: true)
 class ReadingInfoResponse {
   @JsonKey(name: 'readingId')
@@ -111,6 +126,9 @@ class ReadingInfoResponse {
   @JsonKey(name: 'permitReading', defaultValue: null)
   final bool? permitReading;
 
+  @JsonKey(name: 'connectionLocation', defaultValue: null)
+  final ConnectionLocationDto? connectionLocation;
+
   ReadingInfoResponse({
     this.readingId,
     this.previousReadingDate,
@@ -138,6 +156,7 @@ class ReadingInfoResponse {
     this.connectionStateName,
     this.connectionStateDescription,
     this.permitReading,
+    this.connectionLocation,
   });
 
   factory ReadingInfoResponse.fromJson(Map<String, dynamic> json) =>

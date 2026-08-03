@@ -37,6 +37,16 @@ dependencies:
   cached_network_image: '^3.4.1'
   flutter_riverpod: ^3.0.0
   share_plus: ^13.2.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+  flutter_launcher_icons: ^0.14.4
+  http_parser: ^4.1.2
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
+  connectivity_plus: ^6.1.5
+  internet_connection_checker: ^3.0.1
 
 flutter_launcher_icons:
   android: 'launcher_icon'
@@ -59,7 +69,8 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/Roboto-Regular.ttf
-    - .env
+    - .env.dev
+    - .env.production
   fonts:
     - family: Roboto
       fonts:

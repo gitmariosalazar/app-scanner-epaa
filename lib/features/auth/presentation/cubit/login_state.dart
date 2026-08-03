@@ -42,3 +42,16 @@ class LoginUserNotFound extends LoginState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Emitted when [SessionWatcherService] determines the session cannot be
+/// silently renewed (idle/backgrounded too long, or refresh outright
+/// failed). Unlike [LoginInitial], the UI keeps the current screen and
+/// shows a modal offering to extend or end the session.
+class LoginSessionExpired extends LoginState {
+  final User user;
+
+  const LoginSessionExpired(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}

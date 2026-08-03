@@ -11,34 +11,27 @@ import 'package:flutter_application/features/incidents/domain/usecases/find_inci
 import 'incident_state.dart';
 
 class IncidentCubit extends Cubit<IncidentState> {
-  final CreateIncidentUseCase _createIncidentUseCase;
-  final ResolveIncidentUseCase _resolveIncidentUseCase;
-  final FindIncidentsByConnectionUseCase _findIncidentsByConnectionUseCase;
-  final FindIncidentByIdUseCase _findIncidentByIdUseCase;
-  final FindIncidentsUseCase _findIncidentsUseCase;
-  final FindIncidentCategoriesUseCase _findIncidentCategoriesUseCase;
+  final CreateIncidentUseCase createIncidentUseCase;
+  final ResolveIncidentUseCase resolveIncidentUseCase;
+  final FindIncidentsByConnectionUseCase findIncidentsByConnectionUseCase;
+  final FindIncidentByIdUseCase findIncidentByIdUseCase;
+  final FindIncidentsUseCase findIncidentsUseCase;
+  final FindIncidentCategoriesUseCase findIncidentCategoriesUseCase;
 
   IncidentCubit({
-    required CreateIncidentUseCase createIncidentUseCase,
-    required ResolveIncidentUseCase resolveIncidentUseCase,
-    required FindIncidentsByConnectionUseCase findIncidentsByConnectionUseCase,
-    required FindIncidentByIdUseCase findIncidentByIdUseCase,
-    required FindIncidentsUseCase findIncidentsUseCase,
-    required FindIncidentCategoriesUseCase findIncidentCategoriesUseCase,
-  })  : _createIncidentUseCase = createIncidentUseCase,
-        _resolveIncidentUseCase = resolveIncidentUseCase,
-        _findIncidentsByConnectionUseCase = findIncidentsByConnectionUseCase,
-        _findIncidentByIdUseCase = findIncidentByIdUseCase,
-        _findIncidentsUseCase = findIncidentsUseCase,
-        _findIncidentCategoriesUseCase = findIncidentCategoriesUseCase,
-        super(IncidentInitial());
+    required this.createIncidentUseCase,
+    required this.resolveIncidentUseCase,
+    required this.findIncidentsByConnectionUseCase,
+    required this.findIncidentByIdUseCase,
+    required this.findIncidentsUseCase,
+    required this.findIncidentCategoriesUseCase,
+  }) : super(IncidentInitial());
 
-  Future<void> createIncident({
-    required CreateIncidentRequest request,
-  }) async {
+  Future<void> createIncident({required CreateIncidentRequest request}) async {
     emit(IncidentLoading());
-    final result = await _createIncidentUseCase(request);
+    final result = await createIncidentUseCase(request);
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (newIncident) => emit(
@@ -51,12 +44,12 @@ class IncidentCubit extends Cubit<IncidentState> {
   }
 
   Future<void> resolveIncident({
-    required int incidentId,
+    required String incidentId,
     required String resolverUserId,
     required ResolveIncidentRequest request,
   }) async {
     emit(IncidentLoading());
-    final result = await _resolveIncidentUseCase(
+    final result = await resolveIncidentUseCase(
       ResolveIncidentParams(
         incidentId: incidentId,
         resolverUserId: resolverUserId,
@@ -64,6 +57,7 @@ class IncidentCubit extends Cubit<IncidentState> {
       ),
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (resolvedIncident) => emit(
@@ -77,18 +71,20 @@ class IncidentCubit extends Cubit<IncidentState> {
 
   Future<void> loadIncidentsByConnection(String connectionId) async {
     emit(IncidentLoading());
-    final result = await _findIncidentsByConnectionUseCase(connectionId);
+    final result = await findIncidentsByConnectionUseCase(connectionId);
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (incidents) => emit(IncidentsLoaded(incidents)),
     );
   }
 
-  Future<void> loadIncidentById(int incidentId) async {
+  Future<void> loadIncidentById(String incidentId) async {
     emit(IncidentLoading());
-    final result = await _findIncidentByIdUseCase(incidentId);
+    final result = await findIncidentByIdUseCase(incidentId);
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (incident) => emit(IncidentDetailLoaded(incident)),
@@ -102,7 +98,7 @@ class IncidentCubit extends Cubit<IncidentState> {
     int? incidentTypeId,
   }) async {
     emit(IncidentLoading());
-    final result = await _findIncidentsUseCase(
+    final result = await findIncidentsUseCase(
       FindIncidentsParams(
         connectionId: connectionId,
         status: status,
@@ -111,6 +107,7 @@ class IncidentCubit extends Cubit<IncidentState> {
       ),
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (incidents) => emit(IncidentsLoaded(incidents)),
@@ -119,8 +116,11 @@ class IncidentCubit extends Cubit<IncidentState> {
 
   Future<void> loadIncidentCategories() async {
     emit(IncidentLoading());
-    final result = await _findIncidentCategoriesUseCase(NoParams());
+    final result = await findIncidentCategoriesUseCase(NoParams());
 
+    if (isClosed) return;
+
+    if (isClosed) return;
     result.fold(
       (failure) => emit(IncidentError(failure.message)),
       (categories) => emit(IncidentCategoriesLoaded(categories)),

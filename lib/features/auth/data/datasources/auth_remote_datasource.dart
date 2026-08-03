@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/core/error/exception.dart';
+import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
 import 'package:flutter_application/features/auth/domain/entities/verify_user_result.dart';
 import 'package:http/http.dart' as http;
 
 abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login(String username_or_email, String password);
+  Future<AuthResponseModel> refreshToken(String refreshToken);
   Future<void> logout();
 
   /// Throws [NetworkException] if offline. Throws [ServerException] if server errors.
@@ -15,9 +17,22 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
+  final AuthLocalDataSource authLocalDataSource;
   final String baseUrl = Environment.apiUrl;
 
-  AuthRemoteDataSourceImpl({required this.client});
+  AuthRemoteDataSourceImpl({
+    required this.client,
+    required this.authLocalDataSource,
+  });
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await authLocalDataSource.getToken();
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   @override
   Future<AuthResponseModel> login(
@@ -49,14 +64,63 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       } else {
         try {
           final json = jsonDecode(response.body);
+          final messageData = json['message'];
+          String errorMessage = 'Error al iniciar sesión';
+
+          if (messageData is List && messageData.isNotEmpty) {
+            errorMessage = messageData.join('\n');
+          } else if (messageData is String) {
+            errorMessage = messageData;
+          }
+
+          if (errorMessage.contains('Invalid credentials')) {
+            errorMessage =
+                'Usuario o contraseña incorrectos. Por favor, inténtalo de nuevo.';
+          }
+
+          throw ServerException(errorMessage, response.statusCode);
+        } catch (e) {
+          if (e is ServerException) rethrow;
           throw ServerException(
-            json['message']?.toString() ?? 'Login failed',
+            'Login failed with status code ${response.statusCode}',
+            response.statusCode,
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  Future<AuthResponseModel> refreshToken(String refreshToken) async {
+    return guardNetwork(() async {
+      final uri = Uri.parse('$baseUrl/auth/refresh');
+      final response = await client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final json = jsonDecode(response.body);
+        final data = json['data'];
+        if (data == null) {
+          throw ServerException('Invalid response: missing data');
+        }
+        if (data is Map<String, dynamic>) {
+          return AuthResponseModel.fromJson(data);
+        }
+        throw ServerException('Invalid response: data is not an object');
+      } else {
+        try {
+          final json = jsonDecode(response.body);
+          throw ServerException(
+            json['message']?.toString() ?? 'Refresh token failed',
             response.statusCode,
           );
         } catch (e) {
           if (e is ServerException) rethrow;
           throw ServerException(
-            'Login failed with status code ${response.statusCode}',
+            'Refresh token failed with status ${response.statusCode}',
             response.statusCode,
           );
         }

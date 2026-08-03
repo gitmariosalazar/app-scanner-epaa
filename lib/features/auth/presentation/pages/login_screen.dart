@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
+import 'package:flutter_application/components/common/custom_overlay_snack_bar.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -153,11 +154,10 @@ class _LoginViewState extends State<LoginView> {
                         if (state is LoginSuccess) {
                           context.go('/inicio');
                         } else if (state is LoginFailure) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(state.message),
-                              backgroundColor: theme.colorScheme.error,
-                            ),
+                          CustomOverlaySnackBar.show(
+                            context: context,
+                            message: state.message,
+                            type: SnackBarType.error,
                           );
                         }
                       },

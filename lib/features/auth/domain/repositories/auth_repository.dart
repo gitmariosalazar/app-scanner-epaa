@@ -6,11 +6,12 @@ import 'package:flutter_application/features/auth/domain/entities/verify_user_re
 
 abstract class AuthRepository {
   Future<Either<Failure, AuthResponseModel>> login(
-    String username_or_email,
+    String usernameOrEmail,
     String password,
   );
   Future<Either<Failure, void>> logout();
   Future<Either<Failure, AuthResponseModel>> checkAuthStatus();
+  Future<Either<Failure, AuthResponseModel>> refreshToken(String refreshToken);
 
   /// Verifies whether a user with the given identifier exists in the remote system.
   /// Used to guard token-cached sessions against deleted/deactivated accounts.

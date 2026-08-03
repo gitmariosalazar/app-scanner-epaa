@@ -50,6 +50,10 @@ extension ReadingInfoResponseX on dto.ReadingInfoResponse {
       connectionStateName: connectionStateName,
       connectionStateDescription: connectionStateDescription,
       permitReading: permitReading,
+      connectionLocation: ConnectionLocation(
+        lat: connectionLocation?.lat,
+        lng: connectionLocation?.lng,
+      ),
     );
   }
 

@@ -122,6 +122,23 @@ class LecturasScreen extends StatelessWidget {
               ),
               onTap: () => context.push('/manually-entry'),
             ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.cable,
+              enable: false,
+              title: 'Buscar Acometidas',
+              subtitle:
+                  'Accede a información de acometidas y medidores para buscar por CI/RUC o Número de Medidor',
+              gradient: const LinearGradient(
+                colors: [
+                  Color.fromARGB(255, 12, 100, 0),
+                  Color.fromARGB(169, 29, 193, 0),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/search-connection'),
+            ),
             const SizedBox(height: 28),
             const _SectionTitle('Observaciones y Novedades'),
             const SizedBox(height: 14),
@@ -194,10 +211,42 @@ class LecturasScreen extends StatelessWidget {
               ),
               onTap: () => context.push('/incidents-history'),
             ),
+
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.map_rounded,
+              enable: true,
+              title: 'Mapa de Incidencias',
+              subtitle: 'Ver el mapa con la ubicación de las incidencias',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF004D40), Color(0xFF00796B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/public-incidents-map'),
+            ),
+            const SizedBox(height: 12),
+
+            _ActionCard(
+              icon: Icons.dashboard,
+              enable: true,
+              title: 'Dashboard de Incidencias',
+              subtitle: 'Ver el dashboard de las incidencias',
+              gradient: const LinearGradient(
+                colors: [
+                  Color.fromARGB(255, 0, 132, 197),
+                  Color.fromARGB(255, 32, 179, 247),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/public-incidents-dashboard'),
+            ),
             const SizedBox(height: 32),
             const Center(
               child: Text(
-                'Rápido · Seguro · Simple',
+                'Empresa Pública de Agua Potable y Alcantarillado de Antonio Ante\nEPAA-AA',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
                   fontStyle: FontStyle.italic,

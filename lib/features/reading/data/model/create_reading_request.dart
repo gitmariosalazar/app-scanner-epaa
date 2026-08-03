@@ -32,6 +32,7 @@ class CreateReadingRequest {
 
   final double averageConsumption;
   final String previousMonthReading;
+  @JsonKey(name: 'locationCapture')
   final LocationCapture? readingLocation;
 
   CreateReadingRequest({

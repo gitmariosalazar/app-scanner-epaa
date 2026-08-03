@@ -1,37 +1,61 @@
-// lib/core/network/api_response.dart
 class ApiResponse<T> {
   final int statusCode;
   final String time;
   final List<String> message;
   final String url;
-  final List<T> data;
+  final T? data; // ← ACEPTA CUALQUIER TIPO: List, Map, String, null
 
   ApiResponse({
     required this.statusCode,
     required this.time,
     required this.message,
     required this.url,
-    required this.data,
+    this.data,
   });
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
-    T Function(Map<String, dynamic>) fromJsonT,
+    T Function(dynamic) fromJsonT, // ← ACEPTA cualquier tipo
   ) {
-    return ApiResponse<T>(
-      statusCode: json['status_code'] as int,
-      time: json['time'] as String,
-      message: List<String>.from(json['message'] as List),
-      url: json['url'] as String,
-      data: (json['data'] as List<dynamic>)
-          .map((e) => fromJsonT(e as Map<String, dynamic>))
-          .toList(),
-    );
-  }
+    final rawData = json['data'];
 
-  // Útil para debugging
-  @override
-  String toString() {
-    return 'ApiResponse(statusCode: $statusCode, message: $message, dataCount: ${data.length})';
+    T? parsedData;
+    if (rawData != null) {
+      if (rawData is List) {
+        // Si es lista → mapear cada elemento
+        parsedData = rawData.map(fromJsonT).toList() as T;
+      } else {
+        // Si es objeto, string, etc. → aplicar fromJsonT directamente
+        parsedData = fromJsonT(rawData);
+      }
+    }
+
+    int parseStatusCode(dynamic val) {
+      if (val == null) return 0;
+      if (val is int) return val;
+      if (val is String) {
+        return int.tryParse(val) ?? 0;
+      }
+      if (val is double) {
+        return val.toInt();
+      }
+      return 0;
+    }
+
+    List<String> parseMessage(dynamic val) {
+      if (val == null) return [];
+      if (val is List) {
+        return val.map((e) => e.toString()).toList();
+      }
+      return [val.toString()];
+    }
+
+    return ApiResponse<T>(
+      statusCode: parseStatusCode(json['status_code'] ?? json['statusCode']),
+      time: (json['time'] ?? json['timestamp'] ?? '').toString(),
+      message: parseMessage(json['message']),
+      url: (json['url'] ?? json['path'] ?? '').toString(),
+      data: parsedData,
+    );
   }
 }

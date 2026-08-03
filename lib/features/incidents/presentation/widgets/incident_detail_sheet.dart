@@ -1,7 +1,10 @@
 // lib/features/incidents/presentation/widgets/incident_detail_sheet.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/button/widget_button.dart';
+import 'package:flutter_application/components/chip/color_chip.dart';
 import 'package:flutter_application/components/empty/EmptyData.dart';
 import 'package:flutter_application/components/photo/photo_grid.dart';
+import 'package:flutter_application/features/form/presentation/pages/form_screen.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +18,7 @@ class IncidentDetailSheet extends ConsumerStatefulWidget {
   final String statusLabel;
   final Color priorityColor;
   final String Function(String) getImageUrl;
+  final VoidCallback? onIncidentResolved;
 
   const IncidentDetailSheet({
     super.key,
@@ -23,6 +27,7 @@ class IncidentDetailSheet extends ConsumerStatefulWidget {
     required this.statusLabel,
     required this.priorityColor,
     required this.getImageUrl,
+    this.onIncidentResolved,
   });
 
   @override
@@ -108,6 +113,21 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
     }
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'REPORTADO':
+        return const Color(0xFFE65100);
+      case 'EN_INSPECCION':
+        return Colors.deepPurpleAccent;
+      case 'RESUELTO':
+        return const Color(0xFF2E7D32);
+      case 'FALSO_REPORTE':
+        return const Color(0xFFC62828);
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -152,7 +172,7 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'ID: ${widget.incident.incidentId} · Clave Catastral: ${widget.incident.connectionId ?? "N/A"}',
+                        'Nº: ${widget.incident.incidentCode} · Clave Catastral: ${widget.incident.connectionId ?? "N/A"}',
                         style: TextStyle(
                           color: cs.onSurfaceVariant,
                           fontSize: 12,
@@ -161,6 +181,28 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                     ],
                   ),
                 ),
+                ActionButton(
+                  onPressed: () async {
+                    final result = await context.push(
+                      '/solve-incident',
+                      extra: {
+                        'incidentId': widget.incident.incidentId,
+                        'incidentCode': widget.incident.incidentCode,
+                      },
+                    );
+                    if (result == true && context.mounted) {
+                      context.pop(); // Close the bottom sheet
+                      widget.onIncidentResolved?.call();
+                    }
+                  },
+                  icon: Icons.add_task,
+                  label: 'Resolver',
+                  color: AppColors.primary,
+                  size: ActionButtonSize.small,
+                  disabled: widget.incident.status == 'RESUELTO',
+                  hideElevation: widget.incident.status == 'RESUELTO',
+                ),
+                const SizedBox(width: 6),
                 IconButton.filledTonal(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => context.pop(),
@@ -593,77 +635,150 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                         'dd/MM/yyyy HH:mm',
                       ).format(history.dateChange);
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: widget.statusColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                Container(
-                                  width: 2,
-                                  height: 36,
-                                  color: cs.outlineVariant,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerLow,
+                            border: Border.all(color: cs.outlineVariant),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Column(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        history.newStatus,
-                                        style: TextStyle(
-                                          color: cs.onSurface,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        dateStr,
-                                        style: TextStyle(
-                                          color: cs.onSurfaceVariant,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    ],
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(history.newStatus),
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
-                                  if (history.managedBy != null)
-                                    Text(
-                                      'Operador: ${history.managedBy}',
-                                      style: TextStyle(
-                                        color: cs.onSurfaceVariant,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  if (history.observation != null &&
-                                      history.observation!.isNotEmpty)
-                                    Text(
-                                      'Nota: ${history.observation}',
-                                      style: TextStyle(
-                                        color: cs.onSurfaceVariant.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                        fontSize: 11,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
+                                  Container(
+                                    width: 2,
+                                    height: 75,
+                                    color: cs.outlineVariant,
+                                  ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          history.newStatus,
+                                          style: TextStyle(
+                                            color: cs.onSurface,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          dateStr,
+                                          style: TextStyle(
+                                            color: cs.onSurfaceVariant,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (history.observation != null &&
+                                        history.observation!.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        width: double.infinity,
+
+                                        decoration: BoxDecoration(
+                                          color: cs.outlineVariant,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Icon(
+                                              Icons.chat_bubble_outline_rounded,
+                                              size: 12,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                '${history.observation}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontStyle: FontStyle.italic,
+                                                  color: cs.onSurface,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    if (history.managedBy != null)
+                                      Row(
+                                        children: [
+                                          ColorChip(
+                                            label:
+                                                '${history.managedBy?.nombre} ${history.managedBy?.apellido}',
+                                            variant: ColorChipVariant.ghost,
+                                            size: ColorChipSize.sm,
+                                            withDot: false,
+                                            icon: const Icon(
+                                              Icons.person_outlined,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    Row(
+                                      children: [
+                                        if (history
+                                                .managedBy
+                                                ?.correo
+                                                ?.isNotEmpty ??
+                                            false) ...[
+                                          ColorChip(
+                                            label: history.managedBy!.correo!,
+                                            color: Colors.indigo,
+                                            variant: ColorChipVariant.ghost,
+                                            size: ColorChipSize.sm,
+                                            icon: const Icon(
+                                              Icons.mail_outline,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                        ],
+                                        if (history
+                                                .managedBy
+                                                ?.celular
+                                                ?.isNotEmpty ??
+                                            false) ...[
+                                          ColorChip(
+                                            label: history.managedBy!.celular!,
+                                            color: Colors.indigo,
+                                            variant: ColorChipVariant.ghost,
+                                            size: ColorChipSize.sm,
+                                            icon: const Icon(
+                                              Icons.phone_outlined,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }),

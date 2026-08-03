@@ -1,5 +1,38 @@
 import 'package:equatable/equatable.dart';
 
+class ReportClient {
+  final String firstName;
+  final String lastName;
+  final String? email;
+  final String? cellPhone;
+
+  ReportClient({
+    required this.firstName,
+    required this.lastName,
+    this.email,
+    this.cellPhone,
+  });
+
+  // Constructor de utilidad si vas a recibir esto desde un JSON (API)
+  factory ReportClient.fromJson(Map<String, dynamic> json) {
+    return ReportClient(
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
+      email: json['email'] as String?,
+      cellPhone: json['cellPhone'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      'cellPhone': cellPhone,
+    };
+  }
+}
+
 class IncidentCoordinates extends Equatable {
   final double lat;
   final double lng;
@@ -48,11 +81,34 @@ class IncidentEvidencePhoto extends Equatable {
   }
 }
 
+class ManagedByUser {
+  final String nombre;
+  final String apellido;
+  final String correo;
+  final String celular;
+
+  ManagedByUser({
+    required this.nombre,
+    required this.apellido,
+    required this.correo,
+    required this.celular,
+  });
+
+  factory ManagedByUser.fromJson(Map<String, dynamic> json) {
+    return ManagedByUser(
+      nombre: json['nombre'] ?? '',
+      apellido: json['apellido'] ?? '',
+      correo: json['correo'] ?? '',
+      celular: json['celular'] ?? '',
+    );
+  }
+}
+
 class IncidentStatusHistory extends Equatable {
   final DateTime changeDate;
   final String? previousStatus;
   final String newStatus;
-  final String? managedBy;
+  final ManagedByUser? managedBy;
   final String? observation;
 
   const IncidentStatusHistory({
@@ -79,7 +135,9 @@ class IncidentStatusHistory extends Equatable {
           : DateTime.now(),
       previousStatus: json['previousStatus'] as String?,
       newStatus: json['newStatus'] as String? ?? '',
-      managedBy: json['managedBy'] as String?,
+      managedBy: json['managedBy'] != null
+          ? ManagedByUser.fromJson(json['managedBy'])
+          : null,
       observation: json['observation'] as String?,
     );
   }
@@ -96,8 +154,9 @@ class IncidentStatusHistory extends Equatable {
 }
 
 class IncidentModel extends Equatable {
-  final int incidentId;
+  final String incidentId;
   final String? connectionId;
+  final String incidentCode;
   final int? readingId;
   final int incidentTypeId;
   final String reportDescription;
@@ -129,10 +188,12 @@ class IncidentModel extends Equatable {
   final String? reportedBy;
   final List<IncidentEvidencePhoto>? evidencePhotos;
   final List<IncidentStatusHistory>? statusHistory;
+  final ReportClient? reportClient;
 
   const IncidentModel({
     required this.incidentId,
     this.connectionId,
+    required this.incidentCode,
     this.readingId,
     required this.incidentTypeId,
     required this.reportDescription,
@@ -156,6 +217,7 @@ class IncidentModel extends Equatable {
     this.reportedBy,
     this.evidencePhotos,
     this.statusHistory,
+    this.reportClient,
   });
 
   bool isChargeableToUser() {
@@ -166,6 +228,7 @@ class IncidentModel extends Equatable {
   List<Object?> get props => [
     incidentId,
     connectionId,
+    incidentCode,
     readingId,
     incidentTypeId,
     reportDescription,
@@ -189,12 +252,14 @@ class IncidentModel extends Equatable {
     reportedBy,
     evidencePhotos,
     statusHistory,
+    reportClient,
   ];
 
   factory IncidentModel.fromJson(Map<String, dynamic> json) {
     return IncidentModel(
-      incidentId: json['incidentId'] as int? ?? 0,
+      incidentId: json['incidentId'] as String? ?? '',
       connectionId: json['connectionId'] as String?,
+      incidentCode: json['incidentCode'] as String? ?? '',
       readingId: json['readingId'] as int?,
       incidentTypeId: json['incidentTypeId'] as int? ?? 0,
       reportDescription: json['reportDescription'] as String? ?? '',
@@ -239,6 +304,9 @@ class IncidentModel extends Equatable {
             (e) => IncidentStatusHistory.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
+      reportClient: json['reportClient'] != null
+          ? ReportClient.fromJson(json['reportClient'])
+          : null,
     );
   }
 
@@ -246,6 +314,7 @@ class IncidentModel extends Equatable {
     return {
       'incidentId': incidentId,
       'connectionId': connectionId,
+      'incidentCode': incidentCode,
       'readingId': readingId,
       'incidentTypeId': incidentTypeId,
       'reportDescription': reportDescription,
@@ -271,6 +340,7 @@ class IncidentModel extends Equatable {
       'reportedBy': reportedBy,
       'evidencePhotos': evidencePhotos?.map((e) => e.toJson()).toList(),
       'statusHistory': statusHistory?.map((e) => e.toJson()).toList(),
+      'reportClient': reportClient?.toJson(),
     };
   }
 }

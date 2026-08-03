@@ -17,12 +17,12 @@ class IncidentCategoryTypeModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        categoryId,
-        categoryCode,
-        categoryName,
-        categoryDescription,
-        incidentTypes,
-      ];
+    categoryId,
+    categoryCode,
+    categoryName,
+    categoryDescription,
+    incidentTypes,
+  ];
 
   factory IncidentCategoryTypeModel.fromJson(Map<String, dynamic> json) {
     return IncidentCategoryTypeModel(
@@ -30,8 +30,11 @@ class IncidentCategoryTypeModel extends Equatable {
       categoryCode: json['categoryCode'] as String? ?? '',
       categoryName: json['categoryName'] as String? ?? '',
       categoryDescription: json['categoryDescription'] as String? ?? '',
-      incidentTypes: (json['incidentTypes'] as List<dynamic>?)
-              ?.map((e) => IncidentTypeModel.fromJson(e as Map<String, dynamic>))
+      incidentTypes:
+          (json['incidentTypes'] as List<dynamic>?)
+              ?.map(
+                (e) => IncidentTypeModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -63,11 +66,11 @@ class IncidentTypeModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        typeCode,
-        typeName,
-        typeDescription,
-        suggestedPriority,
-      ];
+    typeCode,
+    typeName,
+    typeDescription,
+    suggestedPriority,
+  ];
 
   factory IncidentTypeModel.fromJson(Map<String, dynamic> json) {
     return IncidentTypeModel(

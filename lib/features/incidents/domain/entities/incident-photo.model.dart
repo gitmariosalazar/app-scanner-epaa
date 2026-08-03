@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class IncidentPhotoModel extends Equatable {
   final int id;
-  final int incidentId;
+  final String incidentId;
   final String filePath;
   final String photoType; // 'REPORTE' | 'RESOLUCION'
   final DateTime createdAt;
@@ -21,7 +21,7 @@ class IncidentPhotoModel extends Equatable {
   factory IncidentPhotoModel.fromJson(Map<String, dynamic> json) {
     return IncidentPhotoModel(
       id: json['id'] as int? ?? 0,
-      incidentId: json['incidentId'] as int? ?? 0,
+      incidentId: json['incidentId'] as String? ?? '',
       filePath: json['filePath'] as String? ?? '',
       photoType: json['photoType'] as String? ?? '',
       createdAt: json['createdAt'] != null

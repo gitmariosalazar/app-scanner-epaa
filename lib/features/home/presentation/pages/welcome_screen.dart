@@ -222,7 +222,8 @@ class _HeroHeader extends StatelessWidget {
 
     final dateStr = DateFormat('EEEE, d MMM yyyy', 'es_ES').format(now);
     final timeStr = DateFormat('HH:mm').format(now);
-    final username = user?.username ?? '—';
+    final username =
+        '${user?.firstName.split(' ').first} ${user?.lastName.split(' ').first}';
 
     return Container(
       decoration: BoxDecoration(

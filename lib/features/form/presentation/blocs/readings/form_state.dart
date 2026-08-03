@@ -8,7 +8,7 @@ class FormInitial extends FormState {}
 class FormLoading extends FormState {}
 
 class FormSuccess extends FormState {
-  final Map<String, dynamic> data;
+  final ReadingResult data;
 
   FormSuccess(this.data);
 }

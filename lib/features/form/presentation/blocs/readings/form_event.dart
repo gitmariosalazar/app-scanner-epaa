@@ -19,50 +19,10 @@ class LoadReadingEvent extends FormEvent {
 
 /// Evento para insertar una lectura (POST)
 class InsertReadingEvent extends FormEvent {
-  final String connectionId;
-  final int sector;
-  final int account;
-  final String cadastralKey;
-  final double sewerRate;
-  final double previousReading;
-  final double currentReading;
-  final int incomeCode;
-  final double readingValue;
-  final int rentalIncomeCode;
-  final String novelty;
-  final double averageConsumption;
-  final String previousMonthReading;
+  final CreateReadingRequest request;
 
-  const InsertReadingEvent({
-    required this.connectionId,
-    required this.sector,
-    required this.account,
-    required this.cadastralKey,
-    required this.sewerRate,
-    required this.previousReading,
-    required this.currentReading,
-    required this.incomeCode,
-    required this.readingValue,
-    required this.rentalIncomeCode,
-    required this.novelty,
-    required this.averageConsumption,
-    required this.previousMonthReading,
-  });
+  const InsertReadingEvent({required this.request});
 
   @override
-  List<Object> get props => [
-    connectionId,
-    sector,
-    account,
-    cadastralKey,
-    sewerRate,
-    previousReading,
-    currentReading,
-    incomeCode,
-    readingValue,
-    rentalIncomeCode,
-    novelty,
-    averageConsumption,
-    previousMonthReading,
-  ];
+  List<Object> get props => [request];
 }

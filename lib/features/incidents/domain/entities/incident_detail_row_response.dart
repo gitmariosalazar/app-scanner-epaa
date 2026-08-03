@@ -81,11 +81,34 @@ class EvidencePhoto extends Equatable {
   }
 }
 
+class ManagedByUser {
+  final String nombre;
+  final String apellido;
+  final String correo;
+  final String celular;
+
+  ManagedByUser({
+    required this.nombre,
+    required this.apellido,
+    required this.correo,
+    required this.celular,
+  });
+
+  factory ManagedByUser.fromJson(Map<String, dynamic> json) {
+    return ManagedByUser(
+      nombre: json['nombre'] ?? '',
+      apellido: json['apellido'] ?? '',
+      correo: json['correo'] ?? '',
+      celular: json['celular'] ?? '',
+    );
+  }
+}
+
 class IncidentHistory extends Equatable {
   final DateTime dateChange;
   final String? previousStatus;
   final String newStatus;
-  final String? managedBy;
+  final ManagedByUser? managedBy;
   final String? observation;
 
   const IncidentHistory({
@@ -112,7 +135,9 @@ class IncidentHistory extends Equatable {
           : DateTime.now(),
       previousStatus: json['previousStatus'] as String?,
       newStatus: json['newStatus'] as String? ?? '',
-      managedBy: json['managedBy'] as String?,
+      managedBy: json['managedBy'] != null
+          ? ManagedByUser.fromJson(json['managedBy'])
+          : null,
       observation: json['observation'] as String?,
     );
   }
@@ -331,8 +356,9 @@ class UserRow extends Equatable {
 /// ==================== MODELO PRINCIPAL ====================
 
 class IncidentDetailRowResponse extends Equatable {
-  final int incidentId;
+  final String incidentId;
   final String? connectionId;
+  final String incidentCode;
   final int? readingId;
 
   final String categoryCode;
@@ -377,6 +403,7 @@ class IncidentDetailRowResponse extends Equatable {
   const IncidentDetailRowResponse({
     required this.incidentId,
     this.connectionId,
+    required this.incidentCode,
     this.readingId,
     required this.categoryCode,
     required this.categoryName,
@@ -414,6 +441,7 @@ class IncidentDetailRowResponse extends Equatable {
   List<Object?> get props => [
     incidentId,
     connectionId,
+    incidentCode,
     readingId,
     categoryCode,
     categoryName,
@@ -449,8 +477,9 @@ class IncidentDetailRowResponse extends Equatable {
 
   factory IncidentDetailRowResponse.fromJson(Map<String, dynamic> json) {
     return IncidentDetailRowResponse(
-      incidentId: _parseInt(json['incidentId']),
+      incidentId: json['incidentId'] as String? ?? '',
       connectionId: json['connectionId'] as String?,
+      incidentCode: json['incidentCode'] as String? ?? '',
       readingId: _parseInt(json['readingId']),
       categoryCode: json['categoryCode'] as String? ?? '',
       categoryName: json['categoryName'] as String? ?? '',
@@ -527,6 +556,7 @@ class IncidentDetailRowResponse extends Equatable {
     return {
       'incidentId': incidentId,
       'connectionId': connectionId,
+      'incidentCode': incidentCode,
       'readingId': readingId,
       'categoryCode': categoryCode,
       'categoryName': categoryName,

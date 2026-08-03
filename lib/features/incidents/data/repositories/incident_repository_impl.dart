@@ -7,6 +7,7 @@ import 'package:flutter_application/features/incidents/domain/dto/request/resolv
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
+import 'package:flutter_application/features/incidents/domain/entities/incident_kpi.model.dart';
 import 'package:flutter_application/features/incidents/domain/repositories/incident_repository.dart';
 
 class IncidentRepositoryImpl implements IncidentRepository {
@@ -34,7 +35,7 @@ class IncidentRepositoryImpl implements IncidentRepository {
 
   @override
   Future<Either<Failure, IncidentModel>> resolveIncident({
-    required int incidentId,
+    required String incidentId,
     required String resolverUserId,
     required ResolveIncidentRequest request,
   }) async {
@@ -74,7 +75,7 @@ class IncidentRepositoryImpl implements IncidentRepository {
   }
 
   @override
-  Future<Either<Failure, IncidentModel>> findById(int incidentId) async {
+  Future<Either<Failure, IncidentModel>> findById(String incidentId) async {
     try {
       final incident = await remoteDataSource.findById(incidentId);
       return Right(incident);
@@ -127,6 +128,19 @@ class IncidentRepositoryImpl implements IncidentRepository {
       return Left(
         ServerFailure(message: 'Error al obtener categorías de incidentes: $e'),
       );
+    }
+  }
+
+  @override
+  Future<Either<Failure, IncidentDashboardKpiResponse>>
+  getIncidentDashboardKpis() async {
+    try {
+      final kpis = await remoteDataSource.getIncidentDashboardKpis();
+      return Right(kpis);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 }

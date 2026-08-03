@@ -18,17 +18,28 @@ class IncidentCategoryModel extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, code, name, description, isActive, incidentTypes];
+  List<Object?> get props => [
+    id,
+    code,
+    name,
+    description,
+    isActive,
+    incidentTypes,
+  ];
 
   factory IncidentCategoryModel.fromJson(Map<String, dynamic> json) {
     return IncidentCategoryModel(
       id: (json['categoryId'] ?? json['id']) as int? ?? 0,
       code: (json['categoryCode'] ?? json['code']) as String? ?? '',
       name: (json['categoryName'] ?? json['name']) as String? ?? '',
-      description: (json['categoryDescription'] ?? json['description']) as String?,
+      description:
+          (json['categoryDescription'] ?? json['description']) as String?,
       isActive: json['isActive'] as bool? ?? true,
-      incidentTypes: (json['incidentTypes'] as List<dynamic>?)
-              ?.map((e) => IncidentTypeModel.fromJson(e as Map<String, dynamic>))
+      incidentTypes:
+          (json['incidentTypes'] as List<dynamic>?)
+              ?.map(
+                (e) => IncidentTypeModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -60,7 +71,12 @@ class IncidentTypeModel extends Equatable {
   });
 
   @override
-  List<Object?> get props => [typeCode, typeName, typeDescription, suggestedPriority];
+  List<Object?> get props => [
+    typeCode,
+    typeName,
+    typeDescription,
+    suggestedPriority,
+  ];
 
   factory IncidentTypeModel.fromJson(Map<String, dynamic> json) {
     return IncidentTypeModel(
@@ -80,4 +96,3 @@ class IncidentTypeModel extends Equatable {
     };
   }
 }
-

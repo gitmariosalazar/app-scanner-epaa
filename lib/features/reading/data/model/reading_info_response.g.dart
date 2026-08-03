@@ -26,6 +26,17 @@ Map<String, dynamic> _$EmailToJson(Email instance) => <String, dynamic>{
   'email': instance.email,
 };
 
+ConnectionLocationDto _$ConnectionLocationDtoFromJson(
+  Map<String, dynamic> json,
+) => ConnectionLocationDto(
+  lat: (json['lat'] as num?)?.toDouble(),
+  lng: (json['lng'] as num?)?.toDouble(),
+);
+
+Map<String, dynamic> _$ConnectionLocationDtoToJson(
+  ConnectionLocationDto instance,
+) => <String, dynamic>{'lat': instance.lat, 'lng': instance.lng};
+
 ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
     ReadingInfoResponse(
       readingId: (json['readingId'] as num?)?.toInt(),
@@ -62,6 +73,11 @@ ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
       connectionStateName: json['connectionStateName'] as String?,
       connectionStateDescription: json['connectionStateDescription'] as String?,
       permitReading: json['permitReading'] as bool?,
+      connectionLocation: json['connectionLocation'] == null
+          ? null
+          : ConnectionLocationDto.fromJson(
+              json['connectionLocation'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$ReadingInfoResponseToJson(
@@ -93,4 +109,5 @@ Map<String, dynamic> _$ReadingInfoResponseToJson(
   'connectionStateName': instance.connectionStateName,
   'connectionStateDescription': instance.connectionStateDescription,
   'permitReading': instance.permitReading,
+  'connectionLocation': instance.connectionLocation?.toJson(),
 };

@@ -18,6 +18,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
     signingConfigs {
         val keystoreProperties = Properties()
         val keystorePropertiesFile = rootProject.file("key.properties")
@@ -45,12 +51,12 @@ android {
     // === FLAVORS ===
     flavorDimensions += "app"
     productFlavors {
-        create("dev") {
+        create("develop") {
             dimension = "app"
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
+            applicationIdSuffix = ".develop"
+            versionNameSuffix = "-develop"
             resValue("string", "app_name", "Readings App DEV")
-            resValue("string", "google_maps_key", googleMapsApiKey("dev"))
+            resValue("string", "google_maps_key", googleMapsApiKey("develop"))
         }
         create("prod") {
             dimension = "app"
@@ -78,42 +84,28 @@ android {
     }
 }
 
-// === LEE .env DESDE LA RAÍZ DEL PROYECTO FLUTTER ===
 fun googleMapsApiKey(flavor: String): String {
-    val fileName = if (flavor == "dev") ".env.dev" else ".env"
-    val rootProjectDir = project.rootProject.projectDir.parentFile
-    val envFile = rootProjectDir.resolve(fileName)
+    val fileName = if (flavor == "develop") ".env.dev" else ".env.production"
+    val envFile = project.rootProject.file("../$fileName")
 
     if (!envFile.exists()) {
-        println("Warning: Archivo $fileName no encontrado en $rootProjectDir. Usando clave por defecto.")
+        println("❌ Warning: Archivo $fileName no encontrado en ${envFile.absolutePath}")
         return "MISSING_KEY"
     }
 
     return try {
         val props = Properties()
-        FileInputStream(envFile).use { input ->
-            props.load(input)
-        }
+        envFile.inputStream().use { props.load(it) }
         val key = props.getProperty("GOOGLE_MAPS_API_KEY")
         if (key.isNullOrBlank()) {
-            println("Warning: GOOGLE_MAPS_API_KEY vacía en $fileName.")
+            println("❌ Warning: GOOGLE_MAPS_API_KEY vacía o no encontrada en $fileName")
             "MISSING_KEY"
         } else {
             key.trim()
         }
-    } catch (e: IOException) {
-        println("Error al leer $fileName: ${e.message}")
-        "MISSING_KEY"
     } catch (e: Exception) {
-        println("Error inesperado: ${e.message}")
+        println("❌ Error al leer $fileName: ${e.message}")
         "MISSING_KEY"
-    }
-}
-
-// Configure Kotlin compiler options (required for Kotlin 2.3.x - replaces deprecated kotlinOptions DSL)
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

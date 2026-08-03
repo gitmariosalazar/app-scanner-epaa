@@ -1,16 +1,18 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 
 class ResolveIncidentRequest extends Equatable {
   final String description;
   final double repairCost;
   final bool chargeToUser;
-  final List<String>? images;
+  final List<File> images;
 
   const ResolveIncidentRequest({
     required this.description,
     required this.repairCost,
     required this.chargeToUser,
-    this.images,
+    required this.images,
   });
 
   @override
@@ -21,7 +23,7 @@ class ResolveIncidentRequest extends Equatable {
       'description': description,
       'repairCost': repairCost,
       'chargeToUser': chargeToUser,
-      if (images != null) 'images': images,
+      'images': images,
     };
   }
 }

@@ -1,6 +1,7 @@
 // lib/features/incidents/presentation/page/incident_history_page.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/loaders/professional_loader.dart';
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
@@ -503,18 +504,9 @@ class _IncidentHistoryPageState extends State<IncidentHistoryPage> {
 
   Widget _buildListContent(ColorScheme cs) {
     if (_isLoadingIncidents) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text(
-              'Cargando historial de incidentes...',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
-        ),
+      return const ProfessionalLoader(
+        label: 'Cargando...',
+        description: 'Se está cargando la información',
       );
     }
 

@@ -68,7 +68,7 @@ class RemoteConnectionWithPropertiesDataSourceImpl
       throw Exception('Formato de data inesperado');
     }
 
-    final apiResponse = ApiResponse<ConnectionWithPropertiesResponse>(
+    final apiResponse = ApiResponse<dynamic>(
       statusCode: json['status_code'] as int,
       time: json['time'] as String,
       message: List<String>.from(json['message'] as List),
@@ -80,12 +80,12 @@ class RemoteConnectionWithPropertiesDataSourceImpl
       throw Exception(apiResponse.message.join(', '));
     }
 
-    if (apiResponse.data.isEmpty) {
+    if (dataList.isEmpty) {
       throw Exception(
         'No se encontró conexión para la clave catastral: $cadastralKey',
       );
     }
 
-    return apiResponse.data.first;
+    return dataList.first;
   }
 }

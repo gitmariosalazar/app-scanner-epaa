@@ -61,19 +61,35 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
       throw ServerException('Respuesta vacía del servidor');
     }
 
-    final apiResponse = ApiResponse<ReadingInfoResponse>.fromJson(
+    final apiResponse = ApiResponse<dynamic>.fromJson(
       json,
-      ReadingInfoResponse.fromJson,
+      (data) => data,
     );
 
     if (apiResponse.statusCode >= 400) {
       throw ServerException(apiResponse.message.join(', '));
     }
 
-    if (apiResponse.data.isEmpty) {
+    final rawData = apiResponse.data;
+    if (rawData == null) {
       throw ServerException('No se encontró lectura para $cadastralKey');
     }
-    return apiResponse.data;
+
+    List<ReadingInfoResponse> results = [];
+    if (rawData is List) {
+      results = rawData
+          .map((e) => ReadingInfoResponse.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else if (rawData is Map<String, dynamic>) {
+      results = [ReadingInfoResponse.fromJson(rawData)];
+    } else {
+      throw ServerException('Formato de datos de lectura desconocido');
+    }
+
+    if (results.isEmpty) {
+      throw ServerException('No se encontró lectura para $cadastralKey');
+    }
+    return results;
   }
 
   @override
@@ -91,16 +107,53 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final apiResponse = ApiResponse<ReadingBasicInfoResponse>.fromJson(
+    final apiResponse = ApiResponse<dynamic>.fromJson(
       json,
-      ReadingBasicInfoResponse.fromJson,
+      (data) => data,
     );
 
     if (apiResponse.statusCode >= 400) {
       throw ServerException(apiResponse.message.join(', '));
     }
 
-    return apiResponse.data;
+    final rawData = apiResponse.data;
+    if (rawData == null) {
+      return [];
+    }
+
+    List<ReadingBasicInfoResponse> results = [];
+    if (rawData is List) {
+      results = rawData
+          .map((e) => ReadingBasicInfoResponse.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else if (rawData is Map<String, dynamic>) {
+      results = [ReadingBasicInfoResponse.fromJson(rawData)];
+    } else {
+      throw ServerException('Formato de datos de lectura básico desconocido');
+    }
+
+    return results;
+  }
+
+  Map<String, dynamic> _sanitizeReadingResponseData(Map<String, dynamic> json) {
+    final Map<String, dynamic> sanitized = Map.from(json);
+    final fieldsToConvert = [
+      'readingValue',
+      'sewerRate',
+      'previousReading',
+      'currentReading',
+      'readingId',
+      'sector',
+      'account',
+      'rentalIncomeCode',
+      'incomeCode',
+    ];
+    for (final field in fieldsToConvert) {
+      if (sanitized[field] is String) {
+        sanitized[field] = num.tryParse(sanitized[field]);
+      }
+    }
+    return sanitized;
   }
 
   @override
@@ -121,38 +174,14 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
 
-    // ApiResponse generic wrapper usually returns List<T>, but for single updates
-    // it might be cleaner to parse data directly if the structure allows.
-    // Assuming backend returns standard ApiResponse structure where data is List or Single object wrapped.
-    // Based on previous code, ApiResponse expects data to be a list.
-    // If backend returns single object in data, we might need to adjust or use the first element.
-
-    // However, looking at the backend controller:
-    // return new ApiResponse(..., response, ...)
-    // 'response' is a ReadingResponse object.
-
-    // ApiResponse.fromJson expects data to be List.
-    // Let's check shared/api/response/api_response.dart again:
-    // data: (json['data'] as List<dynamic>).map(...)
-
-    // If backend returns a single object in 'data', ApiResponse.fromJson will fail if it casts to List.
-    // BUT the backend usually wraps it in a list or the ApiResponse class in backend handles it.
-    // In the provided backend controller (Step 161), it passes `response` (ReadingResponse object) to ApiResponse constructor.
-    // If the NestJS ApiResponse wrapper puts it in an array or passes as is, depends on that implementation.
-    // Assuming standard behavior where data might be a single object for single updates.
-
-    // Let's manually parse for safety since ApiResponse in Steps 24 implementation enforces List.
-
     final data = json['data'];
     if (data is List) {
       if (data.isEmpty) throw ServerException('Empty response data');
-      return ReadingResponse.fromJson(data.first as Map<String, dynamic>);
+      return ReadingResponse.fromJson(_sanitizeReadingResponseData(data.first as Map<String, dynamic>));
     } else if (data is Map<String, dynamic>) {
-      return ReadingResponse.fromJson(data);
+      return ReadingResponse.fromJson(_sanitizeReadingResponseData(data));
     } else {
-      // If data is null or unknown
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        // Potentially success but no data? Unlikely for update returning ReadingResponse.
         throw ServerException('Invalid response format');
       }
       throw ServerException(json['message']?.toString() ?? 'Update failed');
@@ -162,10 +191,15 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
   @override
   Future<ReadingResponse> createReading(CreateReadingRequest request) async {
     final headers = await _getHeaders();
+    final requestBody = jsonEncode(request.toJson());
+    
+    // Imprimir lo que se está enviando al backend
+    print("🚀🚀🚀 ENVIANDO REQUEST A BACKEND: $requestBody");
+
     final response = await client.post(
       Uri.parse('$baseUrl/Readings/create-reading'),
       headers: headers,
-      body: jsonEncode(request.toJson()),
+      body: requestBody,
     );
 
     if (response.statusCode == 401) {
@@ -174,13 +208,15 @@ class RemoteReadingDataSourceImpl implements RemoteReadingDataSource {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
 
+    print("JSON CREARLECTURA: $json");
+
     // Similar handling as update
     final data = json['data'];
     if (data is List) {
       if (data.isEmpty) throw ServerException('Empty response data');
-      return ReadingResponse.fromJson(data.first as Map<String, dynamic>);
+      return ReadingResponse.fromJson(_sanitizeReadingResponseData(data.first as Map<String, dynamic>));
     } else if (data is Map<String, dynamic>) {
-      return ReadingResponse.fromJson(data);
+      return ReadingResponse.fromJson(_sanitizeReadingResponseData(data));
     } else {
       throw ServerException(json['message']?.toString() ?? 'Create failed');
     }

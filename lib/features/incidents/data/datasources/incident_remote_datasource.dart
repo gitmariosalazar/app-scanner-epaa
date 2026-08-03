@@ -7,6 +7,7 @@ import 'package:flutter_application/features/incidents/domain/dto/request/resolv
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident.model.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
+import 'package:flutter_application/features/incidents/domain/entities/incident_kpi.model.dart';
 import 'package:http/http.dart' as http;
 
 abstract class IncidentRemoteDataSource {
@@ -15,7 +16,7 @@ abstract class IncidentRemoteDataSource {
   });
 
   Future<IncidentModel> resolveIncident({
-    required int incidentId,
+    required String incidentId,
     required String resolverUserId,
     required ResolveIncidentRequest request,
   });
@@ -24,7 +25,7 @@ abstract class IncidentRemoteDataSource {
     String connectionId,
   );
 
-  Future<IncidentModel> findById(int incidentId);
+  Future<IncidentModel> findById(String incidentId);
 
   Future<List<IncidentDetailRowResponse>> findIncidents({
     String? connectionId,
@@ -34,6 +35,8 @@ abstract class IncidentRemoteDataSource {
   });
 
   Future<List<IncidentCategoryModel>> findIncidentCategories();
+
+  Future<IncidentDashboardKpiResponse> getIncidentDashboardKpis();
 }
 
 class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
@@ -48,10 +51,15 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await authLocalDataSource.getToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
+
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    } else {
+      headers['x-api-key'] = Environment.publicAppApiKey;
+    }
+
+    return headers;
   }
 
   void _checkHttpStatus(int statusCode, String errorBody) {
@@ -83,12 +91,14 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
   }) async {
     try {
       final token = await authLocalDataSource.getToken();
-
       final uri = Uri.parse('$_baseUrl/incidents/create-incident');
-
       var requestMultipart = http.MultipartRequest('POST', uri);
 
-      requestMultipart.headers.addAll({'Authorization': 'Bearer $token'});
+      if (token != null) {
+        requestMultipart.headers['Authorization'] = 'Bearer $token';
+      } else {
+        requestMultipart.headers['x-api-key'] = Environment.publicAppApiKey;
+      }
 
       // Campos de texto
       if (request.connectionId != null) {
@@ -100,9 +110,23 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
       requestMultipart.fields['incidentTypeId'] = request.incidentTypeId
           .toString();
       requestMultipart.fields['reportDescription'] = request.reportDescription;
-      requestMultipart.fields['referenceAddress'] = request.referenceAddress;
-      requestMultipart.fields['reportOrigin'] = request.reportOrigin;
-      requestMultipart.fields['priority'] = request.priority;
+      if (request.referenceAddress != null) {
+        requestMultipart.fields['referenceAddress'] = request.referenceAddress!;
+      }
+      if (request.reportOrigin != null) {
+        requestMultipart.fields['reportOrigin'] = request.reportOrigin!;
+      }
+      if (request.priority != null) {
+        requestMultipart.fields['priority'] = request.priority!;
+      }
+      if (request.reportClient != null) {
+        requestMultipart.fields['reportClient'] = jsonEncode({
+          'firstName': request.reportClient!.firstName,
+          'lastName': request.reportClient!.lastName,
+          'email': request.reportClient!.email,
+          'cellPhone': request.reportClient!.cellPhone,
+        });
+      }
       requestMultipart.fields['latitude'] = request.latitude.toString();
       requestMultipart.fields['longitude'] = request.longitude.toString();
 
@@ -160,28 +184,73 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
 
   @override
   Future<IncidentModel> resolveIncident({
-    required int incidentId,
+    required String incidentId,
     required String resolverUserId,
     required ResolveIncidentRequest request,
   }) async {
-    final headers = await _getHeaders();
-    final uri = Uri.parse('$_baseUrl/incidents/resolve-incident/$incidentId');
-    final response = await client.put(
-      uri,
-      headers: headers,
-      body: jsonEncode(request.toJson()),
-    );
+    try {
+      final token = await authLocalDataSource.getToken();
+      final uri = Uri.parse('$_baseUrl/incidents/resolve-incident/$incidentId');
+      var requestMultipart = http.MultipartRequest('PUT', uri);
 
-    _checkHttpStatus(response.statusCode, response.body);
+      if (token != null) {
+        requestMultipart.headers['Authorization'] = 'Bearer $token';
+      } else {
+        requestMultipart.headers['x-api-key'] = Environment.publicAppApiKey;
+      }
 
-    final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = jsonResponse['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw ServerException(
-        'La respuesta no contiene datos válidos del incidente.',
-      );
+      requestMultipart.fields['description'] = request.description;
+      requestMultipart.fields['repairCost'] = request.repairCost.toString();
+      requestMultipart.fields['chargeToUser'] = request.chargeToUser.toString();
+
+      for (var file in request.images) {
+        final fileBytes = await file.readAsBytes();
+        final extension = file.path.split('.').last.toLowerCase();
+
+        http.MediaType contentType;
+        switch (extension) {
+          case 'png':
+            contentType = http.MediaType('image', 'png');
+            break;
+          case 'webp':
+            contentType = http.MediaType('image', 'webp');
+            break;
+          case 'gif':
+            contentType = http.MediaType('image', 'gif');
+            break;
+          case 'jpg':
+          case 'jpeg':
+          default:
+            contentType = http.MediaType('image', 'jpeg');
+        }
+
+        final multipartFile = http.MultipartFile.fromBytes(
+          'images',
+          fileBytes,
+          filename: file.path.split('/').last,
+          contentType: contentType,
+        );
+
+        requestMultipart.files.add(multipartFile);
+      }
+
+      final streamedResponse = await requestMultipart.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      _checkHttpStatus(response.statusCode, response.body);
+
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = jsonResponse['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw ServerException(
+          'La respuesta no contiene datos válidos del incidente.',
+        );
+      }
+      return IncidentModel.fromJson(data);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException(e.toString());
     }
-    return IncidentModel.fromJson(data);
   }
 
   @override
@@ -210,7 +279,7 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
   }
 
   @override
-  Future<IncidentModel> findById(int incidentId) async {
+  Future<IncidentModel> findById(String incidentId) async {
     throw UnimplementedError(
       'El endpoint de búsqueda individual por ID no está expuesto en el gateway.',
     );
@@ -269,5 +338,21 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
           .toList();
     }
     return [];
+  }
+
+  @override
+  Future<IncidentDashboardKpiResponse> getIncidentDashboardKpis() async {
+    final headers = await _getHeaders();
+    final uri = Uri.parse('$_baseUrl/incidents/dashboard/kpis');
+    final response = await client.get(uri, headers: headers);
+
+    _checkHttpStatus(response.statusCode, response.body);
+
+    final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = jsonResponse['data'];
+    if (data == null) {
+      throw ServerException('La respuesta no contiene datos de KPIs.');
+    }
+    return IncidentDashboardKpiResponse.fromJson(data as Map<String, dynamic>);
   }
 }

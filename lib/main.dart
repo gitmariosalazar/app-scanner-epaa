@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/messages/session_expired_dialog.dart';
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/core/theme/app_theme.dart';
 import 'package:flutter_application/features/form/presentation/blocs/photo-readings/photo_reading_bloc.dart';
 import 'package:flutter_application/features/theme/presentation/cubit/theme_cubit.dart';
@@ -7,18 +9,35 @@ import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/core/router/app_router.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ← Agrega esto
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
+const flavor = String.fromEnvironment('FLAVOR', defaultValue: 'develop');
+final envFile = flavor == 'prod' ? '.env.production' : '.env.dev';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES', null);
-  await dotenv.load(fileName: ".env");
+
+  // 4. Carga el entorno correcto (API_URL desde .env.production o .env.dev)
+  final envType = flavor == 'develop'
+      ? EnvironmentType.dev
+      : EnvironmentType.prod;
+
+  await Environment.init(env: envType);
+
+  // 5. Solo en dev: imprime config
+  if (flavor == 'develop') {
+    Environment.printConfig();
+  }
+
+  // 6. Inyección de dependencias
   await di.init();
+
+  // 7. Inicializar tema persistido antes del primer frame
   await di.sl<ThemeCubit>().init();
 
   runApp(
@@ -44,6 +63,18 @@ class MyApp extends StatelessWidget {
         listener: (context, state) {
           if (state is LoginInitial) {
             AppRouter.router.go('/login');
+          } else if (state is LoginSuccess) {
+            AppRouter.router.go('/home');
+          } else if (state is LoginSessionExpired) {
+            final cubit = context.read<LoginCubit>();
+            final dialogContext = AppRouter.navigatorKey.currentContext;
+            if (dialogContext != null) {
+              SessionExpiredDialog.show(
+                dialogContext,
+                onExtend: cubit.extendSession,
+                onLogout: cubit.logout,
+              );
+            }
           }
         },
         child: BlocBuilder<ThemeCubit, ThemeMode>(

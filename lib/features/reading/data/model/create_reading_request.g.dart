@@ -31,10 +31,10 @@ CreateReadingRequest _$CreateReadingRequestFromJson(
   novelty: json['novelty'] as String?,
   averageConsumption: (json['averageConsumption'] as num).toDouble(),
   previousMonthReading: json['previousMonthReading'] as String,
-  readingLocation: json['readingLocation'] == null
+  readingLocation: json['locationCapture'] == null
       ? null
       : LocationCapture.fromJson(
-          json['readingLocation'] as Map<String, dynamic>,
+          json['locationCapture'] as Map<String, dynamic>,
         ),
 );
 
@@ -54,5 +54,5 @@ Map<String, dynamic> _$CreateReadingRequestToJson(
   'novelty': instance.novelty,
   'averageConsumption': instance.averageConsumption,
   'previousMonthReading': instance.previousMonthReading,
-  'readingLocation': instance.readingLocation,
+  'locationCapture': instance.readingLocation,
 };

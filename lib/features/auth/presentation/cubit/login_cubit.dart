@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_application/core/error/failure.dart';
+import 'package:flutter_application/core/network/jwt_utils.dart';
+import 'package:flutter_application/core/network/refresh_exceptions.dart';
+import 'package:flutter_application/core/network/session_event_bus.dart';
+import 'package:flutter_application/core/network/token_refresh_coordinator.dart';
+import 'package:flutter_application/core/services/session_watcher_service.dart';
 import 'package:flutter_application/core/usecases/usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/check_auth_status_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/logout_usecase.dart';
-import 'package:flutter_application/features/auth/domain/usecases/verify_user_usecase.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 
 /// Cubit that orchestrates the full authentication lifecycle.
@@ -13,22 +18,43 @@ import 'package:flutter_application/features/auth/presentation/cubit/login_state
 ///
 ///   Cache empty             → [LoginInitial]     (go to login)
 ///   Cache found, then:
-///     NetworkFailure        → [LoginSuccess]     (keep session, work offline) ✅ FIX
-///     ServerFailure (other) → [LoginInitial]     (force re-login)
+///     NetworkRefreshException → [LoginSuccess]   (keep session, work offline)
+///     AuthSessionExpiredException → [LoginInitial] (force re-login)
 ///     exists == true        → [LoginSuccess]     (normal session restore)
 ///     exists == false       → [LoginUserNotFound] (account deleted/inactive)
+///
+/// Session lifetime (proactive refresh + backgrounded-idle timeout) is fully
+/// delegated to [SessionWatcherService]; this cubit only reacts to
+/// [SessionEventBus] events to decide what to show the user, and delegates
+/// every actual refresh call to the shared [TokenRefreshCoordinator] so it
+/// can never race the reactive 401 retry in [AuthenticatedHttpClient].
 class LoginCubit extends Cubit<LoginState> {
   final LoginUseCase loginUseCase;
   final LogoutUseCase logoutUseCase;
   final CheckAuthStatusUseCase checkAuthStatusUseCase;
-  final VerifyUserUseCase verifyUserUseCase;
+  final TokenRefreshCoordinator refreshCoordinator;
+  final SessionWatcherService sessionWatcherService;
+  final SessionEventBus sessionEventBus;
+
+  StreamSubscription<SessionEvent>? _sessionEventSubscription;
 
   LoginCubit({
     required this.loginUseCase,
     required this.logoutUseCase,
     required this.checkAuthStatusUseCase,
-    required this.verifyUserUseCase,
-  }) : super(LoginInitial());
+    required this.refreshCoordinator,
+    required this.sessionWatcherService,
+    required this.sessionEventBus,
+  }) : super(LoginInitial()) {
+    _sessionEventSubscription = sessionEventBus.events.listen(_onSessionEvent);
+  }
+
+  void _onSessionEvent(SessionEvent event) {
+    final currentState = state;
+    if (event == SessionEvent.expired && currentState is LoginSuccess) {
+      emit(LoginSessionExpired(currentState.user));
+    }
+  }
 
   Future<void> checkAuthStatus() async {
     final localResult = await checkAuthStatusUseCase(NoParams());
@@ -36,36 +62,32 @@ class LoginCubit extends Cubit<LoginState> {
     await localResult.fold((_) async => emit(LoginInitial()), (
       authResponse,
     ) async {
-      final verifyResult = await verifyUserUseCase(
-        VerifyUserParams(usernameOrEmail: authResponse.user.username),
-      );
+      // Margen de 1 minuto para evitar expiraciones en tránsito
+      if (!JwtUtils.isExpired(authResponse.accessToken, bufferMs: 60000)) {
+        emit(LoginSuccess(authResponse.user, authResponse.accessToken));
+        sessionWatcherService.start(authResponse.accessToken);
+        return;
+      }
 
-      verifyResult.fold(
-        (failure) {
-          if (failure is NetworkFailure) {
-            // ✅ No internet — keep cached session, work offline
-            emit(LoginSuccess(authResponse.user, authResponse.accessToken));
-          } else {
-            // ⛔ Unexpected server error → force re-login
-            _clearLocalSession();
-            emit(LoginInitial());
-          }
-        },
+      // If there's no refresh token, we can't refresh
+      if (authResponse.refreshToken.isEmpty) {
+        _clearLocalSession();
+        emit(LoginInitial());
+        return;
+      }
 
-        (verifyData) {
-          if (verifyData.exists) {
-            emit(LoginSuccess(authResponse.user, authResponse.accessToken));
-          } else {
-            _clearLocalSession();
-            emit(
-              const LoginUserNotFound(
-                'Tu cuenta ya no existe o fue desactivada. '
-                'Por favor inicia sesión nuevamente.',
-              ),
-            );
-          }
-        },
-      );
+      try {
+        final session = await refreshCoordinator.refresh();
+        emit(LoginSuccess(session.user, session.accessToken));
+        sessionWatcherService.start(session.accessToken);
+      } on NetworkRefreshException {
+        // ✅ No internet — keep cached session, work offline
+        emit(LoginSuccess(authResponse.user, authResponse.accessToken));
+      } on AuthSessionExpiredException {
+        // ⛔ Token expired or invalid → force re-login
+        _clearLocalSession();
+        emit(LoginInitial());
+      }
     });
   }
 
@@ -75,16 +97,17 @@ class LoginCubit extends Cubit<LoginState> {
       LoginParams(usernameOrEmail: usernameOrEmail, password: password),
     );
 
-    print('✅✅✅✅✅✅ Token Login Cubit: ${result}');
-    result.fold(
-      (failure) => emit(LoginFailure(failure.message)),
-      (authResponse) =>
-          emit(LoginSuccess(authResponse.user, authResponse.accessToken)),
-    );
+    result.fold((failure) => emit(LoginFailure(failure.message)), (
+      authResponse,
+    ) {
+      emit(LoginSuccess(authResponse.user, authResponse.accessToken));
+      sessionWatcherService.start(authResponse.accessToken);
+    });
   }
 
   Future<void> logout() async {
     emit(LoginLoading());
+    sessionWatcherService.stop();
     final result = await logoutUseCase(NoParams());
     result.fold(
       (failure) => emit(LoginFailure(failure.message)),
@@ -92,7 +115,25 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  /// Called by [SessionExpiredDialog]'s "Continuar sesión" action.
+  Future<void> extendSession() async {
+    try {
+      final session = await refreshCoordinator.refresh();
+      emit(LoginSuccess(session.user, session.accessToken));
+      sessionWatcherService.start(session.accessToken);
+    } catch (_) {
+      await logout();
+    }
+  }
+
   void _clearLocalSession() {
+    sessionWatcherService.stop();
     logoutUseCase(NoParams()).ignore();
+  }
+
+  @override
+  Future<void> close() {
+    _sessionEventSubscription?.cancel();
+    return super.close();
   }
 }

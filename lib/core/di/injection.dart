@@ -6,6 +6,7 @@ import 'package:flutter_application/features/incidents/data/datasources/incident
 import 'package:flutter_application/features/incidents/data/repositories/incident_repository_impl.dart';
 import 'package:flutter_application/features/incidents/domain/repositories/incident_repository.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/create_incident.dart';
+import 'package:flutter_application/features/incidents/domain/usecases/get_incident_dashboard_kpis.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/resolve_incident.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/find_incidents_by_connection.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/find_incident_by_id.dart';
@@ -16,6 +17,9 @@ import 'package:flutter_application/features/audit/domain/usecases/close_sector.
 import 'package:flutter_application/features/audit/domain/usecases/get_audit_by_month.dart';
 import 'package:flutter_application/features/audit/domain/usecases/watch_audit_by_month.dart';
 import 'package:flutter_application/features/audit/presentation/cubit/audit_cubit.dart';
+import 'package:flutter_application/features/public/presentation/cubit/public_incident_kpis_cubit.dart';
+import 'package:flutter_application/features/public/presentation/cubit/public_incidents_map_cubit.dart';
+import 'package:flutter_application/features/reading/domain/usecases/create_reading_usecase.dart';
 import 'package:flutter_application/features/theme/data/datasources/theme_local_datasource.dart';
 import 'package:flutter_application/features/theme/data/repositories/theme_repository_impl.dart';
 import 'package:flutter_application/features/theme/domain/repositories/theme_repository.dart';
@@ -45,6 +49,7 @@ import 'package:flutter_application/features/auth/domain/usecases/check_auth_sta
 import 'package:flutter_application/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/verify_user_usecase.dart';
+import 'package:flutter_application/features/auth/domain/usecases/refresh_token_usecase.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
@@ -92,8 +97,34 @@ import 'package:flutter_application/features/work-orders/domain/usecases/create_
 import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 
 import 'package:get_it/get_it.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:flutter_application/core/network/authenticated_http_client.dart';
+import 'package:flutter_application/core/network/session_event_bus.dart';
+import 'package:flutter_application/core/network/token_refresh_coordinator.dart';
+import 'package:flutter_application/core/services/session_watcher_service.dart';
+
+import 'package:flutter_application/features/properties/search/data/datasources/local_connection_datasource.dart';
+import 'package:flutter_application/features/properties/search/data/datasources/remote_connection_datasource.dart'
+    as search_remote;
+import 'package:flutter_application/features/properties/search/data/datasources/remote_connection_with_properties_datasource.dart'
+    as search_remote_prop;
+import 'package:flutter_application/features/properties/search/data/repositories/connection_repository_impl.dart'
+    as search_conn_repo;
+import 'package:flutter_application/features/properties/search/data/repositories/connection_with_properties_repository_impl.dart'
+    as search_conn_prop_repo;
+import 'package:flutter_application/features/properties/search/domain/usecases/find_property_with_client.dart';
+import 'package:flutter_application/features/properties/search/domain/usecases/get_connection_with_properties.dart'
+    as search_get_conn;
+import 'package:flutter_application/features/properties/search/presentation/info/cubit/search_connection_cubit.dart';
+import 'package:flutter_application/features/properties/search/domain/services/document_export_service.dart';
+import 'package:flutter_application/features/properties/search/data/services/pdf_document_export_service_impl.dart';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:flutter_application/core/network/network_info.dart';
 
 final sl = GetIt.instance;
 
@@ -103,7 +134,37 @@ Future<void> init() async {
   // ==========================
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
-  sl.registerLazySingleton<http.Client>(() => http.Client());
+
+  // ==========================
+  // SESSION MANAGEMENT
+  // ==========================
+  // `SessionEventBus` and `TokenRefreshCoordinator` must be registered
+  // before `http.Client` below, since the wrapped client depends on them.
+  sl.registerLazySingleton<SessionEventBus>(() => SessionEventBus());
+  sl.registerLazySingleton<TokenRefreshCoordinator>(
+    () => TokenRefreshCoordinator(
+      authRepository: sl<AuthRepository>(),
+      authLocalDataSource: sl<AuthLocalDataSource>(),
+    ),
+  );
+  sl.registerLazySingleton<SessionWatcherService>(
+    () => SessionWatcherService(
+      coordinator: sl<TokenRefreshCoordinator>(),
+      sessionEventBus: sl<SessionEventBus>(),
+    ),
+  );
+
+  // Every datasource below resolves `http.Client` through this single
+  // registration, so wrapping it here transparently adds silent
+  // refresh-and-retry-on-401 behavior to all of them (Decorator pattern) —
+  // no other datasource file needs to change.
+  sl.registerLazySingleton<http.Client>(
+    () => AuthenticatedHttpClient(
+      inner: http.Client(),
+      coordinator: sl<TokenRefreshCoordinator>(),
+      sessionEventBus: sl<SessionEventBus>(),
+    ),
+  );
 
   // ==========================
   // WEBSOCKET (Global singleton)
@@ -124,8 +185,14 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
   );
+  // Uses its own raw `http.Client` (NOT the `sl()`-resolved wrapped one) to
+  // break the circular dependency: AuthenticatedHttpClient ->
+  // TokenRefreshCoordinator -> AuthRepository -> AuthRemoteDataSource.
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: sl()),
+    () => AuthRemoteDataSourceImpl(
+      client: http.Client(),
+      authLocalDataSource: sl(),
+    ),
   );
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
@@ -140,12 +207,17 @@ Future<void> init() async {
     () => CheckAuthStatusUseCase(sl()),
   );
   sl.registerLazySingleton<VerifyUserUseCase>(() => VerifyUserUseCase(sl()));
-  sl.registerFactory(
+  sl.registerLazySingleton<RefreshTokenUseCase>(
+    () => RefreshTokenUseCase(sl()),
+  );
+  sl.registerLazySingleton<LoginCubit>(
     () => LoginCubit(
       loginUseCase: sl(),
       logoutUseCase: sl(),
       checkAuthStatusUseCase: sl(),
-      verifyUserUseCase: sl(),
+      refreshCoordinator: sl<TokenRefreshCoordinator>(),
+      sessionWatcherService: sl<SessionWatcherService>(),
+      sessionEventBus: sl<SessionEventBus>(),
     ),
   );
 
@@ -175,10 +247,11 @@ Future<void> init() async {
     () => CreatePhotoReadingUseCase(sl()),
   );
   sl.registerFactory(() => PhotoReadingBloc(sl()));
+  sl.registerLazySingleton<CreateReadingUseCase>(
+    () => CreateReadingUseCase(sl()),
+  );
   sl.registerFactory(
-    () => FormBloc(
-      token: sl<SharedPreferences>().getString(CACHED_AUTH_TOKEN) ?? '',
-    ),
+    () => FormBloc(createReadingUseCase: sl<CreateReadingUseCase>()),
   );
 
   // ==========================
@@ -397,6 +470,12 @@ Future<void> init() async {
       findIncidentCategoriesUseCase: sl(),
     ),
   );
+  sl.registerFactory(() => PublicIncidentsMapCubit(sl()));
+  sl.registerLazySingleton(() => GetIncidentDashboardKpis(sl()));
+
+  sl.registerFactory(
+    () => PublicIncidentKpisCubit(getIncidentDashboardKpisUseCase: sl()),
+  );
 
   // ==========================
   // THEME FEATURE
@@ -411,5 +490,75 @@ Future<void> init() async {
   sl.registerLazySingleton<SaveThemeMode>(() => SaveThemeMode(sl()));
   sl.registerSingleton<ThemeCubit>(
     ThemeCubit(getThemeMode: sl(), saveThemeMode: sl()),
+  );
+  // ==========================
+  // SEARCH FEATURE
+  // ==========================
+  sl.registerLazySingleton(() => Connectivity());
+  sl.registerLazySingleton(() => InternetConnectionChecker.createInstance());
+  sl.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl(connectivity: sl(), connectionChecker: sl()),
+  );
+
+  sl.registerLazySingleton<LocalConnectionDataSource>(
+    () => LocalConnectionDataSourceImpl(sharedPreferences: sl()),
+  );
+
+  sl.registerLazySingleton<search_remote.RemoteConnectionDataSource>(
+    () => search_remote.RemoteConnectionDataSourceImpl(sl(), sl()),
+  );
+
+  sl.registerLazySingleton<
+    search_remote_prop.RemoteConnectionWithPropertiesDataSource
+  >(
+    () => search_remote_prop.RemoteConnectionWithPropertiesDataSourceImpl(
+      sl(),
+      sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<search_conn_repo.ConnectionRepositoryImpl>(
+    () => search_conn_repo.ConnectionRepositoryImpl(
+      remoteConnectionDataSource:
+          sl<search_remote.RemoteConnectionDataSource>(),
+      localConnectionDataSource: sl<LocalConnectionDataSource>(),
+      networkInfo: sl<NetworkInfo>(),
+    ),
+  );
+
+  sl.registerLazySingleton<
+    search_conn_prop_repo.ConnectionWithPropertiesRepositoryImpl
+  >(
+    () => search_conn_prop_repo.ConnectionWithPropertiesRepositoryImpl(
+      remoteConnectionWithPropertiesDataSource:
+          sl<search_remote_prop.RemoteConnectionWithPropertiesDataSource>(),
+      localConnectionDataSource: sl<LocalConnectionDataSource>(),
+      networkInfo: sl<NetworkInfo>(),
+    ),
+  );
+
+  sl.registerLazySingleton<FindPropertyWithClient>(
+    () =>
+        FindPropertyWithClient(sl<search_conn_repo.ConnectionRepositoryImpl>()),
+  );
+
+  sl.registerLazySingleton<search_get_conn.GetConnection>(
+    () => search_get_conn.GetConnection(
+      sl<search_conn_repo.ConnectionRepositoryImpl>(),
+    ),
+  );
+
+  sl.registerLazySingleton<search_get_conn.GetConnectionWithProperties>(
+    () => search_get_conn.GetConnectionWithProperties(
+      sl<search_conn_prop_repo.ConnectionWithPropertiesRepositoryImpl>(),
+    ),
+  );
+
+  sl.registerFactory<SearchConnectionCubit>(
+    () => SearchConnectionCubit(sl<search_get_conn.GetConnection>()),
+  );
+
+  sl.registerLazySingleton<DocumentExportService>(
+    () => PdfDocumentExportServiceImpl(),
   );
 }

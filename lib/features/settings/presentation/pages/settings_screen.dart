@@ -284,6 +284,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String email,
     List<String> roles,
   ) {
+    final isSuperAdmin = roles.any(
+      (r) => r.toUpperCase() == 'SUPER ADMINISTRADOR',
+    );
+    final dotColor = isSuperAdmin
+        ? const Color(0xFFFFC107)
+        : const Color(0xFF1EB980);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       padding: const EdgeInsets.all(16),
@@ -315,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$firstName $lastName',
+                  '${firstName.split(' ').first} ${lastName.split(' ').first}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -347,6 +353,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
+                // Dot status
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isSuperAdmin ? 'Super Administrador' : 'Administrador',
+                      style: TextStyle(
+                        color: isSuperAdmin
+                            ? const Color(0xFFFFC107)
+                            : Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -366,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showSecurityStatus(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Estado de seguridad'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -392,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Aceptar'),
           ),
         ],

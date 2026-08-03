@@ -15,6 +15,16 @@ class Email extends Equatable {
   List<Object?> get props => [email];
 }
 
+class ConnectionLocation extends Equatable {
+  final double? lat;
+  final double? lng;
+
+  const ConnectionLocation({this.lat, this.lng});
+
+  @override
+  List<Object?> get props => [lat, lng];
+}
+
 class Reading extends Equatable {
   final int? readingId;
   final DateTime? previousReadingDate;
@@ -43,6 +53,7 @@ class Reading extends Equatable {
   final String? connectionStateName;
   final String? connectionStateDescription;
   final bool? permitReading;
+  final ConnectionLocation? connectionLocation;
 
   const Reading({
     this.readingId,
@@ -71,6 +82,7 @@ class Reading extends Equatable {
     this.connectionStateName,
     this.connectionStateDescription,
     this.permitReading,
+    this.connectionLocation,
   });
 
   @override
@@ -101,5 +113,6 @@ class Reading extends Equatable {
     connectionStateName,
     connectionStateDescription,
     permitReading,
+    connectionLocation,
   ];
 }

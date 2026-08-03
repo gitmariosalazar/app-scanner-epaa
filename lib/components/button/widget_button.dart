@@ -26,6 +26,8 @@ class ActionButton extends StatelessWidget {
   // === Extras ===
   final Widget? trailing; // Para badges, counters, etc.
   final double? iconSizeOverride;
+  final bool hideButton;
+  final bool hideElevation;
 
   const ActionButton({
     super.key,
@@ -42,6 +44,8 @@ class ActionButton extends StatelessWidget {
     this.size = ActionButtonSize.medium,
     this.trailing,
     this.iconSizeOverride,
+    this.hideButton = false,
+    this.hideElevation = false,
   });
 
   // === Helpers internos ===
@@ -75,6 +79,8 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (hideButton) return const SizedBox.shrink();
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -90,7 +96,9 @@ class ActionButton extends StatelessWidget {
     // === Estilos por tipo ===
     Color? fillColor;
     Color? foregroundColor;
-    double elevation = ResponsiveUtils.cardElevation(context);
+    double elevation = hideElevation
+        ? 0
+        : ResponsiveUtils.cardElevation(context);
 
     switch (style) {
       case ActionButtonStyle.elevated:
@@ -181,7 +189,7 @@ class ActionButton extends StatelessWidget {
           backgroundColor: fillColor,
           foregroundColor: foregroundColor,
           elevation: elevation,
-          shadowColor: effectiveColor.withOpacity(0.3),
+          shadowColor: effectiveColor.withValues(alpha: 0.3),
           disabledBackgroundColor: theme.disabledColor,
           minimumSize: Size(
             size == ActionButtonSize.small ? 80 : 100,
@@ -251,10 +259,26 @@ class ResponsiveButton extends StatelessWidget {
         colorFilter: enable
             ? const ColorFilter.mode(Colors.transparent, BlendMode.color)
             : const ColorFilter.matrix(<double>[
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0,      0,      0,      1, 0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
         child: GestureDetector(
           onTapDown: enable && !loading
@@ -284,8 +308,9 @@ class ResponsiveButton extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: color.withOpacity(enable ? 0.2 : 0.0),
-                        blurRadius:
-                            ResponsiveUtils.isSmallDevice(context) ? 8 : 12,
+                        blurRadius: ResponsiveUtils.isSmallDevice(context)
+                            ? 8
+                            : 12,
                         offset: Offset(
                           0,
                           ResponsiveUtils.isSmallDevice(context) ? 3 : 5,
@@ -333,12 +358,11 @@ class ResponsiveButton extends StatelessWidget {
                               ResponsiveUtils.hSpace(context, 0.03),
                               Text(
                                 label,
-                                style: ResponsiveUtils.buttonText(
-                                  context,
-                                ).copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: ResponsiveUtils.buttonText(context)
+                                    .copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
                             ],
                           ),

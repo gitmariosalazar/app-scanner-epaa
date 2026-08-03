@@ -6,7 +6,7 @@ import 'package:flutter_application/features/incidents/domain/entities/incident.
 import 'package:flutter_application/features/incidents/domain/repositories/incident_repository.dart';
 
 class ResolveIncidentParams {
-  final int incidentId;
+  final String incidentId;
   final String resolverUserId;
   final ResolveIncidentRequest request;
 
@@ -17,7 +17,8 @@ class ResolveIncidentParams {
   });
 }
 
-class ResolveIncidentUseCase implements UseCase<IncidentModel, ResolveIncidentParams> {
+class ResolveIncidentUseCase
+    implements UseCase<IncidentModel, ResolveIncidentParams> {
   final IncidentRepository repository;
 
   ResolveIncidentUseCase(this.repository);

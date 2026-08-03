@@ -22,7 +22,7 @@ class ReadingRepositoryImpl implements ReadingRepository {
   }
 
   @override
-  Future<List<ReadingBasicInfo>> findBasicReading(String catastralCode) async {
+  Future<List<Reading>> findBasicReading(String catastralCode) async {
     final dtos = await dataSource.findBasicReading(catastralCode);
     return dtos.map((dto) => _mapBasicInfoToEntity(dto)).toList();
   }
@@ -43,8 +43,8 @@ class ReadingRepositoryImpl implements ReadingRepository {
   }
 
   // Mappers (could be moved to separate mapper files)
-  ReadingBasicInfo _mapBasicInfoToEntity(ReadingBasicInfoResponse dto) {
-    return ReadingBasicInfo(
+  Reading _mapBasicInfoToEntity(ReadingBasicInfoResponse dto) {
+    return Reading(
       readingId: dto.readingId,
       previousReadingDate: dto.previousReadingDate != null
           ? DateTime.tryParse(dto.previousReadingDate!)
@@ -53,13 +53,13 @@ class ReadingRepositoryImpl implements ReadingRepository {
       cardId: dto.cardId,
       clientName: dto.clientName,
       address: dto.address,
-      previousReading: dto.previousReading,
-      currentReading: dto.currentReading,
+      previousReading: dto.previousReading?.toString(),
+      currentReading: dto.currentReading?.toString(),
       sector: dto.sector,
       account: dto.account,
-      readingValue: dto.readingValue,
-      averageConsumption: dto.averageConsumption,
-      meterNumber: dto.meterNumber,
+      readingValue: dto.readingValue?.toString(),
+      averageConsumption: dto.averageConsumption?.toString(),
+      meterNumber: dto.meterNumber?.toString(),
       rateId: dto.rateId,
       rateName: dto.rateName,
     );

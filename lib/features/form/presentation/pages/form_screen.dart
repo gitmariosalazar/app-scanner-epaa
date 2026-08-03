@@ -1,6 +1,7 @@
 // lib/features/form/presentation/pages/form_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
 import 'package:flutter_application/features/form/presentation/services/photo_reading_service.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_application/features/form/presentation/widgets/owner_add
 import 'package:flutter_application/features/form/presentation/widgets/reading_current_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/reading_fields_row.dart';
 import 'package:flutter_application/features/properties/list/domain/usecases/get_connection_with_properties.dart';
+import 'package:flutter_application/features/reading/data/model/create_reading_request.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
 import 'package:flutter_application/utils/dialog_utils.dart';
@@ -869,9 +871,9 @@ class _FormScreenState extends State<FormScreen>
         await submitPhotoReading(
           context: context,
           images: _attachedImages,
-          readingId: state.data['readingId'],
-          cadastralKey: state.data['cadastralKey'],
-          description: state.data['novelty'] ?? 'Sin descripción',
+          readingId: state.data.readingId ?? 0,
+          cadastralKey: state.data.cadastralKey ?? '',
+          description: state.data.novelty ?? 'Sin descripción',
           mode: widget.mode,
         );
         if (mounted) {
@@ -900,38 +902,66 @@ class _FormScreenState extends State<FormScreen>
 
     setState(() => _errorMessage = null);
 
+    LocationCapture? capture;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        var permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          );
+          capture = LocationCapture(
+            lat: position.latitude,
+            lng: position.longitude,
+          );
+        }
+      }
+    } catch (e) {
+      // Ignorar error de ubicación y enviar null o manejar según se requiera
+    }
+
+    if (!mounted) return;
+
     await DialogUtils.showConfirmationDialog(
       context,
       onConfirm: () {
         if (!mounted) return;
         context.read<form_bloc.FormBloc>().add(
           form_bloc.InsertReadingEvent(
-            novelty: _descriptionController.text,
-            currentReading: double.parse(_newCurrentReadingController.text),
-            previousReading: double.parse(
-              _currentReadingController.text.isEmpty
-                  ? '0'
-                  : _currentReadingController.text,
+            request: CreateReadingRequest(
+              novelty: _descriptionController.text,
+              currentReading: double.parse(_newCurrentReadingController.text),
+              previousReading: double.parse(
+                _currentReadingController.text.isEmpty
+                    ? '0'
+                    : _currentReadingController.text,
+              ),
+              rentalIncomeCode: 0,
+              incomeCode: 0,
+              cadastralKey: _cadastralKeyConnectionController.text,
+              sector: int.parse(
+                _sectorConnectionController.text.isEmpty
+                    ? '0'
+                    : _sectorConnectionController.text,
+              ),
+              account: int.parse(
+                _accountConnectionController.text.isEmpty
+                    ? '0'
+                    : _accountConnectionController.text,
+              ),
+              readingValue: double.parse('0'),
+              connectionId: _connectionIdController.text,
+              sewerRate: 0.0,
+              averageConsumption:
+                  double.tryParse(_averageConsumptionController.text) ?? 0.0,
+              previousMonthReading: _monthReadingController.text,
+              readingLocation: capture,
             ),
-            rentalIncomeCode: 0,
-            incomeCode: 0,
-            cadastralKey: _cadastralKeyConnectionController.text,
-            sector: int.parse(
-              _sectorConnectionController.text.isEmpty
-                  ? '0'
-                  : _sectorConnectionController.text,
-            ),
-            account: int.parse(
-              _accountConnectionController.text.isEmpty
-                  ? '0'
-                  : _accountConnectionController.text,
-            ),
-            readingValue: double.parse('0'),
-            connectionId: _connectionIdController.text,
-            sewerRate: 0.0,
-            averageConsumption:
-                double.tryParse(_averageConsumptionController.text) ?? 0.0,
-            previousMonthReading: _monthReadingController.text,
           ),
         );
       },
