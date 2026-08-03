@@ -126,6 +126,13 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:flutter_application/core/network/network_info.dart';
 
+import 'package:flutter_application/features/location_enforcer/domain/repositories/location_enforcer_repository.dart';
+import 'package:flutter_application/features/location_enforcer/data/repositories/location_enforcer_repository_impl.dart';
+import 'package:flutter_application/features/location_enforcer/domain/usecases/check_location_status_usecase.dart';
+import 'package:flutter_application/features/location_enforcer/domain/usecases/request_location_permission_usecase.dart';
+import 'package:flutter_application/features/location_enforcer/domain/usecases/open_location_settings_usecase.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -560,5 +567,29 @@ Future<void> init() async {
 
   sl.registerLazySingleton<DocumentExportService>(
     () => PdfDocumentExportServiceImpl(),
+  );
+
+  // ==========================
+  // LOCATION ENFORCER FEATURE
+  // ==========================
+  sl.registerLazySingleton<LocationEnforcerRepository>(
+    () => LocationEnforcerRepositoryImpl(),
+  );
+  sl.registerLazySingleton<CheckLocationStatusUseCase>(
+    () => CheckLocationStatusUseCase(sl()),
+  );
+  sl.registerLazySingleton<RequestLocationPermissionUseCase>(
+    () => RequestLocationPermissionUseCase(sl()),
+  );
+  sl.registerLazySingleton<OpenLocationSettingsUseCase>(
+    () => OpenLocationSettingsUseCase(sl()),
+  );
+  // We register it as singleton to keep state across app
+  sl.registerSingleton<LocationEnforcerCubit>(
+    LocationEnforcerCubit(
+      checkLocationStatusUseCase: sl(),
+      requestLocationPermissionUseCase: sl(),
+      openLocationSettingsUseCase: sl(),
+    ),
   );
 }

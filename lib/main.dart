@@ -10,7 +10,8 @@ import 'package:flutter_application/core/router/app_router.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ← Agrega esto
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -58,25 +59,30 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<LoginCubit>()..checkAuthStatus()),
         BlocProvider(create: (_) => di.sl<PhotoReadingBloc>()),
         BlocProvider.value(value: di.sl<ThemeCubit>()),
+        BlocProvider.value(value: di.sl<LocationEnforcerCubit>()),
       ],
-      child: BlocListener<LoginCubit, LoginState>(
-        listener: (context, state) {
-          if (state is LoginInitial) {
-            AppRouter.router.go('/login');
-          } else if (state is LoginSuccess) {
-            AppRouter.router.go('/home');
-          } else if (state is LoginSessionExpired) {
-            final cubit = context.read<LoginCubit>();
-            final dialogContext = AppRouter.navigatorKey.currentContext;
-            if (dialogContext != null) {
-              SessionExpiredDialog.show(
-                dialogContext,
-                onExtend: cubit.extendSession,
-                onLogout: cubit.logout,
-              );
-            }
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<LoginCubit, LoginState>(
+            listener: (context, state) {
+              if (state is LoginInitial) {
+                AppRouter.router.go('/login');
+              } else if (state is LoginSuccess) {
+                AppRouter.router.go('/home');
+              } else if (state is LoginSessionExpired) {
+                final cubit = context.read<LoginCubit>();
+                final dialogContext = AppRouter.navigatorKey.currentContext;
+                if (dialogContext != null) {
+                  SessionExpiredDialog.show(
+                    dialogContext,
+                    onExtend: cubit.extendSession,
+                    onLogout: cubit.logout,
+                  );
+                }
+              }
+            },
+          ),
+        ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {
             return MaterialApp.router(

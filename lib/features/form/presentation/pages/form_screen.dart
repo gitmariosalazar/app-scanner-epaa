@@ -891,6 +891,55 @@ class _FormScreenState extends State<FormScreen>
     }
   }
 
+  void _showGpsSubmissionError(String message) {
+    if (!mounted) return;
+
+    setState(() => _errorMessage = message);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  Future<bool> _ensureGpsEnabledForSubmission() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showGpsSubmissionError('Activa el GPS para enviar la lectura.');
+        return false;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        _showGpsSubmissionError(
+          'Debes conceder permiso de ubicación para enviar la lectura.',
+        );
+        return false;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showGpsSubmissionError(
+          'El permiso de ubicación está bloqueado. Actívalo desde Ajustes.',
+        );
+        return false;
+      }
+
+      return permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+    } catch (e) {
+      _showGpsSubmissionError(
+        'No se pudo verificar el GPS. Actívalo e inténtalo de nuevo.',
+      );
+      return false;
+    }
+  }
+
   Future<void> _onSavePressed(
     BuildContext context,
     form_bloc.FormState state,
@@ -902,35 +951,33 @@ class _FormScreenState extends State<FormScreen>
 
     setState(() => _errorMessage = null);
 
+    final canSubmitWithGps = await _ensureGpsEnabledForSubmission();
+    if (!canSubmitWithGps) return;
+
     LocationCapture? capture;
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        var permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.whileInUse ||
-            permission == LocationPermission.always) {
-          final position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-          );
-          capture = LocationCapture(
-            lat: position.latitude,
-            lng: position.longitude,
-          );
-        }
-      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      capture = LocationCapture(
+        lat: position.latitude,
+        lng: position.longitude,
+      );
     } catch (e) {
-      // Ignorar error de ubicación y enviar null o manejar según se requiera
+      _showGpsSubmissionError(
+        'No se pudo obtener la ubicación actual. Verifica el GPS e inténtalo de nuevo.',
+      );
+      return;
     }
 
     if (!mounted) return;
 
     await DialogUtils.showConfirmationDialog(
       context,
-      onConfirm: () {
-        if (!mounted) return;
+      onConfirm: () async {
+        if (!mounted) return false;
+        final stillReadyForGps = await _ensureGpsEnabledForSubmission();
+        if (!stillReadyForGps) return false;
         context.read<form_bloc.FormBloc>().add(
           form_bloc.InsertReadingEvent(
             request: CreateReadingRequest(
@@ -964,6 +1011,7 @@ class _FormScreenState extends State<FormScreen>
             ),
           ),
         );
+        return true;
       },
       fields: [
         {'label': 'ID de Conexión', 'value': _connectionIdController.text},

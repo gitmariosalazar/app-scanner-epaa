@@ -29,6 +29,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
+import 'package:flutter_application/features/location_enforcer/domain/entities/location_status.dart';
+import 'package:flutter_application/core/router/go_router_refresh_stream.dart';
 import 'package:flutter_application/features/auth/presentation/pages/login_screen.dart';
 import 'package:flutter_application/features/reading/presentation/scan/pages/scan_screen.dart';
 import 'package:flutter_application/features/reading/presentation/manually/pages/manually_screen.dart';
@@ -46,6 +49,9 @@ import 'package:flutter_application/features/properties/list/domain/entities/per
     as list_person;
 import 'package:flutter_application/features/properties/list/domain/entities/company.dart'
     as list_company;
+import 'package:flutter_application/features/location_enforcer/presentation/pages/location_enforcer_screen.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
+import 'package:flutter_application/features/location_enforcer/domain/entities/location_status.dart';
 
 class AppRouter {
   /// Exposes a [BuildContext] that is always inside the Navigator/
@@ -59,10 +65,24 @@ class AppRouter {
     initialLocation: '/login',
     observers: [routeObserver],
     // GoRouter 16.x resolves the platform URI before initialLocation;
-    // redirect '/' to '/login' so unmatched root never throws.
+    refreshListenable: Listenable.merge([
+      GoRouterRefreshStream(di.sl<LoginCubit>().stream),
+      GoRouterRefreshStream(di.sl<LocationEnforcerCubit>().stream),
+    ]),
     redirect: (context, state) {
       final authState = di.sl<LoginCubit>().state;
       final isAuthenticated = authState is LoginSuccess;
+
+      final locationState = di.sl<LocationEnforcerCubit>().state;
+      final isLocationGranted = locationState.status == LocationStatus.granted;
+
+      if (!isLocationGranted && state.uri.path != '/enforce-location') {
+        return '/enforce-location';
+      }
+
+      if (isLocationGranted && state.uri.path == '/enforce-location') {
+        return isAuthenticated ? '/home' : '/login';
+      }
 
       if (state.uri.path == '/') {
         return isAuthenticated ? '/home' : '/login';
@@ -77,6 +97,7 @@ class AppRouter {
     routes: [
       // ── Auth (no shell) ──────────────────────────────────────────
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/enforce-location', builder: (context, state) => const LocationEnforcerScreen()),
 
       // ── Shell: tabs con bottom nav ───────────────────────────────
       ShellRoute(

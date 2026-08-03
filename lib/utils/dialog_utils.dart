@@ -97,7 +97,7 @@ class DialogUtils {
 
   static Future<bool?> showConfirmationDialog(
     BuildContext context, {
-    required VoidCallback onConfirm,
+    required Future<bool> Function() onConfirm,
     required List<Map<String, String>> fields,
   }) {
     final theme = Theme.of(context);
@@ -200,9 +200,11 @@ class DialogUtils {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: () {
-                        onConfirm(); // Ejecuta la acción antes de cerrar el diálogo
-                        Navigator.of(dialogContext).pop(true); // Retorna true
+                      onPressed: () async {
+                        final confirmed = await onConfirm();
+                        if (confirmed && context.mounted) {
+                          Navigator.of(dialogContext).pop(true);
+                        }
                       },
                       icon: const Icon(Icons.save, size: 20),
                       label: const Text('Guardar'),

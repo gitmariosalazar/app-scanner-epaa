@@ -8,6 +8,9 @@ import 'package:flutter_application/features/auth/presentation/cubit/login_state
 import 'package:flutter_application/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:flutter_application/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:flutter_application/features/dashboard/presentation/cubit/dashboard_state.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
+import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_state.dart';
+import 'package:flutter_application/features/location_enforcer/domain/entities/location_status.dart';
 
 // ── Semantic status colors (brand constants, same in light & dark) ─────────
 const _kGreen = Color(0xFF1EB980);
@@ -176,6 +179,23 @@ class _DashboardViewState extends State<_DashboardView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      BlocBuilder<LocationEnforcerCubit, LocationEnforcerState>(
+                        builder: (context, state) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Text(
+                                'GPS: ${state.status.name}',
+                                style: TextStyle(
+                                  color: state.status == LocationStatus.granted ? Colors.greenAccent : Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       Container(
                         width: 6,
                         height: 6,
