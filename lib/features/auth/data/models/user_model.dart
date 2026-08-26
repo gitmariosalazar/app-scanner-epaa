@@ -1,3 +1,4 @@
+import 'package:flutter_application/features/auth/domain/entities/RoleOrPermission.dart';
 import 'package:flutter_application/features/auth/domain/entities/user.dart';
 
 class UserModel extends User {
@@ -14,22 +15,28 @@ class UserModel extends User {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['userId'] as String? ?? json['id'] as String,
-      username: json['username'] as String,
-      email: json['email'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      roles:
-          (json['roles'] as List<dynamic>?)
-              ?.map((e) => e is String ? e : (e['name'] as String))
-              .toList() ??
-          [],
-      permissions:
-          (json['permissions'] as List<dynamic>?)
-              ?.map((e) => e is String ? e : (e['name'] as String))
-              .toList() ??
-          [],
-      isActive: json['isActive'] as bool,
+      id: json['userId']?.toString() ?? json['id']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      firstName: json['firstName']?.toString() ?? '',
+      lastName: json['lastName']?.toString() ?? '',
+      roles: (json['roles'] as List<dynamic>?)?.map((e) {
+        if (e is String) {
+          return RoleOrPermission(id: 0, name: e, description: '');
+        } else if (e is int) {
+          return RoleOrPermission(id: e, name: e.toString(), description: '');
+        }
+        return RoleOrPermission.fromJson(e as Map<String, dynamic>);
+      }).toList() ?? [],
+      permissions: (json['permissions'] as List<dynamic>?)?.map((e) {
+        if (e is String) {
+          return RoleOrPermission(id: 0, name: e, description: '');
+        } else if (e is int) {
+          return RoleOrPermission(id: e, name: e.toString(), description: '');
+        }
+        return RoleOrPermission.fromJson(e as Map<String, dynamic>);
+      }).toList() ?? [],
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 
@@ -40,8 +47,10 @@ class UserModel extends User {
       'email': email,
       'firstName': firstName,
       'lastName': lastName,
-      'roles': roles.map((roleName) => {'name': roleName}).toList(),
-      'permissions': permissions.map((permName) => {'name': permName}).toList(),
+      'roles': roles.map((role) => role.toJson()).toList(),
+      'permissions': permissions
+          .map((permission) => permission.toJson())
+          .toList(),
       'isActive': isActive,
     };
   }

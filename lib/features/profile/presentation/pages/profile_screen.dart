@@ -9,6 +9,9 @@ import 'package:flutter_application/features/auth/presentation/cubit/login_cubit
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/features/auth/domain/entities/user.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
+import 'package:flutter_application/features/profile/presentation/components/ChangePasswordModal.dart';
+import 'package:flutter_application/features/profile/presentation/cubit/change_password_cubit.dart';
+import 'package:flutter_application/core/di/injection.dart' as di;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE — orchestration only
@@ -49,6 +52,8 @@ class _ProfileBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return CustomScrollView(
       slivers: [
         // ── Hero SliverAppBar (banner + avatar + name) ─────────
@@ -60,6 +65,31 @@ class _ProfileBody extends StatelessWidget {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               _ProfileStatsRow(user: user),
+              const SizedBox(height: 10),
+              // Boton change password
+              ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => BlocProvider(
+                      create: (_) => di.sl<ChangePasswordCubit>(),
+                      child: ChangePasswordModal(userId: user.id),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.password_outlined, color: cs.primary),
+                label: Text(
+                  'Cambiar Contraseña',
+                  style: TextStyle(color: cs.primary),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cs.outline,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 0,
+                ),
+              ),
               const SizedBox(height: 24),
               _SectionHeader(
                 icon: Icons.person_outline_rounded,
@@ -89,7 +119,7 @@ class _ProfileBody extends StatelessWidget {
                 title: 'Roles y Permisos',
               ),
               const SizedBox(height: 12),
-              _RolesCard(roles: user.roles),
+              _RolesCard(roles: user.roles.map((e) => e.name).toList()),
               const SizedBox(height: 24),
               _SectionHeader(
                 icon: Icons.business_rounded,
@@ -125,7 +155,7 @@ class _ProfileHeroSliver extends StatelessWidget {
         : 225.0; // Aumentado para evitar overflow en SafeArea
 
     final isSuperAdmin = user.roles.any(
-      (r) => r.toUpperCase() == 'SUPER ADMINISTRADOR',
+      (r) => r.name.toUpperCase() == 'SUPER ADMINISTRADOR',
     );
     final dotColor = user.isActive
         ? (isSuperAdmin ? const Color(0xFFFFC107) : const Color(0xFF1EB980))
@@ -162,43 +192,6 @@ class _ProfileHeroSliver extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── EPAA badge ────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.onPrimary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: cs.onPrimary.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1EB980),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'EPAA-AA · Lecturista',
-                          style: TextStyle(
-                            color: cs.onPrimary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const Spacer(),
                   // ── Avatar + identity row ─────────────────────
                   Row(
@@ -271,8 +264,15 @@ class _ProfileHeroSliver extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            _ActiveBadge(isActive: user.isActive),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _ActiveBadge(isActive: user.isActive),
+                                _CompanyRoleBadge(user: user),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -323,6 +323,64 @@ class _ActiveBadge extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPANY / ROLE BADGE
+// ─────────────────────────────────────────────────────────────────────────────
+class _CompanyRoleBadge extends StatelessWidget {
+  final User user;
+  const _CompanyRoleBadge({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    
+    // Get the first role or default to 'Usuario'
+    String roleName = 'Usuario';
+    if (user.roles.isNotEmpty) {
+      final rawRole = user.roles.first.name;
+      // Capitalize properly (e.g., "SUPER ADMINISTRADOR" -> "Super Administrador")
+      roleName = rawRole.split(' ').map((word) {
+        if (word.isEmpty) return '';
+        return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      }).join(' ');
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.onPrimary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: cs.onPrimary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1EB980),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'EPAA-AA · $roleName',
+            style: TextStyle(
+              color: cs.onPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
           ),
         ],

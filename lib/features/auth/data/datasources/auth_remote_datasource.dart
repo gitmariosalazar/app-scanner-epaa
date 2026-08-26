@@ -4,6 +4,7 @@ import 'package:flutter_application/core/error/exception.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
 import 'package:flutter_application/features/auth/domain/entities/verify_user_result.dart';
+import 'package:flutter_application/features/auth/domain/schemas/dto/request/ChangePasswordRequest.dart';
 import 'package:http/http.dart' as http;
 
 abstract class AuthRemoteDataSource {
@@ -13,6 +14,7 @@ abstract class AuthRemoteDataSource {
 
   /// Throws [NetworkException] if offline. Throws [ServerException] if server errors.
   Future<VerifyUserResult> verifyUser(String usernameOrEmail);
+  Future<void> changePassword(String userId, ChangePasswordRequest request);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -166,6 +168,48 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           if (e is ServerException) rethrow;
           throw ServerException(
             'User verification failed with status ${response.statusCode}',
+            response.statusCode,
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> changePassword(
+    String userId,
+    ChangePasswordRequest request,
+  ) async {
+    return guardNetwork(() async {
+      final authResponse = await authLocalDataSource.getAuthResponse();
+      final uri = Uri.parse('$baseUrl/users-gateway/update-password/$userId');
+      final response = await client.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (authResponse != null)
+            'Authorization': 'Bearer ${authResponse.accessToken}',
+        },
+        body: jsonEncode({
+          'oldPassword': request.oldPassword,
+          'newPassword': request.newPassword,
+          'confirmNewPassword': request.confirmNewPassword,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return;
+      } else {
+        try {
+          final json = jsonDecode(response.body);
+          throw ServerException(
+            json['message']?.toString() ?? 'Change password failed',
+            response.statusCode,
+          );
+        } catch (e) {
+          if (e is ServerException) rethrow;
+          throw ServerException(
+            'Change password failed with status ${response.statusCode}',
             response.statusCode,
           );
         }

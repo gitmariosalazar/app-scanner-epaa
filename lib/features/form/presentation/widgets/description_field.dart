@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/components/text/text_field.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
+import 'mic_suffix_button.dart';
 
 class DescriptionField extends StatelessWidget {
   final TextEditingController descriptionController;
@@ -20,6 +21,7 @@ class DescriptionField extends StatelessWidget {
           'Descripción o Novedades${mode == 'manual' ? ' (Requerido)' : ' (Opcional)'}',
       leftIcon: Icons.description,
       maxLines: ResponsiveUtils.isTablet(context) ? 5 : 3,
+      suffixIcon: MicSuffixButton(controller: descriptionController),
       hintText: mode == 'manual'
           ? 'Ingrese una descripción detallada...'
           : 'Ingrese una descripción o novedad...',

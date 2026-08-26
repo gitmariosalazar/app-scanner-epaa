@@ -125,7 +125,7 @@ class LecturasScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _ActionCard(
               icon: Icons.cable,
-              enable: false,
+              enable: true,
               title: 'Buscar Acometidas',
               subtitle:
                   'Accede a información de acometidas y medidores para buscar por CI/RUC o Número de Medidor',

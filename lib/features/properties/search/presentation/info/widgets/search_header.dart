@@ -66,7 +66,8 @@ class SearchHeader extends StatelessWidget {
                     onSubmitted: (_) => onSearch(),
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      hintText: 'Clave catastral o Cédula/RUC',
+                      hintText:
+                          'Clave catastral, Número de Medidor o Cédula/RUC',
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.hintColor.withValues(alpha: 0.6),
                       ),

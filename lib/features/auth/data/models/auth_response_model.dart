@@ -1,15 +1,12 @@
+import 'package:flutter_application/features/auth/domain/entities/auth_response_entity.dart';
 import 'package:flutter_application/features/auth/data/models/user_model.dart';
 
-class AuthResponseModel {
-  final String accessToken;
-  final String refreshToken;
-  final UserModel user;
-
-  AuthResponseModel({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.user,
-  });
+class AuthResponseModel extends AuthResponseEntity {
+  const AuthResponseModel({
+    required String accessToken,
+    required String refreshToken,
+    required UserModel user,
+  }) : super(accessToken: accessToken, refreshToken: refreshToken, user: user);
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
     return AuthResponseModel(
@@ -23,7 +20,15 @@ class AuthResponseModel {
     return {
       'accessToken': accessToken,
       'refreshToken': refreshToken,
-      'user': user.toJson(),
+      'user': (user as UserModel).toJson(),
     };
   }
 }
+
+/*
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+*/

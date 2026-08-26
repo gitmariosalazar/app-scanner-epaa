@@ -1,16 +1,17 @@
 // lib/features/home/presentation/pages/welcome_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/di/injection.dart' as di;
-import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
-import 'package:flutter_application/features/auth/data/models/user_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
+import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
+import 'package:flutter_application/features/auth/domain/entities/user.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Welcome / Home screen — SRP: only handles the welcome UI.
-/// DIP: depends on [AuthLocalDataSource] abstraction, not a concrete class.
+/// DIP: depends on [LoginCubit] for global state.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -19,7 +20,6 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  UserModel? _user;
   DateTime _now = DateTime.now();
   late final Timer _clockTimer;
   String _version = '1.0.1';
@@ -27,7 +27,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUser();
     _loadVersion();
     // Refresh time every minute to keep greeting/clock up to date.
     _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -43,13 +42,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           _version = packageInfo.version;
         });
       }
-    } catch (_) {}
-  }
-
-  Future<void> _loadUser() async {
-    try {
-      final authResponse = await di.sl<AuthLocalDataSource>().getAuthResponse();
-      if (mounted) setState(() => _user = authResponse?.user);
     } catch (_) {}
   }
 
@@ -71,6 +63,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final loginState = context.watch<LoginCubit>().state;
+    final user = loginState is LoginSuccess ? loginState.user : null;
+
     return Scaffold(
       backgroundColor: cs.surface,
       body: CustomScrollView(
@@ -79,7 +74,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           // ── Hero header ─────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _HeroHeader(
-              user: _user,
+              user: user,
               greeting: _greeting,
               now: _now,
               isDark: isDark,
@@ -155,6 +150,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       onTap: () => context.push('/manually-entry'),
     ),
     _FeatureCard(
+      icon: Icons.search_rounded,
+      title: 'Buscar Acometidas',
+      subtitle: 'Consulta las acometidas',
+      color: const Color(0xFF6A1B9A),
+      onTap: () => context.push('/search-connection'),
+    ),
+    _FeatureCard(
       icon: Icons.dashboard_rounded,
       title: 'Dashboard',
       subtitle: 'Indicadores y\nmétricas clave',
@@ -202,7 +204,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 // ── Hero Header ───────────────────────────────────────────────────────────────
 
 class _HeroHeader extends StatelessWidget {
-  final UserModel? user;
+  final User? user;
   final String greeting;
   final DateTime now;
   final bool isDark;

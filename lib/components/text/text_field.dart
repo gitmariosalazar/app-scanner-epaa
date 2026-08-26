@@ -15,6 +15,7 @@ class CustomTextField extends StatelessWidget {
   final TextStyle? textStyle;
   final bool isReadOnly;
   final List<TextInputFormatter>? inputFormatters;
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
@@ -28,6 +29,7 @@ class CustomTextField extends StatelessWidget {
     this.textStyle,
     this.isReadOnly = false,
     this.inputFormatters,
+    this.suffixIcon,
   });
 
   @override
@@ -86,6 +88,7 @@ class CustomTextField extends StatelessWidget {
                   ),
               decoration: InputDecoration(
                 hintText: hintText,
+                suffixIcon: suffixIcon,
                 contentPadding: contentPadding,
                 filled: !isReadOnly,
                 fillColor: isReadOnly

@@ -1,7 +1,7 @@
 name: flutter_application
 description: 'Una aplicación de escaneo en Flutter'
 publish_to: 'none'
-version: 1.0.2+2
+version: 1.0.4+4
 
 environment:
   sdk: ^3.9.2
@@ -47,6 +47,7 @@ dependencies:
   open_filex: ^4.7.0
   connectivity_plus: ^6.1.5
   internet_connection_checker: ^3.0.1
+  speech_to_text: ^7.4.0
 
 flutter_launcher_icons:
   android: 'launcher_icon'

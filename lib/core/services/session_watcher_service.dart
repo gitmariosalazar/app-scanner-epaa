@@ -19,15 +19,19 @@ class SessionWatcherService with WidgetsBindingObserver {
   /// Fire the proactive refresh this long before the access token expires.
   static const Duration refreshBuffer = Duration(seconds: 30);
 
-  /// How long the app may sit backgrounded before the session is treated
-  /// as idle-timed-out (mirrors MAX_IDLE_TIME_MS in the web frontends).
-  static const Duration maxBackgroundIdleTime = Duration(minutes: 15);
+  /// How long the app may stay backgrounded without network before the session
+  /// is treated as idle-timed-out. Field workers often pocket their phone for
+  /// extended periods — 4 h gives a full shift without interruption.
+  static const Duration maxBackgroundIdleTime = Duration(hours: 4);
 
   /// Retry delay when a proactive refresh fails purely due to connectivity.
   static const Duration networkRetryDelay = Duration(seconds: 30);
 
   Timer? _refreshTimer;
   DateTime? _backgroundedAt;
+  /// Tracks the last time the user interacted with the app (pointer event).
+  /// Used to measure true idle time rather than just backgrounded time.
+  DateTime? _lastActivityAt;
   bool _isObserving = false;
 
   SessionWatcherService({
@@ -46,11 +50,19 @@ class SessionWatcherService with WidgetsBindingObserver {
     _scheduleRefresh(accessToken);
   }
 
+  /// Call this whenever the user interacts with the app (tap, scroll, etc.).
+  /// Resets the idle clock so a brief background period after activity is not
+  /// counted against the user.
+  void recordUserActivity() {
+    _lastActivityAt = DateTime.now();
+  }
+
   /// Stops all monitoring. Call on logout.
   void stop() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
     _backgroundedAt = null;
+    _lastActivityAt = null;
     if (_isObserving) {
       WidgetsBinding.instance.removeObserver(this);
       _isObserving = false;
@@ -86,6 +98,30 @@ class SessionWatcherService with WidgetsBindingObserver {
     }
   }
 
+  /// Attempt a refresh specifically triggered by the app coming to the
+  /// foreground. If the network is unavailable AND the user has been idle
+  /// longer than [maxBackgroundIdleTime], the session is treated as expired.
+  /// Otherwise the app continues with the current (possibly still-valid) token.
+  Future<void> _attemptRefreshOnResume({
+    required bool expireOnNetworkFailure,
+  }) async {
+    try {
+      final session = await _coordinator.refresh();
+      // Got a fresh pair of tokens — reschedule the proactive timer.
+      _scheduleRefresh(session.accessToken);
+    } on AuthSessionExpiredException {
+      // Refresh token itself is gone — must re-login.
+      _sessionEventBus.emitExpired();
+    } on NetworkRefreshException {
+      // No internet on resume.
+      if (expireOnNetworkFailure) {
+        // Idle too long AND no network to verify → expire for security.
+        _sessionEventBus.emitExpired();
+      }
+      // else: short background + no network → keep going with current token.
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -96,9 +132,20 @@ class SessionWatcherService with WidgetsBindingObserver {
 
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
-    if (backgroundedAt != null &&
-        DateTime.now().difference(backgroundedAt) > maxBackgroundIdleTime) {
-      _sessionEventBus.emitExpired();
-    }
+
+    // Measure idle from the last recorded user activity (most accurate) or
+    // from the moment the app was backgrounded (conservative fallback).
+    final idleStart = _lastActivityAt != null &&
+            backgroundedAt != null &&
+            _lastActivityAt!.isAfter(backgroundedAt)
+        ? _lastActivityAt
+        : backgroundedAt;
+
+    final wasIdleTooLong = idleStart != null &&
+        DateTime.now().difference(idleStart) > maxBackgroundIdleTime;
+
+    // Always refresh on resume — keeps the token fresh every time the user
+    // opens the app, even after a short background period.
+    _attemptRefreshOnResume(expireOnNetworkFailure: wasIdleTooLong);
   }
 }

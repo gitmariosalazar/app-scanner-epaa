@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_application/core/services/speech_service.dart';
 import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
 import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
 import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
@@ -50,7 +51,9 @@ import 'package:flutter_application/features/auth/domain/usecases/login_usecase.
 import 'package:flutter_application/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/verify_user_usecase.dart';
 import 'package:flutter_application/features/auth/domain/usecases/refresh_token_usecase.dart';
+import 'package:flutter_application/features/auth/domain/usecases/change_password_usecase.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
+import 'package:flutter_application/features/profile/presentation/cubit/change_password_cubit.dart';
 
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
 import 'package:flutter_application/features/observations/data/repositories/observation_repository_impl.dart';
@@ -161,6 +164,11 @@ Future<void> init() async {
     ),
   );
 
+  // ==========================
+  // NATIVE SERVICES
+  // ==========================
+  sl.registerLazySingleton<SpeechService>(() => SpeechServiceImpl());
+
   // Every datasource below resolves `http.Client` through this single
   // registration, so wrapping it here transparently adds silent
   // refresh-and-retry-on-401 behavior to all of them (Decorator pattern) —
@@ -216,6 +224,12 @@ Future<void> init() async {
   sl.registerLazySingleton<VerifyUserUseCase>(() => VerifyUserUseCase(sl()));
   sl.registerLazySingleton<RefreshTokenUseCase>(
     () => RefreshTokenUseCase(sl()),
+  );
+  sl.registerLazySingleton<ChangePasswordUsecase>(
+    () => ChangePasswordUsecase(repository: sl()),
+  );
+  sl.registerFactory<ChangePasswordCubit>(
+    () => ChangePasswordCubit(changePasswordUsecase: sl()),
   );
   sl.registerLazySingleton<LoginCubit>(
     () => LoginCubit(

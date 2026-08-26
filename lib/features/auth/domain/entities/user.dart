@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_application/features/auth/domain/entities/RoleOrPermission.dart';
 
 class User extends Equatable {
   final String id;
@@ -6,8 +7,8 @@ class User extends Equatable {
   final String email;
   final String firstName;
   final String lastName;
-  final List<String> roles;
-  final List<String> permissions;
+  final List<RoleOrPermission> roles;
+  final List<RoleOrPermission> permissions;
   final bool isActive;
 
   const User({

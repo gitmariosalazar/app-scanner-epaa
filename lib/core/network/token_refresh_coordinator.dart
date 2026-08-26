@@ -1,7 +1,7 @@
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/core/network/refresh_exceptions.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
-import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
+import 'package:flutter_application/features/auth/domain/entities/auth_response_entity.dart';
 import 'package:flutter_application/features/auth/domain/repositories/auth_repository.dart';
 
 /// Single-flight guard around `POST /auth/refresh`.
@@ -22,15 +22,15 @@ class TokenRefreshCoordinator {
     required this.authLocalDataSource,
   });
 
-  Future<AuthResponseModel>? _inFlight;
+  Future<AuthResponseEntity>? _inFlight;
 
-  Future<AuthResponseModel> refresh() {
+  Future<AuthResponseEntity> refresh() {
     return _inFlight ??= _performRefresh().whenComplete(() {
       _inFlight = null;
     });
   }
 
-  Future<AuthResponseModel> _performRefresh() async {
+  Future<AuthResponseEntity> _performRefresh() async {
     final storedRefreshToken = await authLocalDataSource.getRefreshToken();
     if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
       throw AuthSessionExpiredException('No refresh token found');

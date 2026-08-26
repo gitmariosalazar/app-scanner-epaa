@@ -7,6 +7,7 @@ import 'package:flutter_application/components/text/acometida_id_input_formatter
 import 'package:flutter_application/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:flutter_application/features/auth/presentation/cubit/login_state.dart';
 import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
+import 'package:flutter_application/features/form/presentation/widgets/mic_suffix_button.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/features/reading/domain/usecases/get_reading_info.dart';
@@ -1446,6 +1447,8 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
         labelText: 'Descripción de la Incidencia *',
         hintText: 'Describe el problema en detalle...',
         alignLabelWithHint: true,
+        suffixIcon: MicSuffixButton(controller: _descriptionController),
+
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: colors.surfaceContainerHighest,
@@ -1468,6 +1471,7 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
         labelText: 'Dirección de Referencia *',
         hintText: 'Describe la dirección de referencia...',
         alignLabelWithHint: true,
+        suffixIcon: MicSuffixButton(controller: _referenceAddressController),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: colors.surfaceContainerHighest,

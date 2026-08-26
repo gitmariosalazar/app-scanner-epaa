@@ -58,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               user.firstName,
               user.lastName,
               user.email,
-              user.roles,
+              user.roles.map((e) => e.name).toList(),
             ),
 
           // ── General section ──────────────────────────────────────

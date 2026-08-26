@@ -4,11 +4,13 @@ import 'package:flutter_application/core/error/exception.dart';
 import 'package:flutter_application/core/error/failure.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:flutter_application/features/auth/data/models/auth_response_model.dart';
+import 'package:flutter_application/features/auth/data/models/user_model.dart';
+import 'package:flutter_application/features/auth/domain/entities/auth_response_entity.dart';
 import 'package:flutter_application/features/auth/domain/entities/verify_user_result.dart';
 import 'package:flutter_application/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_application/core/services/websocket_service.dart';
 import 'package:flutter_application/config/environments/environment.dart';
+import 'package:flutter_application/features/auth/domain/schemas/dto/request/ChangePasswordRequest.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -22,7 +24,7 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<Either<Failure, AuthResponseModel>> login(
+  Future<Either<Failure, AuthResponseEntity>> login(
     String username_or_email,
     String password,
   ) async {
@@ -36,7 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // Validar si el usuario tiene el rol permitido para usar esta aplicación móvil.
       // Permitimos acceso a 'LECTURISTA CAMPO' y opcionalmente a 'SUPER ADMINISTRADOR'.
       final hasAccess = authResponse.user.roles.any((role) {
-        final upperRole = role.toUpperCase();
+        final upperRole = role.name.toUpperCase();
         return upperRole == 'LECTURISTA CAMPO' ||
             upperRole == 'SUPER ADMINISTRADOR';
       });
@@ -53,7 +55,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       await localDataSource.cacheToken(authResponse.accessToken);
       await localDataSource.cacheRefreshToken(authResponse.refreshToken);
-      await localDataSource.cacheUser(authResponse.user);
+      await localDataSource.cacheUser(authResponse.user as UserModel);
 
       webSocketService.disconnect();
       webSocketService.connect(
@@ -74,7 +76,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthResponseModel>> refreshToken(
+  Future<Either<Failure, AuthResponseEntity>> refreshToken(
     String refreshToken,
   ) async {
     try {
@@ -84,7 +86,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDataSource.cacheToken(authResponse.accessToken);
       // Backend rotates refresh tokens (single-use) — persist the new one.
       await localDataSource.cacheRefreshToken(authResponse.refreshToken);
-      await localDataSource.cacheUser(authResponse.user);
+      await localDataSource.cacheUser(authResponse.user as UserModel);
 
       // Update WebSocket with new token
       webSocketService.disconnect();
@@ -123,7 +125,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthResponseModel>> checkAuthStatus() async {
+  Future<Either<Failure, AuthResponseEntity>> checkAuthStatus() async {
     try {
       final token = await localDataSource.getToken();
       final authResponse = await localDataSource.getAuthResponse();
@@ -157,6 +159,23 @@ class AuthRepositoryImpl implements AuthRepository {
     } on NetworkException catch (e) {
       // Device is offline — propagate as NetworkFailure so the cubit
       // can keep the session alive instead of clearing it.
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> changePassword(
+    String userId,
+    ChangePasswordRequest request,
+  ) async {
+    try {
+      await remoteDataSource.changePassword(userId, request);
+      return Right(null);
+    } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, code: e.code));

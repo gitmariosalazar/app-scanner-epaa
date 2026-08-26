@@ -239,6 +239,7 @@ class ConnectionResultCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
+                  /*
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
@@ -269,6 +270,7 @@ class ConnectionResultCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  */
                   // Report button
                   const SizedBox(width: 6),
                   Expanded(

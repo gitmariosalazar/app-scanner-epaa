@@ -126,6 +126,13 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
+  /// Called by the global gesture listener in main.dart on every pointer event.
+  /// Delegates to [SessionWatcherService.recordUserActivity] to reset the
+  /// idle clock — prevents the session from expiring while the user is active.
+  void notifyUserActivity() {
+    sessionWatcherService.recordUserActivity();
+  }
+
   void _clearLocalSession() {
     sessionWatcherService.stop();
     logoutUseCase(NoParams()).ignore();
