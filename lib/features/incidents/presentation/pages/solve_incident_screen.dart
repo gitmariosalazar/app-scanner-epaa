@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application/features/form/presentation/widgets/mic_suffix_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -171,6 +172,9 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
                       ),
                       filled: true,
                       fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
+                      suffixIcon: MicSuffixButton(
+                        controller: _descriptionController,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {

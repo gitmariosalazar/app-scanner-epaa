@@ -946,10 +946,40 @@ class _FormScreenState extends State<FormScreen>
   ) async {
     if (!_formKey.currentState!.validate()) return;
 
-    // SE ELIMINÓ LA RESTRICCIÓN: imágenes ya no son obligatorias en modo manual
-    // SE ELIMINÓ LA RESTRICCIÓN: descripción (observaciones) ya no es obligatoria
-
     setState(() => _errorMessage = null);
+
+    final enteredReadingStr = _newCurrentReadingController.text;
+    final previousReadingStr = _currentReadingController.text;
+
+    if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
+      final enteredReading = double.tryParse(enteredReadingStr) ?? 0.0;
+      final previousReading = double.tryParse(previousReadingStr) ?? 0.0;
+
+      if (enteredReading < previousReading) {
+        if (_descriptionController.text.trim().isEmpty ||
+            _attachedImages.isEmpty) {
+          setState(
+            () => _errorMessage =
+                'La lectura ingresada es menor a la anterior. Debe ingresar una descripción o adjuntar al menos una foto obligatoriamente.',
+          );
+          return;
+        }
+        if (_descriptionController.text.trim().isEmpty) {
+          setState(
+            () => _errorMessage =
+                'La lectura ingresada es menor a la anterior. Debe ingresar una descripción obligatoriamente.',
+          );
+          return;
+        }
+        if (_attachedImages.isEmpty) {
+          setState(
+            () => _errorMessage =
+                'La lectura ingresada es menor a la anterior. Debe adjuntar al menos una foto obligatoriamente.',
+          );
+          return;
+        }
+      }
+    }
 
     final canSubmitWithGps = await _ensureGpsEnabledForSubmission();
     if (!canSubmitWithGps) return;
