@@ -84,6 +84,7 @@ import 'package:flutter_application/features/properties/form/update/domain/repos
 import 'package:flutter_application/features/properties/form/update/domain/repositories/customer_repository.dart';
 import 'package:flutter_application/features/properties/form/update/domain/usecases/update_company.dart';
 import 'package:flutter_application/features/properties/form/update/domain/usecases/update_connection.dart';
+import 'package:flutter_application/features/properties/form/update/domain/usecases/change_meter_usecase.dart';
 import 'package:flutter_application/features/properties/form/update/domain/usecases/update_customer.dart';
 
 import 'package:flutter_application/features/reading/data/datasources/remote_reading_data_source.dart';
@@ -271,8 +272,12 @@ Future<void> init() async {
   sl.registerLazySingleton<CreateReadingUseCase>(
     () => CreateReadingUseCase(sl()),
   );
-  sl.registerFactory(
-    () => FormBloc(createReadingUseCase: sl<CreateReadingUseCase>()),
+  sl.registerFactory<FormBloc>(
+    () => FormBloc(
+      createReadingUseCase: sl<CreateReadingUseCase>(),
+      changeMeterUseCase: sl<ChangeMeterUseCase>(),
+      createIncidentUseCase: sl<CreateIncidentUseCase>(),
+    ),
   );
 
   // ==========================
@@ -348,6 +353,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<UpdateConnectionUseCase>(
     () => UpdateConnectionUseCase(sl()),
+  );
+  sl.registerLazySingleton<ChangeMeterUseCase>(
+    () => ChangeMeterUseCase(sl()),
   );
 
   // ==========================

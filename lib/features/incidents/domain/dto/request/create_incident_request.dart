@@ -12,6 +12,8 @@ class CreateIncidentRequest {
   final double longitude;
   final List<File> images;
   final ReportClient? reportClient;
+  final String? condicionMedidor;
+  final String? estadoFisico;
 
   const CreateIncidentRequest({
     this.connectionId,
@@ -25,6 +27,8 @@ class CreateIncidentRequest {
     required this.longitude,
     required this.images,
     this.reportClient,
+    this.condicionMedidor,
+    this.estadoFisico,
   });
 }
 

@@ -18,3 +18,14 @@ class FormFailure extends FormState {
 
   FormFailure({required this.message});
 }
+
+class ChangeMeterSuccess extends FormState {
+  ChangeMeterSuccess();
+}
+
+class MeterConflictState extends FormState {
+  final SaveCompleteFormEvent originalEvent;
+  final String message;
+
+  MeterConflictState({required this.originalEvent, required this.message});
+}

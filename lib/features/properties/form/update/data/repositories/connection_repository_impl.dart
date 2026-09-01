@@ -2,6 +2,7 @@
 import 'package:flutter_application/features/properties/form/update/data/datasources/connection_remote_data_source.dart';
 import 'package:flutter_application/features/properties/form/update/data/mappers/connection_mapper.dart';
 import 'package:flutter_application/features/properties/form/update/domain/repositories/connection_repository.dart';
+import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
 
 class ConnectionRepositoryImpl implements ConnectionRepository {
   final ConnectionRemoteDataSource remoteDataSource;
@@ -18,5 +19,10 @@ class ConnectionRepositoryImpl implements ConnectionRepository {
       connectionId: connectionId,
       request: request,
     );
+  }
+
+  @override
+  Future<void> changeMeterByReader(ChangeMeterRequest request) async {
+    await remoteDataSource.changeMeter(request);
   }
 }

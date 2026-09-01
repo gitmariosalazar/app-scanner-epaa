@@ -17,6 +17,12 @@ import 'package:flutter_application/features/form/presentation/widgets/owner_add
 import 'package:flutter_application/features/form/presentation/widgets/reading_current_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/reading_fields_row.dart';
 import 'package:flutter_application/features/properties/list/domain/usecases/get_connection_with_properties.dart';
+import 'package:flutter_application/features/reading/domain/usecases/create_reading_usecase.dart';
+import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
+import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
+import 'package:flutter_application/features/incidents/presentation/cubit/incident_state.dart';
+import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
+import 'package:flutter_application/features/incidents/domain/dto/request/create_incident_request.dart';
 import 'package:flutter_application/features/reading/data/model/create_reading_request.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
@@ -81,11 +87,19 @@ class _FormScreenState extends State<FormScreen>
   late ConsumptionVisuals _consumptionVisuals;
   String? _errorMessage;
   String? _successMessage;
+
+  // Nuevos campos para actualización de medidor
+  String? _condicionMedidor;
+  String? _estadoFisico;
+  final _nuevoMedidorController = TextEditingController();
   bool hasCurrentReading = false;
   String? connectionStateDescription;
   String? connectionStateName;
   bool? permitReading;
   int? connectionStateId;
+
+  // Incidente de Ruta
+  int? _selectedRouteIncidentId;
 
   @override
   void initState() {
@@ -93,6 +107,9 @@ class _FormScreenState extends State<FormScreen>
     _initializeData();
     _setupListeners();
     _setupAnimations();
+
+    // Cargar categorías de incidentes (novedades de ruta)
+    context.read<IncidentCubit>().loadIncidentCategories();
   }
 
   void _initializeData() {
@@ -112,6 +129,7 @@ class _FormScreenState extends State<FormScreen>
     _averageConsumptionController.text = r[0].averageConsumption.toString();
     _readingValueController.text = r[0].readingValue.toString();
     _meterNumberController.text = r[0].meterNumber.toString();
+    _nuevoMedidorController.text = r[0].meterNumber.toString();
     _previousReadingDate.text = r[0].previousReadingDate!.toString();
     _monthReadingController.text = r[0].monthReading.toString();
     _startDatePeriodController.text = r[0].startDatePeriod!.toIso8601String();
@@ -201,6 +219,18 @@ class _FormScreenState extends State<FormScreen>
                 if (!mounted) return;
                 if (state is form_bloc.FormSuccess) {
                   _handleSuccess(context, state);
+                } else if (state is form_bloc.ChangeMeterSuccess) {
+                  DialogUtils.showResultDialog(
+                    context,
+                    '¡Medidor cambiado con éxito!',
+                    Icons.check_circle,
+                    Theme.of(context).colorScheme.secondary,
+                  );
+                  Future.delayed(const Duration(seconds: 2), () {
+                    if (mounted) Navigator.of(context).pop(true);
+                  });
+                } else if (state is form_bloc.MeterConflictState) {
+                  _showMeterConflictDialog(state);
                 } else if (state is form_bloc.FormFailure) {
                   setState(() => _errorMessage = state.message);
                 }
@@ -230,6 +260,9 @@ class _FormScreenState extends State<FormScreen>
                         ResponsiveUtils.vSpace(context, 0.03),
                         if (permitReading == true) ...[
                           if (hasCurrentReading == true) ...[
+                            _buildMeterInspectionSection(context),
+                            ResponsiveUtils.vSpace(context, 0.03),
+                            _buildRouteIncidentSection(context),
                             ReadingFieldsRow(
                               currentReadingController:
                                   _currentReadingController,
@@ -800,6 +833,274 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  Widget _buildRouteIncidentSection(BuildContext context) {
+    return BlocBuilder<IncidentCubit, IncidentState>(
+      builder: (context, state) {
+        List<IncidentTypeModel> routeIncidents = [];
+        if (state is IncidentCategoriesLoaded) {
+          // Filtrar solo la categoría 8 (Incidentes de Ruta)
+          final routeCategory = state.categories
+              .where((c) => c.id == 8)
+              .toList();
+          if (routeCategory.isNotEmpty) {
+            routeIncidents = routeCategory.first.incidentTypes;
+          }
+        }
+
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: Theme.of(context).colorScheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Incidentes / Novedades de Ruta',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<int>(
+                  validator: (value) => value == null ? 'Obligatorio' : null,
+                  decoration: InputDecoration(
+                    labelText: 'Seleccione Novedad *',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  value:
+                      routeIncidents.any(
+                        (i) => i.typeCode == _selectedRouteIncidentId,
+                      )
+                      ? _selectedRouteIncidentId
+                      : null,
+                  items: routeIncidents.map((incident) {
+                    return DropdownMenuItem<int>(
+                      value: incident.typeCode,
+                      child: Text(
+                        incident.typeName,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRouteIncidentId = value;
+                    });
+                  },
+                  icon: state is IncidentLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_drop_down),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMeterInspectionSection(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Inspección del Medidor',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    validator: (value) => value == null ? 'Obligatorio' : null,
+                    decoration: InputDecoration(
+                      labelText: 'Condición del Medidor *',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    ),
+                    value: _condicionMedidor,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'NUEVO',
+                        child: Text('NUEVO', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ANTIGUO',
+                        child: Text('ANTIGUO', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'NO_IDENTIFICADO',
+                        child: Text(
+                          'NO IDENTIFICADO',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (mounted) {
+                        setState(() {
+                          _condicionMedidor = val;
+                          if (val == 'NO_IDENTIFICADO') {
+                            _nuevoMedidorController.text = 'S/N';
+                            _estadoFisico = 'NO_IDENTIFICADO';
+                          } else {
+                            if (_nuevoMedidorController.text == 'S/N') {
+                              _nuevoMedidorController.clear();
+                            }
+                            if (_estadoFisico == 'NO_IDENTIFICADO') {
+                              _estadoFisico = null;
+                            }
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    validator: (value) => value == null ? 'Obligatorio' : null,
+                    decoration: InputDecoration(
+                      labelText: 'Estado Físico *',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    ),
+                    value: _estadoFisico,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'BUENO',
+                        child: Text('BUENO', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'REGULAR',
+                        child: Text('REGULAR', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'MALO',
+                        child: Text('MALO', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'DESTRUIDO',
+                        child: Text(
+                          'DESTRUIDO',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'NO_IDENTIFICADO',
+                        child: Text(
+                          'NO IDENTIFICADO',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (mounted) {
+                        setState(() {
+                          _estadoFisico = val;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TitledCard(
+              title: 'Número Registrado en Sistema',
+              elevation: ResponsiveUtils.cardElevation(context),
+              bottomRightIcon: Icon(
+                Icons.water_drop,
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.7),
+                size: ResponsiveUtils.iconSmall(context),
+              ),
+              titleStyle: ResponsiveUtils.titleSmall(context),
+              children: [
+                Text(
+                  _meterNumberController.text.isEmpty
+                      ? 'S/N'
+                      : '${_meterNumberController.text}',
+                  style: ResponsiveUtils.titleMedium(context).copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nuevoMedidorController,
+              decoration: InputDecoration(
+                labelText: 'Número de Medidor Físico *',
+                hintText: 'Ej. 123456789 (o S/N)',
+                prefixIcon: const Icon(
+                  Icons.speed,
+                ), // Icono de medidor/velocímetro
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                filled: true,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Obligatorio. Ingrese el número o S/N';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Helpers: blocked-connection info grid ────────────────────────────────
 
   Widget _connInfoCell(
@@ -948,35 +1249,122 @@ class _FormScreenState extends State<FormScreen>
 
     setState(() => _errorMessage = null);
 
+    ChangeMeterRequest? changeMeterReq;
+    CreateIncidentRequest? incidentReq;
+    CreateReadingRequest? readingReq;
+
+    final validImages = _attachedImages
+        .where((file) => file.existsSync())
+        .toList();
+
+    if (validImages.isEmpty) {
+      setState(
+        () => _errorMessage =
+            'Debe adjuntar al menos una foto obligatoriamente para continuar.',
+      );
+      return;
+    }
+
+    final inputNumeroMedidor = _nuevoMedidorController.text.trim();
+    final numeroSistema = _meterNumberController.text.trim();
+    final currentDesc = _descriptionController.text.trim();
+
+    // Evitar problemas de unicidad en la BD convirtiendo 'S/N' en 'CLAVECATASTRAL-S/N'
+    final isSinNumero =
+        inputNumeroMedidor.toUpperCase() == 'S/N' ||
+        inputNumeroMedidor.toUpperCase() == 'S/N.';
+    final numeroMedidorFinal = isSinNumero
+        ? '${_cadastralKeyConnectionController.text}-S/N'
+        : inputNumeroMedidor;
+
+    if (inputNumeroMedidor.isNotEmpty) {
+      String extraDesc = '';
+      if (numeroMedidorFinal == numeroSistema ||
+          inputNumeroMedidor == numeroSistema) {
+        extraDesc =
+            'Inspección: El número del medidor físico coincide exactamente con el registrado en el sistema ($numeroSistema). Anterior: ${_meterNumberController.text} Nuevo: ${_nuevoMedidorController.text} Lectura Anterior: ${_currentReadingController.text} Lectura Actual: ${_newCurrentReadingController.text}';
+      } else if (isSinNumero) {
+        extraDesc =
+            'Inspección: El medidor físico no tiene número visible o es ilegible (S/N). Se registró como $numeroMedidorFinal. Anterior: ${_meterNumberController.text} Nuevo: ${_nuevoMedidorController.text} Lectura Anterior: ${_currentReadingController.text} Lectura Actual: ${_newCurrentReadingController.text}';
+      } else {
+        extraDesc =
+            'Inspección: El número del medidor físico encontrado ($inputNumeroMedidor) es diferente al registrado en el sistema ($numeroSistema). Anterior: ${_meterNumberController.text} Nuevo: ${_nuevoMedidorController.text} Lectura Anterior: ${_currentReadingController.text} Lectura Actual: ${_newCurrentReadingController.text}';
+      }
+
+      _descriptionController.text = currentDesc.isEmpty
+          ? extraDesc
+          : '$currentDesc | $extraDesc';
+    }
+
+    if (inputNumeroMedidor.isNotEmpty &&
+        numeroMedidorFinal != numeroSistema &&
+        inputNumeroMedidor != numeroSistema) {
+      final meterDetail = MeterChangeDetail(
+        numeroMedidor: numeroMedidorFinal.isNotEmpty
+            ? numeroMedidorFinal
+            : null,
+        claveCatastral: _cadastralKeyConnectionController.text,
+        observaciones: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
+        medidorAnterior: OldMeterData(
+          numeroMedidor: _meterNumberController.text,
+          ultimaLectura: double.tryParse(_currentReadingController.text),
+          fechaUltimaLectura: DateTime.now().toIso8601String(),
+        ),
+        medidorNuevo: NewMeterData(
+          numeroMedidor: numeroMedidorFinal.isNotEmpty
+              ? numeroMedidorFinal
+              : null,
+          lecturaAnterior: 0.0,
+          lecturaActual: 0.0,
+          fechaUltimaLectura: DateTime.now().toIso8601String(),
+        ),
+      );
+
+      changeMeterReq = ChangeMeterRequest(
+        connectionId: _connectionIdController.text,
+        changeDetail: meterDetail,
+        images: validImages,
+        imageDescriptions: [],
+      );
+    }
+
     final enteredReadingStr = _newCurrentReadingController.text;
     final previousReadingStr = _currentReadingController.text;
 
-    if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
-      final enteredReading = double.tryParse(enteredReadingStr) ?? 0.0;
-      final previousReading = double.tryParse(previousReadingStr) ?? 0.0;
+    final isSameMeter =
+        _nuevoMedidorController.text.trim() ==
+        _meterNumberController.text.trim();
 
-      if (enteredReading < previousReading) {
-        if (_descriptionController.text.trim().isEmpty ||
-            _attachedImages.isEmpty) {
-          setState(
-            () => _errorMessage =
-                'La lectura ingresada es menor a la anterior. Debe ingresar una descripción o adjuntar al menos una foto obligatoriamente.',
-          );
-          return;
-        }
-        if (_descriptionController.text.trim().isEmpty) {
-          setState(
-            () => _errorMessage =
-                'La lectura ingresada es menor a la anterior. Debe ingresar una descripción obligatoriamente.',
-          );
-          return;
-        }
-        if (_attachedImages.isEmpty) {
-          setState(
-            () => _errorMessage =
-                'La lectura ingresada es menor a la anterior. Debe adjuntar al menos una foto obligatoriamente.',
-          );
-          return;
+    if (enteredReadingStr.isNotEmpty && isSameMeter) {
+      if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
+        final enteredReading = double.tryParse(enteredReadingStr) ?? 0.0;
+        final previousReading = double.tryParse(previousReadingStr) ?? 0.0;
+
+        if (enteredReading < previousReading) {
+          if (_descriptionController.text.trim().isEmpty ||
+              _attachedImages.isEmpty) {
+            setState(
+              () => _errorMessage =
+                  'La lectura ingresada es menor a la anterior. Debe ingresar una descripción o adjuntar al menos una foto obligatoriamente.',
+            );
+            return;
+          }
+          if (_descriptionController.text.trim().isEmpty) {
+            setState(
+              () => _errorMessage =
+                  'La lectura ingresada es menor a la anterior. Debe ingresar una descripción obligatoriamente.',
+            );
+            return;
+          }
+          if (_attachedImages.isEmpty) {
+            setState(
+              () => _errorMessage =
+                  'La lectura ingresada es menor a la anterior. Debe adjuntar al menos una foto obligatoriamente.',
+            );
+            return;
+          }
         }
       }
     }
@@ -1002,43 +1390,74 @@ class _FormScreenState extends State<FormScreen>
 
     if (!mounted) return;
 
+    if (_selectedRouteIncidentId != null) {
+      incidentReq = CreateIncidentRequest(
+        connectionId: _connectionIdController.text,
+        incidentTypeId: _selectedRouteIncidentId!,
+        reportDescription: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : 'Incidente reportado en ruta de lectura: Actualizacion del número de medidor: anterior: ${_meterNumberController.text}, nuevo: ${_nuevoMedidorController.text}. Lectura anterior: ${_currentReadingController.text}, Lectura actual: ${_newCurrentReadingController.text}',
+        referenceAddress: _addressConnectionController.text,
+        reportOrigin: 'LECTURISTA',
+        priority: 'MEDIA',
+        latitude: capture.lat,
+        longitude: capture.lng,
+        images: validImages,
+        condicionMedidor: _condicionMedidor,
+        estadoFisico: _estadoFisico,
+      );
+    }
+
+    if (enteredReadingStr.isNotEmpty) {
+      readingReq = CreateReadingRequest(
+        novelty: _descriptionController.text,
+        currentReading: double.parse(enteredReadingStr),
+        previousReading: double.parse(
+          previousReadingStr.isEmpty ? '0' : previousReadingStr,
+        ),
+        rentalIncomeCode: 0,
+        incomeCode: 0,
+        cadastralKey: _cadastralKeyConnectionController.text,
+        sector: int.parse(
+          _sectorConnectionController.text.isEmpty
+              ? '0'
+              : _sectorConnectionController.text,
+        ),
+        account: int.parse(
+          _accountConnectionController.text.isEmpty
+              ? '0'
+              : _accountConnectionController.text,
+        ),
+        readingValue: double.parse('0'),
+        connectionId: _connectionIdController.text,
+        sewerRate: 0.0,
+        averageConsumption:
+            double.tryParse(_averageConsumptionController.text) ?? 0.0,
+        previousMonthReading: _monthReadingController.text,
+        readingLocation: capture,
+      );
+    }
+
+    if (changeMeterReq == null && incidentReq == null && readingReq == null) {
+      setState(
+        () => _errorMessage =
+            'Debe ingresar una lectura, un cambio de medidor o un incidente para guardar.',
+      );
+      return;
+    }
+
     await DialogUtils.showConfirmationDialog(
       context,
       onConfirm: () async {
         if (!mounted) return false;
         final stillReadyForGps = await _ensureGpsEnabledForSubmission();
         if (!stillReadyForGps) return false;
+
         context.read<form_bloc.FormBloc>().add(
-          form_bloc.InsertReadingEvent(
-            request: CreateReadingRequest(
-              novelty: _descriptionController.text,
-              currentReading: double.parse(_newCurrentReadingController.text),
-              previousReading: double.parse(
-                _currentReadingController.text.isEmpty
-                    ? '0'
-                    : _currentReadingController.text,
-              ),
-              rentalIncomeCode: 0,
-              incomeCode: 0,
-              cadastralKey: _cadastralKeyConnectionController.text,
-              sector: int.parse(
-                _sectorConnectionController.text.isEmpty
-                    ? '0'
-                    : _sectorConnectionController.text,
-              ),
-              account: int.parse(
-                _accountConnectionController.text.isEmpty
-                    ? '0'
-                    : _accountConnectionController.text,
-              ),
-              readingValue: double.parse('0'),
-              connectionId: _connectionIdController.text,
-              sewerRate: 0.0,
-              averageConsumption:
-                  double.tryParse(_averageConsumptionController.text) ?? 0.0,
-              previousMonthReading: _monthReadingController.text,
-              readingLocation: capture,
-            ),
+          form_bloc.SaveCompleteFormEvent(
+            readingRequest: readingReq,
+            changeMeterRequest: changeMeterReq,
+            incidentRequest: incidentReq,
           ),
         );
         return true;
@@ -1083,6 +1502,85 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  void _showMeterConflictDialog(form_bloc.MeterConflictState state) {
+    final originalReq = state.originalEvent;
+    final numeroMedidor =
+        originalReq.changeMeterRequest?.changeDetail.numeroMedidor ??
+        'Desconocido';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Medidor Duplicado / En Conflicto'),
+          content: Text(
+            'El medidor físico ($numeroMedidor) ya está registrado en otra acometida.\n\n'
+            '¿Deseas guardar la lectura de todas formas y reportar automáticamente este incidente a la central para su revisión?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(
+                  () => _errorMessage =
+                      'Cambio de medidor cancelado por conflicto.',
+                );
+              },
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+
+                final readingLocation =
+                    originalReq.readingRequest?.readingLocation;
+
+                final autoIncidentReq = CreateIncidentRequest(
+                  connectionId:
+                      originalReq.changeMeterRequest?.connectionId ??
+                      _connectionIdController.text,
+                  incidentTypeId: 37, // Serie de Medidor No Coincide
+                  reportDescription:
+                      'Se encontró el medidor físico $numeroMedidor instalado en esta acometida, pero el sistema lo rechazó por conflicto. (Reporte Automático)',
+                  referenceAddress:
+                      _addressConnectionController.text.trim().isEmpty
+                      ? 'S/N'
+                      : _addressConnectionController.text,
+                  reportOrigin: 'LECTURISTA',
+                  priority: 'MEDIA',
+                  latitude: readingLocation?.lat ?? 0.0,
+                  longitude: readingLocation?.lng ?? 0.0,
+                  images: originalReq.changeMeterRequest?.images ?? [],
+                  condicionMedidor: _condicionMedidor,
+                  estadoFisico: _estadoFisico,
+                );
+
+                this.context.read<form_bloc.FormBloc>().add(
+                  form_bloc.SaveCompleteFormEvent(
+                    readingRequest: originalReq.readingRequest,
+                    changeMeterRequest: null, // Cancelamos el cambio de medidor
+                    incidentRequest: autoIncidentReq, // Agregamos el incidente
+                  ),
+                );
+              },
+              child: const Text(
+                'Reportar y Guardar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _newCurrentReadingController.removeListener(_updateCurrentConsumption);
@@ -1104,6 +1602,7 @@ class _FormScreenState extends State<FormScreen>
     _readingValueController.dispose();
     _previousReadingDate.dispose();
     _newCurrentReadingController.dispose();
+    _nuevoMedidorController.dispose();
     _animationController.dispose();
     super.dispose();
   }

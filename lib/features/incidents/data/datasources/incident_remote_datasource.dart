@@ -127,6 +127,12 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
           'cellPhone': request.reportClient!.cellPhone,
         });
       }
+      if (request.condicionMedidor != null) {
+        requestMultipart.fields['meterCondition'] = request.condicionMedidor!;
+      }
+      if (request.estadoFisico != null) {
+        requestMultipart.fields['meterPhysicalState'] = request.estadoFisico!;
+      }
       requestMultipart.fields['latitude'] = request.latitude.toString();
       requestMultipart.fields['longitude'] = request.longitude.toString();
 

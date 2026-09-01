@@ -658,7 +658,7 @@ class _CreateIncidentFormState extends State<CreateIncidentForm> {
       referenceAddress: _referenceAddressController.text.trim().isEmpty
           ? (_searchedReading?.address ?? '')
           : _referenceAddressController.text.trim(),
-      reportOrigin: 'WEB_USUARIO',
+      reportOrigin: 'LECTURISTA',
       priority: _selectedCategoryPriority,
       latitude: _latitude!,
       longitude: _longitude!,

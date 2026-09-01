@@ -142,6 +142,7 @@ class AppRouter {
               BlocProvider(
                 create: (_) => di.sl<ManuallyConnectionWithPropertiesBloc>(),
               ),
+              BlocProvider(create: (_) => di.sl<IncidentCubit>()),
             ],
             child: form.FormScreen(reading: reading, mode: mode),
           );
