@@ -14,6 +14,7 @@ class CreateIncidentRequest {
   final ReportClient? reportClient;
   final String? condicionMedidor;
   final String? estadoFisico;
+  final String? incidentCategory;
 
   const CreateIncidentRequest({
     this.connectionId,
@@ -29,6 +30,7 @@ class CreateIncidentRequest {
     this.reportClient,
     this.condicionMedidor,
     this.estadoFisico,
+    this.incidentCategory,
   });
 }
 

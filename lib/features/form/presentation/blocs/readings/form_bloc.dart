@@ -1,12 +1,8 @@
 // features/form/presentation/blocs/readings/form_bloc.dart
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/features/reading/data/model/create_reading_request.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 import 'package:equatable/equatable.dart';
-import 'dart:convert';
 import 'package:flutter_application/features/reading/domain/entities/reading_result.dart';
 import 'package:flutter_application/features/reading/domain/usecases/create_reading_usecase.dart';
 
@@ -14,6 +10,7 @@ import 'package:flutter_application/features/properties/form/update/domain/useca
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/create_incident.dart';
 import 'package:flutter_application/features/incidents/domain/dto/request/create_incident_request.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 
 part 'form_event.dart';
 part 'form_state.dart';
@@ -66,8 +63,13 @@ class FormBloc extends Bloc<FormEvent, FormState> {
           try {
             await changeMeterUseCase(event.changeMeterRequest!);
           } catch (e) {
-            if (e.toString().contains('409') || e.toString().toLowerCase().contains('asignado a esta acometida')) {
-              emit(MeterConflictState(originalEvent: event, message: e.toString()));
+            if (e.toString().contains('409') ||
+                e.toString().toLowerCase().contains(
+                  'asignado a esta acometida',
+                )) {
+              emit(
+                MeterConflictState(originalEvent: event, message: e.toString()),
+              );
               return;
             }
             rethrow;
@@ -99,6 +101,6 @@ class FormBloc extends Bloc<FormEvent, FormState> {
         }
         emit(FormFailure(message: errorMessage));
       }
-    });
+    }, transformer: droppable());
   }
 }

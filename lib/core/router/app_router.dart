@@ -50,8 +50,6 @@ import 'package:flutter_application/features/properties/list/domain/entities/per
 import 'package:flutter_application/features/properties/list/domain/entities/company.dart'
     as list_company;
 import 'package:flutter_application/features/location_enforcer/presentation/pages/location_enforcer_screen.dart';
-import 'package:flutter_application/features/location_enforcer/presentation/cubit/location_enforcer_cubit.dart';
-import 'package:flutter_application/features/location_enforcer/domain/entities/location_status.dart';
 
 class AppRouter {
   /// Exposes a [BuildContext] that is always inside the Navigator/
@@ -97,7 +95,10 @@ class AppRouter {
     routes: [
       // ── Auth (no shell) ──────────────────────────────────────────
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/enforce-location', builder: (context, state) => const LocationEnforcerScreen()),
+      GoRoute(
+        path: '/enforce-location',
+        builder: (context, state) => const LocationEnforcerScreen(),
+      ),
 
       // ── Shell: tabs con bottom nav ───────────────────────────────
       ShellRoute(

@@ -18,6 +18,7 @@ class ActionButtonsRow extends StatelessWidget {
   final Map<String, String> prefillData;
   final AnimationController animationController;
   final Animation<double> scaleAnimation;
+  final bool isProcessing;
 
   const ActionButtonsRow({
     super.key,
@@ -26,11 +27,12 @@ class ActionButtonsRow extends StatelessWidget {
     required this.prefillData,
     required this.animationController,
     required this.scaleAnimation,
+    this.isProcessing = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isLoading = state is form_bloc.FormLoading;
+    final bool isLoading = state is form_bloc.FormLoading || isProcessing;
 
     if (ResponsiveUtils.isMobile(context)) {
       return Column(

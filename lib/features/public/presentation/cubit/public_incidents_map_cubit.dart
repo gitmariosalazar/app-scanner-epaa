@@ -1,11 +1,13 @@
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/incidents/domain/usecases/find_incidents.dart';
 import 'public_incidents_map_state.dart';
 
 class PublicIncidentsMapCubit extends Cubit<PublicIncidentsMapState> {
   final FindIncidentsUseCase findIncidentsUseCase;
+  final MapProviderConfig mapConfig;
 
-  PublicIncidentsMapCubit(this.findIncidentsUseCase)
+  PublicIncidentsMapCubit(this.findIncidentsUseCase, this.mapConfig)
     : super(PublicIncidentsMapInitial());
 
   Future<void> loadMapIncidents() async {
@@ -23,7 +25,7 @@ class PublicIncidentsMapCubit extends Cubit<PublicIncidentsMapState> {
       final mappedIncidents = incidents
           .where((i) => i.latitude != null && i.longitude != null)
           .toList();
-      emit(PublicIncidentsMapLoaded(mappedIncidents));
+      emit(PublicIncidentsMapLoaded(mappedIncidents, mapConfig));
     });
   }
 }

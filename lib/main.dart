@@ -85,20 +85,23 @@ class MyApp extends StatelessWidget {
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {
-          // Global gesture listener: resets the session idle clock on every
-          // pointer event so the user is never kicked while actively working.
-          return Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: (_) => di.sl<LoginCubit>().notifyUserActivity(),
-            child: MaterialApp.router(
-              title: 'EPAA-AA Scanner',
-              debugShowCheckedModeBanner: false,
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              themeMode: themeMode,
-              routerConfig: AppRouter.router,
-            ),
-          );
+            // Global gesture listener: resets the session idle clock on every
+            // pointer event so the user is never kicked while actively working.
+            return Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => di.sl<LoginCubit>().notifyUserActivity(),
+              child: MaterialApp.router(
+                title: 'EPAA-AA Scanner',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: themeMode,
+                routerConfig: AppRouter.router,
+                builder: (context, child) {
+                  return SafeArea(child: child!);
+                },
+              ),
+            );
           },
         ),
       ),

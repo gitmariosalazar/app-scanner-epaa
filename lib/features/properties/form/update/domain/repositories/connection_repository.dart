@@ -1,4 +1,5 @@
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
+import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_basic_request.dart';
 
 abstract class ConnectionRepository {
   Future<void> updateConnection({
@@ -7,6 +8,8 @@ abstract class ConnectionRepository {
   });
 
   Future<void> changeMeterByReader(ChangeMeterRequest request);
+
+  Future<void> updateConnectionBasic(UpdateConnectionBasicRequest request);
 }
 
 class UpdateConnectionParams {

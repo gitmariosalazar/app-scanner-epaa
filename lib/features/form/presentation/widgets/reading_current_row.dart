@@ -65,10 +65,9 @@ class ReadingCurrentRow extends StatelessWidget {
             color: _kGreen,
             size: ResponsiveUtils.iconSmall(context),
           ),
-          titleStyle: ResponsiveUtils.titleSmall(context).copyWith(
-            color: _kGreen,
-            fontWeight: FontWeight.w600,
-          ),
+          titleStyle: ResponsiveUtils.titleSmall(
+            context,
+          ).copyWith(color: _kGreen, fontWeight: FontWeight.w600),
           backgroundColor: cs.secondaryContainer,
           children: [
             Text(

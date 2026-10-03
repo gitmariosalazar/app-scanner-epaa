@@ -1,6 +1,7 @@
 // lib/features/form/presentation/pages/form_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/utils/validators.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/components/card/title_card.dart';
 import 'package:flutter_application/components/divider/section_divider.dart';
@@ -13,11 +14,12 @@ import 'package:flutter_application/features/form/presentation/widgets/descripti
 import 'package:flutter_application/features/form/presentation/widgets/header_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/id_fields_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
+import 'package:flutter_application/features/properties/form/update/presentation/widgets/basic_update_connection_modal.dart';
 import 'package:flutter_application/features/form/presentation/widgets/owner_address_fields.dart';
 import 'package:flutter_application/features/form/presentation/widgets/reading_current_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/reading_fields_row.dart';
-import 'package:flutter_application/features/properties/list/domain/usecases/get_connection_with_properties.dart';
-import 'package:flutter_application/features/reading/domain/usecases/create_reading_usecase.dart';
+import 'package:flutter_application/features/properties/search/domain/usecases/get_connection_with_properties.dart'
+    as search_get_conn;
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
 import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
 import 'package:flutter_application/features/incidents/presentation/cubit/incident_state.dart';
@@ -31,7 +33,6 @@ import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
-import 'package:go_router/go_router.dart';
 import 'package:flutter_application/components/button/epaa_extended_fab.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 
@@ -87,6 +88,7 @@ class _FormScreenState extends State<FormScreen>
   late ConsumptionVisuals _consumptionVisuals;
   String? _errorMessage;
   String? _successMessage;
+  bool _isProcessingSave = false;
 
   // Nuevos campos para actualización de medidor
   String? _condicionMedidor;
@@ -100,6 +102,26 @@ class _FormScreenState extends State<FormScreen>
 
   // Incidente de Ruta
   int? _selectedRouteIncidentId;
+
+  // Novedades de consumo cero
+  String? _selectedLowConsumptionReason;
+  final List<String> _lowConsumptionReasons = [
+    'Predio deshabitado',
+    'Medidor frenado / dañado',
+    'Medidor robado / Inexistente',
+    'Válvula cerrada / Servicio suspendido',
+    'Lectura confirmada - Sin consumo real',
+    'Otro (especificar en descripción)',
+  ];
+
+  bool get _isZeroOrNegativeConsumption {
+    final current = double.tryParse(_newCurrentReadingController.text);
+    final previous = double.tryParse(_currentReadingController.text);
+    if (current != null && previous != null) {
+      return current <= previous;
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -182,6 +204,106 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  Widget _buildLowConsumptionDropdown(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(ResponsiveUtils.scaleWidth(context, 0.04)),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.errorContainer.withValues(alpha: 0.3),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.error,
+                size: 20,
+              ),
+              SizedBox(width: ResponsiveUtils.scaleWidth(context, 0.02)),
+              Expanded(
+                child: Text(
+                  'Consumo cero o negativo detectado',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.scaleHeight(context, 0.015)),
+          Text(
+            'Seleccione la novedad (obligatorio):',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 12,
+            ),
+          ),
+          SizedBox(height: ResponsiveUtils.scaleHeight(context, 0.01)),
+          DropdownButtonFormField<String>(
+            value: _selectedLowConsumptionReason,
+            isExpanded: true,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.5),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            hint: const Text('Seleccionar novedad...'),
+            items: _lowConsumptionReasons.map((String reason) {
+              return DropdownMenuItem<String>(
+                value: reason,
+                child: Text(reason, style: const TextStyle(fontSize: 14)),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedLowConsumptionReason = newValue;
+                  if (newValue != 'Otro (especificar en descripción)') {
+                    _descriptionController.text = newValue;
+                  } else {
+                    if (_lowConsumptionReasons.contains(
+                      _descriptionController.text,
+                    )) {
+                      _descriptionController.text = '';
+                    }
+                  }
+                });
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -247,7 +369,7 @@ class _FormScreenState extends State<FormScreen>
                           averageConsumptionController:
                               _averageConsumptionController,
                         ),
-                        ResponsiveUtils.vSpace(context, 0.03),
+                        ResponsiveUtils.vSpace(context, 0.015),
                         ConsumptionRow(
                           previousConsumptionController:
                               _previousConsumptionController,
@@ -257,12 +379,13 @@ class _FormScreenState extends State<FormScreen>
                           consumptionVisuals: _consumptionVisuals,
                           now: _now,
                         ),
-                        ResponsiveUtils.vSpace(context, 0.03),
+                        ResponsiveUtils.vSpace(context, 0.015),
                         if (permitReading == true) ...[
                           if (hasCurrentReading == true) ...[
                             _buildMeterInspectionSection(context),
-                            ResponsiveUtils.vSpace(context, 0.03),
+                            ResponsiveUtils.vSpace(context, 0.015),
                             _buildRouteIncidentSection(context),
+                            ResponsiveUtils.vSpace(context, 0.015),
                             ReadingFieldsRow(
                               currentReadingController:
                                   _currentReadingController,
@@ -271,6 +394,10 @@ class _FormScreenState extends State<FormScreen>
                               monthReadingController: _monthReadingController,
                             ),
                             ResponsiveUtils.vSpace(context, 0.015),
+                            if (_isZeroOrNegativeConsumption) ...[
+                              _buildLowConsumptionDropdown(context),
+                              ResponsiveUtils.vSpace(context, 0.015),
+                            ],
                             DescriptionField(
                               descriptionController: _descriptionController,
                               mode: widget.mode,
@@ -349,6 +476,7 @@ class _FormScreenState extends State<FormScreen>
                               },
                               animationController: _animationController,
                               scaleAnimation: _scaleAnimation,
+                              isProcessing: _isProcessingSave,
                             ),
                           ] else ...[
                             TitledCard(
@@ -775,6 +903,7 @@ class _FormScreenState extends State<FormScreen>
             ),
           ),
         ),
+        /*
         floatingActionButton: EpaaExtendedFab(
           enable: false,
           disabledTooltip: 'Conexión bloqueada — no disponible',
@@ -805,7 +934,7 @@ class _FormScreenState extends State<FormScreen>
             );
 
             try {
-              final connection = await di.sl<GetConnectionWithProperties>()(
+              final connection = await di.sl<search_get_conn.GetConnectionWithProperties>()(
                 acometidaId,
               );
 
@@ -815,6 +944,64 @@ class _FormScreenState extends State<FormScreen>
               this.context.push(
                 '/update-form',
                 extra: {'connection': connection, 'mode': 'manual'},
+              );
+            } catch (e) {
+              if (!mounted) return;
+              Navigator.pop(this.context);
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                SnackBar(
+                  content: Text('Error al cargar datos: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        ),
+        */
+        floatingActionButton: EpaaExtendedFab(
+          enable: true,
+          disabledTooltip: 'Conexión bloqueada — no disponible',
+          icon: const Icon(Icons.edit_note_rounded),
+          label: const Text(
+            'Actualizar Datos de Acometida',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          onPressed: () async {
+            final acometidaId = _connectionIdController.text.trim();
+
+            if (acometidaId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('ID de acometida no válido'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            );
+
+            try {
+              final connection =
+                  await di.sl<search_get_conn.GetConnectionWithProperties>()(
+                    acometidaId,
+                  );
+
+              if (!mounted) return;
+              Navigator.pop(this.context);
+
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) =>
+                    BasicUpdateConnectionModal(connection: connection),
               );
             } catch (e) {
               if (!mounted) return;
@@ -849,19 +1036,17 @@ class _FormScreenState extends State<FormScreen>
 
         return Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Theme.of(context).colorScheme.surface,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Incidentes / Novedades de Ruta',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -920,10 +1105,10 @@ class _FormScreenState extends State<FormScreen>
   Widget _buildMeterInspectionSection(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       color: Theme.of(context).colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -932,9 +1117,10 @@ class _FormScreenState extends State<FormScreen>
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
+                fontSize: 13,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -943,7 +1129,7 @@ class _FormScreenState extends State<FormScreen>
                     decoration: InputDecoration(
                       labelText: 'Condición del Medidor *',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(5),
                       ),
                       filled: true,
                       fillColor: Theme.of(
@@ -1042,7 +1228,7 @@ class _FormScreenState extends State<FormScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             TitledCard(
               title: 'Número Registrado en Sistema',
               elevation: ResponsiveUtils.cardElevation(context),
@@ -1071,7 +1257,7 @@ class _FormScreenState extends State<FormScreen>
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _nuevoMedidorController,
               decoration: InputDecoration(
@@ -1081,7 +1267,7 @@ class _FormScreenState extends State<FormScreen>
                   Icons.speed,
                 ), // Icono de medidor/velocímetro
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(5),
                 ),
                 filled: true,
                 fillColor: Theme.of(
@@ -1167,6 +1353,13 @@ class _FormScreenState extends State<FormScreen>
       Icons.check_circle,
       AppColors.secondary,
     );
+
+    if (mounted) {
+      setState(() {
+        _selectedRouteIncidentId = null;
+      });
+    }
+
     if (_attachedImages.isNotEmpty) {
       try {
         await submitPhotoReading(
@@ -1245,40 +1438,45 @@ class _FormScreenState extends State<FormScreen>
     BuildContext context,
     form_bloc.FormState state,
   ) async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isProcessingSave) return;
+    setState(() => _isProcessingSave = true);
 
-    setState(() => _errorMessage = null);
+    try {
+      if (!_formKey.currentState!.validate()) return;
 
-    ChangeMeterRequest? changeMeterReq;
-    CreateIncidentRequest? incidentReq;
-    CreateReadingRequest? readingReq;
+      setState(() => _errorMessage = null);
 
-    final validImages = _attachedImages
-        .where((file) => file.existsSync())
-        .toList();
+      ChangeMeterRequest? changeMeterReq;
+      CreateIncidentRequest? incidentReq;
+      CreateReadingRequest? readingReq;
 
-    if (validImages.isEmpty) {
-      setState(
-        () => _errorMessage =
-            'Debe adjuntar al menos una foto obligatoriamente para continuar.',
-      );
-      return;
-    }
+      final validImages = _attachedImages
+          .where((file) => file.existsSync())
+          .toList();
 
-    final inputNumeroMedidor = _nuevoMedidorController.text.trim();
-    final numeroSistema = _meterNumberController.text.trim();
-    final currentDesc = _descriptionController.text.trim();
+      if (validImages.isEmpty) {
+        setState(
+          () => _errorMessage =
+              'Debe adjuntar al menos una foto obligatoriamente para continuar.',
+        );
+        return;
+      }
 
-    // Evitar problemas de unicidad en la BD convirtiendo 'S/N' en 'CLAVECATASTRAL-S/N'
-    final isSinNumero =
-        inputNumeroMedidor.toUpperCase() == 'S/N' ||
-        inputNumeroMedidor.toUpperCase() == 'S/N.';
-    final numeroMedidorFinal = isSinNumero
-        ? '${_cadastralKeyConnectionController.text}-S/N'
-        : inputNumeroMedidor;
+      final inputNumeroMedidor = _nuevoMedidorController.text.trim();
+      final numeroSistema = _meterNumberController.text.trim();
+      final currentDesc = _descriptionController.text.trim();
 
-    if (inputNumeroMedidor.isNotEmpty) {
-      String extraDesc = '';
+      // Evitar problemas de unicidad en la BD convirtiendo 'S/N' en 'CLAVECATASTRAL-S/N'
+      final isSinNumero =
+          inputNumeroMedidor.toUpperCase() == 'S/N' ||
+          inputNumeroMedidor.toUpperCase() == 'S/N.';
+      final numeroMedidorFinal = isSinNumero
+          ? '${_cadastralKeyConnectionController.text}-S/N'
+          : inputNumeroMedidor;
+
+      if (inputNumeroMedidor.isNotEmpty) {
+        String extraDesc = '';
+        /*
       if (numeroMedidorFinal == numeroSistema ||
           inputNumeroMedidor == numeroSistema) {
         extraDesc =
@@ -1289,217 +1487,233 @@ class _FormScreenState extends State<FormScreen>
       } else {
         extraDesc =
             'Inspección: El número del medidor físico encontrado ($inputNumeroMedidor) es diferente al registrado en el sistema ($numeroSistema). Anterior: ${_meterNumberController.text} Nuevo: ${_nuevoMedidorController.text} Lectura Anterior: ${_currentReadingController.text} Lectura Actual: ${_newCurrentReadingController.text}';
+      }*/
+
+        _descriptionController.text = currentDesc.isEmpty
+            ? extraDesc
+            : '$currentDesc | $extraDesc';
       }
 
-      _descriptionController.text = currentDesc.isEmpty
-          ? extraDesc
-          : '$currentDesc | $extraDesc';
-    }
-
-    if (inputNumeroMedidor.isNotEmpty &&
-        numeroMedidorFinal != numeroSistema &&
-        inputNumeroMedidor != numeroSistema) {
-      final meterDetail = MeterChangeDetail(
-        numeroMedidor: numeroMedidorFinal.isNotEmpty
-            ? numeroMedidorFinal
-            : null,
-        claveCatastral: _cadastralKeyConnectionController.text,
-        observaciones: _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : null,
-        medidorAnterior: OldMeterData(
-          numeroMedidor: _meterNumberController.text,
-          ultimaLectura: double.tryParse(_currentReadingController.text),
-          fechaUltimaLectura: DateTime.now().toIso8601String(),
-        ),
-        medidorNuevo: NewMeterData(
+      if (inputNumeroMedidor.isNotEmpty &&
+          numeroMedidorFinal != numeroSistema &&
+          inputNumeroMedidor != numeroSistema) {
+        final meterDetail = MeterChangeDetail(
           numeroMedidor: numeroMedidorFinal.isNotEmpty
               ? numeroMedidorFinal
               : null,
-          lecturaAnterior: 0.0,
-          lecturaActual: 0.0,
-          fechaUltimaLectura: DateTime.now().toIso8601String(),
-        ),
-      );
+          claveCatastral: _cadastralKeyConnectionController.text,
+          observaciones: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : null,
+          medidorAnterior: OldMeterData(
+            numeroMedidor: _meterNumberController.text,
+            ultimaLectura: double.tryParse(_currentReadingController.text),
+            fechaUltimaLectura: DateTime.now().toIso8601String(),
+          ),
+          medidorNuevo: NewMeterData(
+            numeroMedidor: numeroMedidorFinal.isNotEmpty
+                ? numeroMedidorFinal
+                : null,
+            lecturaAnterior: 0.0,
+            lecturaActual: 0.0,
+            fechaUltimaLectura: DateTime.now().toIso8601String(),
+          ),
+        );
 
-      changeMeterReq = ChangeMeterRequest(
-        connectionId: _connectionIdController.text,
-        changeDetail: meterDetail,
-        images: validImages,
-        imageDescriptions: [],
-      );
-    }
+        changeMeterReq = ChangeMeterRequest(
+          connectionId: _connectionIdController.text,
+          changeDetail: meterDetail,
+          images: validImages,
+          imageDescriptions: [],
+        );
+      }
 
-    final enteredReadingStr = _newCurrentReadingController.text;
-    final previousReadingStr = _currentReadingController.text;
+      final enteredReadingStr = _newCurrentReadingController.text;
+      final previousReadingStr = _currentReadingController.text;
 
-    final isSameMeter =
-        _nuevoMedidorController.text.trim() ==
-        _meterNumberController.text.trim();
+      final isSameMeter =
+          _nuevoMedidorController.text.trim() ==
+          _meterNumberController.text.trim();
 
-    if (enteredReadingStr.isNotEmpty && isSameMeter) {
-      if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
-        final enteredReading = double.tryParse(enteredReadingStr) ?? 0.0;
-        final previousReading = double.tryParse(previousReadingStr) ?? 0.0;
+      if (enteredReadingStr.isNotEmpty && isSameMeter) {
+        if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
+          final enteredReading = double.tryParse(enteredReadingStr) ?? 0.0;
+          final previousReading = double.tryParse(previousReadingStr) ?? 0.0;
 
-        if (enteredReading < previousReading) {
-          if (_descriptionController.text.trim().isEmpty ||
-              _attachedImages.isEmpty) {
-            setState(
-              () => _errorMessage =
-                  'La lectura ingresada es menor a la anterior. Debe ingresar una descripción o adjuntar al menos una foto obligatoriamente.',
-            );
-            return;
-          }
-          if (_descriptionController.text.trim().isEmpty) {
-            setState(
-              () => _errorMessage =
-                  'La lectura ingresada es menor a la anterior. Debe ingresar una descripción obligatoriamente.',
-            );
-            return;
-          }
-          if (_attachedImages.isEmpty) {
-            setState(
-              () => _errorMessage =
-                  'La lectura ingresada es menor a la anterior. Debe adjuntar al menos una foto obligatoriamente.',
-            );
-            return;
+          if (enteredReading <= previousReading) {
+            if (_selectedLowConsumptionReason == null) {
+              setState(
+                () => _errorMessage =
+                    'Consumo detectado de cero o negativo. Debe seleccionar la novedad obligatoriamente.',
+              );
+              return;
+            }
+            if (_selectedLowConsumptionReason ==
+                    'Otro (especificar en descripción)' &&
+                _descriptionController.text.trim().isEmpty) {
+              setState(
+                () => _errorMessage =
+                    'Consumo de cero o negativo: Debe especificar la novedad en la descripción.',
+              );
+              return;
+            }
+            if (_attachedImages.isEmpty) {
+              setState(
+                () => _errorMessage =
+                    'Consumo de cero o negativo: Debe adjuntar al menos una foto como evidencia obligatoriamente.',
+              );
+              return;
+            }
           }
         }
       }
-    }
 
-    final canSubmitWithGps = await _ensureGpsEnabledForSubmission();
-    if (!canSubmitWithGps) return;
+      final canSubmitWithGps = await _ensureGpsEnabledForSubmission();
+      if (!canSubmitWithGps) return;
 
-    LocationCapture? capture;
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      capture = LocationCapture(
-        lat: position.latitude,
-        lng: position.longitude,
-      );
-    } catch (e) {
-      _showGpsSubmissionError(
-        'No se pudo obtener la ubicación actual. Verifica el GPS e inténtalo de nuevo.',
-      );
-      return;
-    }
-
-    if (!mounted) return;
-
-    if (_selectedRouteIncidentId != null) {
-      incidentReq = CreateIncidentRequest(
-        connectionId: _connectionIdController.text,
-        incidentTypeId: _selectedRouteIncidentId!,
-        reportDescription: _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : 'Incidente reportado en ruta de lectura: Actualizacion del número de medidor: anterior: ${_meterNumberController.text}, nuevo: ${_nuevoMedidorController.text}. Lectura anterior: ${_currentReadingController.text}, Lectura actual: ${_newCurrentReadingController.text}',
-        referenceAddress: _addressConnectionController.text,
-        reportOrigin: 'LECTURISTA',
-        priority: 'MEDIA',
-        latitude: capture.lat,
-        longitude: capture.lng,
-        images: validImages,
-        condicionMedidor: _condicionMedidor,
-        estadoFisico: _estadoFisico,
-      );
-    }
-
-    if (enteredReadingStr.isNotEmpty) {
-      readingReq = CreateReadingRequest(
-        novelty: _descriptionController.text,
-        currentReading: double.parse(enteredReadingStr),
-        previousReading: double.parse(
-          previousReadingStr.isEmpty ? '0' : previousReadingStr,
-        ),
-        rentalIncomeCode: 0,
-        incomeCode: 0,
-        cadastralKey: _cadastralKeyConnectionController.text,
-        sector: int.parse(
-          _sectorConnectionController.text.isEmpty
-              ? '0'
-              : _sectorConnectionController.text,
-        ),
-        account: int.parse(
-          _accountConnectionController.text.isEmpty
-              ? '0'
-              : _accountConnectionController.text,
-        ),
-        readingValue: double.parse('0'),
-        connectionId: _connectionIdController.text,
-        sewerRate: 0.0,
-        averageConsumption:
-            double.tryParse(_averageConsumptionController.text) ?? 0.0,
-        previousMonthReading: _monthReadingController.text,
-        readingLocation: capture,
-      );
-    }
-
-    if (changeMeterReq == null && incidentReq == null && readingReq == null) {
-      setState(
-        () => _errorMessage =
-            'Debe ingresar una lectura, un cambio de medidor o un incidente para guardar.',
-      );
-      return;
-    }
-
-    await DialogUtils.showConfirmationDialog(
-      context,
-      onConfirm: () async {
-        if (!mounted) return false;
-        final stillReadyForGps = await _ensureGpsEnabledForSubmission();
-        if (!stillReadyForGps) return false;
-
-        context.read<form_bloc.FormBloc>().add(
-          form_bloc.SaveCompleteFormEvent(
-            readingRequest: readingReq,
-            changeMeterRequest: changeMeterReq,
-            incidentRequest: incidentReq,
-          ),
+      LocationCapture? capture;
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
         );
-        return true;
-      },
-      fields: [
-        {'label': 'ID de Conexión', 'value': _connectionIdController.text},
-        {'label': 'Propietario', 'value': _connectionOwnerController.text},
-        {'label': 'Dirección', 'value': _addressConnectionController.text},
-        {
-          'label': 'Descripción',
-          'value': _descriptionController.text.isEmpty
-              ? 'Sin descripción'
-              : _descriptionController.text,
+        capture = LocationCapture(
+          lat: position.latitude,
+          lng: position.longitude,
+        );
+      } catch (e) {
+        _showGpsSubmissionError(
+          'No se pudo obtener la ubicación actual. Verifica el GPS e inténtalo de nuevo.',
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      if (_selectedRouteIncidentId != null) {
+        incidentReq = CreateIncidentRequest(
+          connectionId: _connectionIdController.text,
+          incidentTypeId: _selectedRouteIncidentId!,
+          reportDescription: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text
+              : '',
+          /*
+          reportDescription: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : 'Incidente reportado en ruta de lectura: Actualizacion del número de medidor: anterior: ${_meterNumberController.text}, nuevo: ${_nuevoMedidorController.text}. Lectura anterior: ${_currentReadingController.text}, Lectura actual: ${_newCurrentReadingController.text}',*/
+          referenceAddress: _addressConnectionController.text,
+          reportOrigin: 'LECTURISTA',
+          priority: 'MEDIA',
+          latitude: capture.lat,
+          longitude: capture.lng,
+          images: validImages,
+          condicionMedidor: _condicionMedidor,
+          estadoFisico: _estadoFisico,
+          incidentCategory: 'RUTA LECTURA',
+        );
+      }
+
+      if (enteredReadingStr.isNotEmpty) {
+        final String currentMonthReading = nextReadingMonthValidator(
+          _monthReadingController.text,
+        );
+
+        readingReq = CreateReadingRequest(
+          novelty: _descriptionController.text,
+          currentReading: double.parse(enteredReadingStr),
+          previousReading: double.parse(
+            previousReadingStr.isEmpty ? '0' : previousReadingStr,
+          ),
+          rentalIncomeCode: 0,
+          incomeCode: 0,
+          cadastralKey: _cadastralKeyConnectionController.text,
+          sector: int.parse(
+            _sectorConnectionController.text.isEmpty
+                ? '0'
+                : _sectorConnectionController.text,
+          ),
+          account: int.parse(
+            _accountConnectionController.text.isEmpty
+                ? '0'
+                : _accountConnectionController.text,
+          ),
+          readingValue: double.parse('0'),
+          connectionId: _connectionIdController.text,
+          currentMonthReading: currentMonthReading,
+          sewerRate: 0.0,
+          averageConsumption:
+              double.tryParse(_averageConsumptionController.text) ?? 0.0,
+          previousMonthReading: _monthReadingController.text,
+          readingLocation: capture,
+        );
+      }
+
+      if (changeMeterReq == null && incidentReq == null && readingReq == null) {
+        setState(
+          () => _errorMessage =
+              'Debe ingresar una lectura, un cambio de medidor o un incidente para guardar.',
+        );
+        return;
+      }
+
+      await DialogUtils.showConfirmationDialog(
+        context,
+        onConfirm: () async {
+          if (!mounted) return false;
+          final stillReadyForGps = await _ensureGpsEnabledForSubmission();
+          if (!stillReadyForGps) return false;
+
+          context.read<form_bloc.FormBloc>().add(
+            form_bloc.SaveCompleteFormEvent(
+              readingRequest: readingReq,
+              changeMeterRequest: changeMeterReq,
+              incidentRequest: incidentReq,
+            ),
+          );
+          return true;
         },
-        {
-          'label': 'Número de Imágenes Adjuntas',
-          'value': _attachedImages.length.toString(),
-        },
-        {
-          'label': 'Modo de Envío',
-          'value': widget.mode == 'manual' ? 'Manual' : 'Escaneo',
-        },
-        {
-          'label': 'Lectura Anterior',
-          'value': _currentReadingController.text.isEmpty
-              ? 'Sin lectura anterior'
-              : _currentReadingController.text,
-        },
-        {
-          'label': 'Lectura Actual',
-          'value': _newCurrentReadingController.text.isEmpty
-              ? 'Sin lectura actual'
-              : double.parse(
-                  _newCurrentReadingController.text,
-                ).toStringAsFixed(2),
-        },
-        {
-          'label': 'Consumo (m³)',
-          'value': '${_currentConsumptionController.text} m³',
-        },
-      ],
-    );
+        fields: [
+          {'label': 'ID de Conexión', 'value': _connectionIdController.text},
+          {'label': 'Propietario', 'value': _connectionOwnerController.text},
+          {'label': 'Dirección', 'value': _addressConnectionController.text},
+          {
+            'label': 'Descripción',
+            'value': _descriptionController.text.isEmpty
+                ? 'Sin descripción'
+                : _descriptionController.text,
+          },
+          {
+            'label': 'Número de Imágenes Adjuntas',
+            'value': _attachedImages.length.toString(),
+          },
+          {
+            'label': 'Modo de Envío',
+            'value': widget.mode == 'manual' ? 'Manual' : 'Escaneo',
+          },
+          {
+            'label': 'Lectura Anterior',
+            'value': _currentReadingController.text.isEmpty
+                ? 'Sin lectura anterior'
+                : _currentReadingController.text,
+          },
+          {
+            'label': 'Lectura Actual',
+            'value': _newCurrentReadingController.text.isEmpty
+                ? 'Sin lectura actual'
+                : double.parse(
+                    _newCurrentReadingController.text,
+                  ).toStringAsFixed(2),
+          },
+          {
+            'label': 'Consumo (m³)',
+            'value': '${_currentConsumptionController.text} m³',
+          },
+        ],
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingSave = false);
+      }
+    }
   }
 
   void _showMeterConflictDialog(form_bloc.MeterConflictState state) {

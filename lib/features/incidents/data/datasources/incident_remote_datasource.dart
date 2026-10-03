@@ -133,6 +133,9 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
       if (request.estadoFisico != null) {
         requestMultipart.fields['meterPhysicalState'] = request.estadoFisico!;
       }
+      if (request.incidentCategory != null) {
+        requestMultipart.fields['incidentCategory'] = request.incidentCategory!;
+      }
       requestMultipart.fields['latitude'] = request.latitude.toString();
       requestMultipart.fields['longitude'] = request.longitude.toString();
 
@@ -177,6 +180,10 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
       final data = jsonResponse['data'] as Map<String, dynamic>?;
 
       if (data == null) {
+        if (request.incidentCategory == 'RUTA LECTURA') {
+          // El backend omitió crear el incidente intencionalmente, retornamos un modelo vacío para que la app sepa que todo fue un éxito
+          return IncidentModel.fromJson(const {});
+        }
         throw ServerException(
           'La respuesta no contiene datos válidos del incidente.',
         );

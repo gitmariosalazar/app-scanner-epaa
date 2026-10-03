@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_application/config/environments/environment.dart';
 import 'package:flutter_application/features/incidents/domain/entities/incident_detail_row_response.dart';
 
 abstract class PublicIncidentsMapState extends Equatable {
@@ -14,8 +15,9 @@ class PublicIncidentsMapLoading extends PublicIncidentsMapState {}
 
 class PublicIncidentsMapLoaded extends PublicIncidentsMapState {
   final List<IncidentDetailRowResponse> incidents;
+  final MapProviderConfig mapConfig;
 
-  const PublicIncidentsMapLoaded(this.incidents);
+  const PublicIncidentsMapLoaded(this.incidents, this.mapConfig);
 
   @override
   List<Object> get props => [incidents];

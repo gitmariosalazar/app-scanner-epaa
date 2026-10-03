@@ -6,7 +6,6 @@ import 'package:flutter_application/features/reading/data/model/reading_basic_in
 import 'package:flutter_application/features/reading/data/model/reading_response.dart';
 import 'package:flutter_application/features/reading/data/model/update_reading_request.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
-import 'package:flutter_application/features/reading/domain/entities/reading_basic_info.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading_result.dart';
 import 'package:flutter_application/features/reading/domain/repositories/reading_repository.dart';
 

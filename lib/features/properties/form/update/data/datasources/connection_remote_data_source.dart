@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_request.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
+import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_basic_request.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 
 class ConnectionRemoteDataSource {
@@ -104,6 +105,77 @@ class ConnectionRemoteDataSource {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to change meter: $responseBody');
+    }
+  }
+
+  Future<void> updateConnectionBasic(UpdateConnectionBasicRequest request) async {
+    final token = await authLocalDataSource.getToken();
+    final url = Uri.parse(
+      '$baseUrl/connections/update-connection-basic/${request.connectionId}',
+    );
+
+    var requestMultipart = http.MultipartRequest('PUT', url);
+
+    if (token != null) {
+      requestMultipart.headers['Authorization'] = 'Bearer $token';
+    }
+
+    if (request.meterNumber != null) {
+      requestMultipart.fields['meterNumber'] = request.meterNumber!;
+    }
+
+    if (request.photosFacadeDescriptions.isNotEmpty) {
+      requestMultipart.fields['photosFacadeDescriptions'] = jsonEncode(
+        request.photosFacadeDescriptions,
+      );
+    }
+
+    if (request.photosMeterDescriptions.isNotEmpty) {
+      requestMultipart.fields['photosMeterDescriptions'] = jsonEncode(
+        request.photosMeterDescriptions,
+      );
+    }
+
+    Future<void> attachFiles(List<dynamic> files, String fieldName) async {
+      for (var file in files) {
+        final fileBytes = await file.readAsBytes();
+        final extension = file.path.split('.').last.toLowerCase();
+
+        http.MediaType contentType;
+        switch (extension) {
+          case 'png':
+            contentType = http.MediaType('image', 'png');
+            break;
+          case 'webp':
+            contentType = http.MediaType('image', 'webp');
+            break;
+          case 'gif':
+            contentType = http.MediaType('image', 'gif');
+            break;
+          case 'jpg':
+          case 'jpeg':
+          default:
+            contentType = http.MediaType('image', 'jpeg');
+        }
+
+        final multipartFile = http.MultipartFile.fromBytes(
+          fieldName,
+          fileBytes,
+          filename: file.path.split('/').last,
+          contentType: contentType,
+        );
+        requestMultipart.files.add(multipartFile);
+      }
+    }
+
+    await attachFiles(request.photosFacade, 'photosFacade');
+    await attachFiles(request.photosMeter, 'photosMeter');
+
+    final response = await client.send(requestMultipart);
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to update connection basic: $responseBody');
     }
   }
 }

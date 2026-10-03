@@ -26,11 +26,11 @@ class CreateReadingRequest {
   final int incomeCode;
   final double readingValue;
   final int rentalIncomeCode;
-
   @JsonKey(defaultValue: null)
   final String? novelty;
 
   final double averageConsumption;
+  final String currentMonthReading;
   final String previousMonthReading;
   @JsonKey(name: 'locationCapture')
   final LocationCapture? readingLocation;
@@ -49,6 +49,7 @@ class CreateReadingRequest {
     this.novelty,
     required this.averageConsumption,
     required this.previousMonthReading,
+    required this.currentMonthReading,
     this.readingLocation,
   });
 

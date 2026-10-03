@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_application/core/services/speech_service.dart';
 import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
 import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
@@ -58,6 +57,7 @@ import 'package:flutter_application/features/profile/presentation/cubit/change_p
 import 'package:flutter_application/features/observations/data/datasources/observations_datasource.dart';
 import 'package:flutter_application/features/observations/data/repositories/observation_repository_impl.dart';
 import 'package:flutter_application/features/observations/domain/repositories/observation_repository.dart';
+import 'package:flutter_application/features/properties/form/update/domain/usecases/update_connection_basic_usecase.dart';
 import 'package:flutter_application/features/observations/domain/usecases/get_observations_by_cadasralkey_usecase.dart';
 import 'package:flutter_application/features/observations/domain/usecases/get_observations_usecase.dart.dart';
 import 'package:flutter_application/features/observations/presentation/bloc/observation_bloc.dart';
@@ -101,7 +101,6 @@ import 'package:flutter_application/features/work-orders/domain/usecases/create_
 import 'package:flutter_application/features/work-orders/presentation/blocs/create_work_order/create_work_order_bloc.dart';
 
 import 'package:get_it/get_it.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -354,8 +353,9 @@ Future<void> init() async {
   sl.registerLazySingleton<UpdateConnectionUseCase>(
     () => UpdateConnectionUseCase(sl()),
   );
-  sl.registerLazySingleton<ChangeMeterUseCase>(
-    () => ChangeMeterUseCase(sl()),
+  sl.registerLazySingleton<ChangeMeterUseCase>(() => ChangeMeterUseCase(sl()));
+  sl.registerLazySingleton<UpdateConnectionBasicUseCase>(
+    () => UpdateConnectionBasicUseCase(sl()),
   );
 
   // ==========================
@@ -499,7 +499,9 @@ Future<void> init() async {
       findIncidentCategoriesUseCase: sl(),
     ),
   );
-  sl.registerFactory(() => PublicIncidentsMapCubit(sl()));
+  sl.registerFactory(
+    () => PublicIncidentsMapCubit(sl(), Environment.mapConfig),
+  );
   sl.registerLazySingleton(() => GetIncidentDashboardKpis(sl()));
 
   sl.registerFactory(
