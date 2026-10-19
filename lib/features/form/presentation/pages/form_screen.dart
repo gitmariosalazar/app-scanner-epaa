@@ -1594,12 +1594,8 @@ class _FormScreenState extends State<FormScreen>
           connectionId: _connectionIdController.text,
           incidentTypeId: _selectedRouteIncidentId!,
           reportDescription: _descriptionController.text.trim().isNotEmpty
-              ? _descriptionController.text
-              : '',
-          /*
-          reportDescription: _descriptionController.text.trim().isNotEmpty
               ? _descriptionController.text.trim()
-              : 'Incidente reportado en ruta de lectura: Actualizacion del número de medidor: anterior: ${_meterNumberController.text}, nuevo: ${_nuevoMedidorController.text}. Lectura anterior: ${_currentReadingController.text}, Lectura actual: ${_newCurrentReadingController.text}',*/
+              : 'Incidente reportado en ruta de lectura',
           referenceAddress: _addressConnectionController.text,
           reportOrigin: 'LECTURISTA',
           priority: 'MEDIA',
