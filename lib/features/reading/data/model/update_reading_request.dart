@@ -14,6 +14,9 @@ class UpdateReadingRequest {
   final String? novelty;
 
   @JsonKey(defaultValue: null)
+  final String? meterStatus;
+
+  @JsonKey(defaultValue: null)
   final int? incomeCode;
 
   @JsonKey(defaultValue: null)
@@ -33,6 +36,7 @@ class UpdateReadingRequest {
     required this.currentReading,
     this.rentalIncomeCode,
     this.novelty,
+    this.meterStatus,
     this.incomeCode,
     this.cadastralKey,
     this.sector,

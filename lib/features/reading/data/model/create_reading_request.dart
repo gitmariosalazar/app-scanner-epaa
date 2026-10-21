@@ -28,6 +28,7 @@ class CreateReadingRequest {
   final int rentalIncomeCode;
   @JsonKey(defaultValue: null)
   final String? novelty;
+  final String? meterStatus;
 
   final double averageConsumption;
   final String currentMonthReading;
@@ -47,6 +48,7 @@ class CreateReadingRequest {
     required this.readingValue,
     required this.rentalIncomeCode,
     this.novelty,
+    this.meterStatus,
     required this.averageConsumption,
     required this.previousMonthReading,
     required this.currentMonthReading,

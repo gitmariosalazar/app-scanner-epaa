@@ -1615,6 +1615,8 @@ class _FormScreenState extends State<FormScreen>
 
         readingReq = CreateReadingRequest(
           novelty: _descriptionController.text,
+          meterStatus:
+              'Estado Fisico_Condicion: $_estadoFisico - $_condicionMedidor, Motivo: $_selectedLowConsumptionReason',
           currentReading: double.parse(enteredReadingStr),
           previousReading: double.parse(
             previousReadingStr.isEmpty ? '0' : previousReadingStr,

@@ -1,7 +1,7 @@
 name: flutter_application
 description: 'Una aplicación de escaneo en Flutter'
 publish_to: 'none'
-version: 1.0.8+8
+version: 1.0.9+9
 
 environment:
   sdk: ^3.9.2
