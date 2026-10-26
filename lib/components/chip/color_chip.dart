@@ -82,8 +82,8 @@ class _ColorChipState extends State<ColorChip> {
     if (widget.status == ColorChipStatus.warning) return true;
     final hsp = math.sqrt(
       0.299 * (c.red * c.red) +
-      0.587 * (c.green * c.green) +
-      0.114 * (c.blue * c.blue)
+          0.587 * (c.green * c.green) +
+          0.114 * (c.blue * c.blue),
     );
     return hsp > 170;
   }
@@ -127,16 +127,32 @@ class _ColorChipState extends State<ColorChip> {
 
     switch (widget.size) {
       case ColorChipSize.xs:
-        paddingHorizontal = 6; paddingVertical = 2; fontSize = 11; height = 20; iconSize = 12;
+        paddingHorizontal = 6;
+        paddingVertical = 2;
+        fontSize = 11;
+        height = 20;
+        iconSize = 12;
         break;
       case ColorChipSize.sm:
-        paddingHorizontal = 8; paddingVertical = 4; fontSize = 12; height = 24; iconSize = 14;
+        paddingHorizontal = 8;
+        paddingVertical = 4;
+        fontSize = 12;
+        height = 24;
+        iconSize = 14;
         break;
       case ColorChipSize.md:
-        paddingHorizontal = 12; paddingVertical = 6; fontSize = 14; height = 32; iconSize = 16;
+        paddingHorizontal = 12;
+        paddingVertical = 6;
+        fontSize = 14;
+        height = 32;
+        iconSize = 16;
         break;
       case ColorChipSize.lg:
-        paddingHorizontal = 16; paddingVertical = 8; fontSize = 16; height = 40; iconSize = 18;
+        paddingHorizontal = 16;
+        paddingVertical = 8;
+        fontSize = 16;
+        height = 40;
+        iconSize = 18;
         break;
     }
 
@@ -147,7 +163,7 @@ class _ColorChipState extends State<ColorChip> {
 
     final mixColor = isDark ? Colors.white : Colors.black;
     final textMixRatio = isDark ? 0.15 : 0.60;
-    
+
     // Helper to mix colors for adapting to light/dark themes
     Color mix(Color c1, Color c2, double ratio) {
       return Color.lerp(c1, c2, ratio)!;
@@ -160,44 +176,50 @@ class _ColorChipState extends State<ColorChip> {
       case ColorChipVariant.solid:
       case ColorChipVariant.filled:
         bgColor = baseColor;
-        textColor = _isLightColor(baseColor) ? const Color(0xFF0F172A) : Colors.white;
+        textColor = _isLightColor(baseColor)
+            ? const Color(0xFF0F172A)
+            : Colors.white;
         break;
       case ColorChipVariant.outline:
         bgColor = Colors.transparent;
         textColor = mixedTextColor;
         borderColor = baseColor;
-        
+
         if (isInteractive && (_isHovered || _isPressed)) {
-          bgColor = baseColor.withOpacity(0.10);
+          bgColor = baseColor.withValues(alpha: 0.10);
         }
         break;
       case ColorChipVariant.soft:
         final softBgMix = isDark ? 0.15 : 0.08;
-        bgColor = baseColor.withOpacity(softBgMix);
+        bgColor = baseColor.withValues(alpha: softBgMix);
         textColor = mixedTextColor;
-        borderColor = baseColor.withOpacity(0.20);
-        
+        borderColor = baseColor.withValues(alpha: 0.20);
+
         if (isInteractive && (_isHovered || _isPressed)) {
-          bgColor = baseColor.withOpacity(0.25);
+          bgColor = baseColor.withValues(alpha: 0.25);
         }
         break;
       case ColorChipVariant.ghost:
         bgColor = Colors.transparent;
         textColor = mixedTextColor;
-        
+
         if (isInteractive && (_isHovered || _isPressed)) {
-          bgColor = baseColor.withOpacity(0.10);
+          bgColor = baseColor.withValues(alpha: 0.10);
         }
         break;
     }
 
     // Apply interaction brightness simulation
-    if (isInteractive && (_isHovered || _isPressed) && 
-        (widget.variant == ColorChipVariant.solid || widget.variant == ColorChipVariant.filled)) {
+    if (isInteractive &&
+        (_isHovered || _isPressed) &&
+        (widget.variant == ColorChipVariant.solid ||
+            widget.variant == ColorChipVariant.filled)) {
       if (_isPressed) {
         bgColor = mix(bgColor, Colors.black, 0.1);
       } else {
-        bgColor = isDark ? mix(bgColor, Colors.white, 0.1) : mix(bgColor, Colors.black, 0.05);
+        bgColor = isDark
+            ? mix(bgColor, Colors.white, 0.1)
+            : mix(bgColor, Colors.black, 0.05);
       }
     }
 
@@ -210,15 +232,18 @@ class _ColorChipState extends State<ColorChip> {
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: widget.variant == ColorChipVariant.solid || widget.variant == ColorChipVariant.filled 
-                  ? textColor 
+              color:
+                  widget.variant == ColorChipVariant.solid ||
+                      widget.variant == ColorChipVariant.filled
+                  ? textColor
                   : baseColor,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 4),
         ],
-        if (widget.icon != null && widget.iconPosition == ColorChipIconPosition.left) ...[
+        if (widget.icon != null &&
+            widget.iconPosition == ColorChipIconPosition.left) ...[
           IconTheme(
             data: IconThemeData(color: textColor, size: iconSize),
             child: widget.icon!,
@@ -235,7 +260,8 @@ class _ColorChipState extends State<ColorChip> {
             letterSpacing: 0,
           ),
         ),
-        if (widget.icon != null && widget.iconPosition == ColorChipIconPosition.right) ...[
+        if (widget.icon != null &&
+            widget.iconPosition == ColorChipIconPosition.right) ...[
           const SizedBox(width: 6),
           IconTheme(
             data: IconThemeData(color: textColor, size: iconSize),
@@ -246,7 +272,9 @@ class _ColorChipState extends State<ColorChip> {
     );
 
     return MouseRegion(
-      cursor: isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: isInteractive
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -265,23 +293,20 @@ class _ColorChipState extends State<ColorChip> {
           curve: Curves.easeInOut,
           height: height,
           padding: EdgeInsets.symmetric(
-            horizontal: paddingHorizontal, 
-            vertical: paddingVertical
+            horizontal: paddingHorizontal,
+            vertical: paddingVertical,
           ),
-          transform: isInteractive && _isHovered && !_isPressed 
-              ? (Matrix4.identity()..translate(0.0, -1.0)) 
+          transform: isInteractive && _isHovered && !_isPressed
+              ? (Matrix4.identity()..translate(0.0, -1.0))
               : Matrix4.identity(),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: widget.borderRadius ?? BorderRadius.circular(9999),
-            border: borderColor != Colors.transparent 
-                ? Border.all(color: borderColor, width: 1) 
+            border: borderColor != Colors.transparent
+                ? Border.all(color: borderColor, width: 1)
                 : null,
           ),
-          child: Center(
-            widthFactor: 1.0,
-            child: content,
-          ),
+          child: Center(widthFactor: 1.0, child: content),
         ),
       ),
     );

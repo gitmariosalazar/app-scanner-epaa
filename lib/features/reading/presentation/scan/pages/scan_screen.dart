@@ -168,7 +168,7 @@ class _ScanPageState extends State<ScanPage> {
       child: Container(
         padding: ResponsiveUtils.cardPadding(context),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
+          color: Colors.black.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.cardBorderRadius(context),
           ),

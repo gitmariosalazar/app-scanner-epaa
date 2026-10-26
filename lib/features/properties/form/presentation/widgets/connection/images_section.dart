@@ -1,4 +1,5 @@
 // lib/features/properties/form/add-img/presentation/widgets/images_section.dart
+/*
 import 'dart:io';
 import 'package:flutter_application/components/common/form_card.dart';
 import 'package:flutter_application/core/theme/app_colors.dart';
@@ -197,9 +198,9 @@ class _ImagesSectionState extends State<ImagesSection> {
           height: size,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: AppColors.surface.withOpacity(0.75),
+            color: AppColors.surface.withValues(alpha:0.75),
             border: Border.all(
-              color: AppColors.primary.withOpacity(isLoading ? 0.2 : 0.45),
+              color: AppColors.primary.withValues(alpha:isLoading ? 0.2 : 0.45),
               width: 2,
             ),
           ),
@@ -226,3 +227,4 @@ class _ImagesSectionState extends State<ImagesSection> {
     );
   }
 }
+*/

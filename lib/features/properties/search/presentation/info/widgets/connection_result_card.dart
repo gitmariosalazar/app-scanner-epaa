@@ -1,9 +1,7 @@
 import 'package:flutter_application/components/badge/custom_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
-import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/features/properties/search/domain/entities/connection.dart';
-import 'package:flutter_application/features/properties/search/domain/services/document_export_service.dart';
 import 'package:go_router/go_router.dart';
 import 'connection_details_sheet.dart';
 

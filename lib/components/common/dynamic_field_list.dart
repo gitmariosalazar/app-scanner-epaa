@@ -148,7 +148,9 @@ class _DynamicFieldListState extends State<DynamicFieldList> {
                         ),
                         onPressed: () => _removeField(index),
                         style: IconButton.styleFrom(
-                          backgroundColor: AppColors.error.withOpacity(0.2),
+                          backgroundColor: AppColors.error.withValues(
+                            alpha: 0.2,
+                          ),
                           padding: EdgeInsets.all(context.smallSpacing * 0.8),
                           shape: const CircleBorder(),
                           minimumSize: const Size(38, 38),

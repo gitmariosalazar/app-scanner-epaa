@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/components/button/widget_button.dart';
-import 'dart:math' as math;
 
 class ScannerView extends StatefulWidget {
   final void Function(String code) onDetect;
@@ -288,7 +287,7 @@ class ScannerViewState extends State<ScannerView> with WidgetsBindingObserver {
                 ),
                 padding: ResponsiveUtils.cardPadding(context),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtils.cardBorderRadius(context),
                   ),
@@ -338,7 +337,7 @@ class ScannerViewState extends State<ScannerView> with WidgetsBindingObserver {
       child: Container(
         padding: ResponsiveUtils.cardPadding(context),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
+          color: Colors.black.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.cardBorderRadius(context),
           ),

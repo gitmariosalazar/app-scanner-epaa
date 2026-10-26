@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 
-
 class MinimalSectionDivider extends StatefulWidget {
   final String title;
   final Color? color;
@@ -90,7 +89,7 @@ class _MinimalSectionDividerState extends State<MinimalSectionDivider>
               borderRadius: BorderRadius.circular(borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -112,7 +111,7 @@ class _MinimalSectionDividerState extends State<MinimalSectionDivider>
                         color: cs.onSurface,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             offset: const Offset(0, 1),
                             blurRadius: 3,
                           ),

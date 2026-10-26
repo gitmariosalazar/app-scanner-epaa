@@ -28,7 +28,7 @@ class PublicDashboardScreen extends StatelessWidget {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: colors.primary.withOpacity(isDark ? 0.2 : 0.1),
+                color: colors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
               ),
             ),
           ),
@@ -40,7 +40,7 @@ class PublicDashboardScreen extends StatelessWidget {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: colors.secondary.withOpacity(isDark ? 0.2 : 0.1),
+                color: colors.secondary.withValues(alpha: isDark ? 0.2 : 0.1),
               ),
             ),
           ),
@@ -88,7 +88,7 @@ class PublicDashboardScreen extends StatelessWidget {
                             Container(
                               decoration: BoxDecoration(
                                 color: colors.surfaceContainerHighest
-                                    .withOpacity(0.5),
+                                    .withValues(alpha: 0.5),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -222,7 +222,7 @@ class PublicDashboardScreen extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.water_drop_rounded,
-                                color: colors.primary.withOpacity(0.5),
+                                color: colors.primary.withValues(alpha: 0.5),
                                 size: 24,
                               ),
                               const SizedBox(height: 8),
@@ -231,8 +231,8 @@ class PublicDashboardScreen extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: colors.onSurfaceVariant.withOpacity(
-                                    0.8,
+                                  color: colors.onSurfaceVariant.withValues(
+                                    alpha: 0.8,
                                   ),
                                 ),
                               ),
@@ -242,8 +242,8 @@ class PublicDashboardScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: colors.onSurfaceVariant.withOpacity(
-                                    0.8,
+                                  color: colors.onSurfaceVariant.withValues(
+                                    alpha: 0.8,
                                   ),
                                 ),
                               ),
@@ -271,15 +271,15 @@ class PublicDashboardScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: colors.primaryContainer.withOpacity(0.8),
+            color: colors.primaryContainer.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: colors.primary.withOpacity(0.3),
+              color: colors.primary.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withOpacity(0.15),
+                color: colors.primary.withValues(alpha: 0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -304,7 +304,7 @@ class PublicDashboardScreen extends StatelessWidget {
                       'Ya has iniciado sesión. Ve a tu panel para gestionar tus servicios.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: colors.onPrimaryContainer.withOpacity(0.8),
+                        color: colors.onPrimaryContainer.withValues(alpha: 0.8),
                         height: 1.3,
                       ),
                     ),
@@ -335,7 +335,7 @@ class PublicDashboardScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colors.primary.withOpacity(0.1),
+                  color: colors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -359,15 +359,15 @@ class PublicDashboardScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: colors.primaryContainer.withOpacity(0.8),
+            color: colors.primaryContainer.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: colors.primary.withOpacity(0.3),
+              color: colors.primary.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withOpacity(0.15),
+                color: colors.primary.withValues(alpha: 0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -392,7 +392,7 @@ class PublicDashboardScreen extends StatelessWidget {
                       'Inicia sesión para gestionar tus medidores y ver tu historial completo.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: colors.onPrimaryContainer.withOpacity(0.8),
+                        color: colors.onPrimaryContainer.withValues(alpha: 0.8),
                         height: 1.4,
                       ),
                     ),
@@ -427,7 +427,7 @@ class PublicDashboardScreen extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: colors.primary.withOpacity(0.1),
+                  color: colors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -454,12 +454,12 @@ class PublicDashboardScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerLowest.withOpacity(0.4),
+        color: colors.surfaceContainerLowest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.surfaceContainerHighest),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -478,7 +478,7 @@ class PublicDashboardScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colors.primaryContainer.withOpacity(0.3),
+                    color: colors.primaryContainer.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: iconColor, size: 28),

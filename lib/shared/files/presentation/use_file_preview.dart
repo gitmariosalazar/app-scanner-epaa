@@ -25,23 +25,16 @@ final dioProvider = Provider<Dio>((ref) {
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        print('🔄 Interceptor activado para: ${options.uri}');
-
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('CACHED_AUTH_TOKEN');
 
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-          print('✅ Token agregado correctamente');
-        } else {
-          print('⚠️ No se encontró token');
         }
         return handler.next(options);
       },
       onError: (error, handler) {
-        if (error.response?.statusCode == 401) {
-          print('❌ 401 Unauthorized - Token inválido o expirado');
-        }
+        if (error.response?.statusCode == 401) {}
         return handler.next(error);
       },
     ),
@@ -93,10 +86,8 @@ class UseFilePreviewNotifier extends StateNotifier<UseFilePreviewResult> {
     try {
       final bytes = await _useCase.execute(type: type, filename: filename);
       state = UseFilePreviewResult(bytes: bytes);
-      print('✅ Preview cargado: ${bytes.length} bytes para $filename');
     } catch (e) {
       state = UseFilePreviewResult(error: e.toString());
-      print('❌ Error preview $filename: $e');
     }
   }
 

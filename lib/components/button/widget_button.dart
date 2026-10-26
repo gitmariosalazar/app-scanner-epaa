@@ -294,7 +294,7 @@ class ResponsiveButton extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [color, color.withOpacity(0.8)],
+                      colors: [color, color.withValues(alpha: 0.8)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -302,12 +302,12 @@ class ResponsiveButton extends StatelessWidget {
                       ResponsiveUtils.buttonBorderRadius(context),
                     ),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(enable ? 0.2 : 0.0),
+                        color: color.withValues(alpha: enable ? 0.2 : 0.0),
                         blurRadius: ResponsiveUtils.isSmallDevice(context)
                             ? 8
                             : 12,

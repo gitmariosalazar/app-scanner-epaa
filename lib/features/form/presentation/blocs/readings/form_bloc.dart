@@ -1,4 +1,5 @@
 // features/form/presentation/blocs/readings/form_bloc.dart
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_application/features/reading/data/model/create_reading_request.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -76,22 +77,29 @@ class FormBloc extends Bloc<FormEvent, FormState> {
           }
         }
 
-        // Ejecutar Incidente de Ruta (si existe)
-        if (event.incidentRequest != null) {
-          final incResult = await createIncidentUseCase(event.incidentRequest!);
-          incResult.fold(
-            (failure) => throw Exception(failure.message),
-            (success) => true,
-          );
-        }
+        // [VERSIÓN ANTERIOR] Incidente bloqueante antes de la lectura.
+        // Se conserva comentado para poder volver a esta versión.
+        // if (event.incidentRequest != null) {
+        //   final incResult = await createIncidentUseCase(event.incidentRequest!);
+        //   incResult.fold(
+        //     (failure) => throw Exception(failure.message),
+        //     (success) => true,
+        //   );
+        // }
 
-        // Ejecutar Lectura (si existe)
+        // Prioridad 1: Ejecutar Lectura (si existe) y notificar éxito de inmediato
         if (event.readingRequest != null) {
           final result = await createReadingUseCase(event.readingRequest!);
           emit(FormSuccess(result));
-        } else {
+        } else if (event.incidentRequest == null) {
           // Si no hubo lectura pero hubo otras acciones, usamos un FormSuccess con data vacía o un ChangeMeterSuccess
           emit(ChangeMeterSuccess());
+        }
+
+        // Prioridad 2: Incidente en segundo plano (no bloquea la UI)
+        if (event.incidentRequest != null) {
+          if (event.readingRequest == null) emit(ChangeMeterSuccess());
+          _createIncidentInBackground(event.incidentRequest!);
         }
       } catch (e) {
         String errorMessage = 'Error al guardar: $e';
@@ -102,5 +110,14 @@ class FormBloc extends Bloc<FormEvent, FormState> {
         emit(FormFailure(message: errorMessage));
       }
     }, transformer: droppable());
+  }
+
+  /// Crea la incidencia sin bloquear el flujo principal (fire-and-forget).
+  void _createIncidentInBackground(CreateIncidentRequest request) {
+    unawaited(
+      createIncidentUseCase(request)
+          .then((r) => r.fold((_) => null, (_) => null))
+          .catchError((_) => null),
+    );
   }
 }

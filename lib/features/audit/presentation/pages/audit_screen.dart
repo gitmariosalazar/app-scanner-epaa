@@ -27,7 +27,6 @@ extension _AuditTheme on BuildContext {
   Color get _muted => Theme.of(this).colorScheme.onSurfaceVariant;
   Color get _cardBg => Theme.of(this).colorScheme.surfaceContainerHighest;
   Color get _cardBorder => Theme.of(this).colorScheme.outlineVariant;
-  Color get _primaryColor => Theme.of(this).colorScheme.primary;
 }
 
 const _sectorNames = <int, String>{};
@@ -198,8 +197,8 @@ class _AuditViewState extends State<_AuditView> {
               onRefresh: () =>
                   context.read<AuditCubit>().refresh(month: _selectedMonth),
               child: _LoadedView(
-                sectors: sectors!,
-                month: month!,
+                sectors: sectors,
+                month: month,
                 closingForSectorId: closingForSectorId,
               ),
             );

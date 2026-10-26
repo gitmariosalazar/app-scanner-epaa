@@ -59,8 +59,8 @@ class CustomTextField extends StatelessWidget {
           label,
           style: (textStyle ?? ResponsiveUtils.bodySmall(context)).copyWith(
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface.withOpacity(
-              isReadOnly ? 0.7 : 0.8,
+            color: theme.colorScheme.onSurface.withValues(
+              alpha: isReadOnly ? 0.7 : 0.8,
             ),
           ),
         ),
@@ -83,7 +83,7 @@ class CustomTextField extends StatelessWidget {
               style: (textStyle ?? ResponsiveUtils.bodyMedium(context))
                   .copyWith(
                     color: isReadOnly
-                        ? theme.colorScheme.onSurface.withOpacity(0.85)
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
                         : null,
                   ),
               decoration: InputDecoration(
@@ -93,12 +93,12 @@ class CustomTextField extends StatelessWidget {
                 filled: !isReadOnly,
                 fillColor: isReadOnly
                     ? null
-                    : theme.colorScheme.surface.withOpacity(0.6),
+                    : theme.colorScheme.surface.withValues(alpha: 0.6),
                 border: OutlineInputBorder(
                   borderRadius: borderRadius,
                   borderSide: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(
-                      isReadOnly ? 0.4 : 0.5,
+                    color: theme.colorScheme.outline.withValues(
+                      alpha: isReadOnly ? 0.4 : 0.5,
                     ),
                     width: 1,
                   ),
@@ -106,8 +106,8 @@ class CustomTextField extends StatelessWidget {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: borderRadius,
                   borderSide: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(
-                      isReadOnly ? 0.4 : 0.5,
+                    color: theme.colorScheme.outline.withValues(
+                      alpha: isReadOnly ? 0.4 : 0.5,
                     ),
                     width: 1,
                   ),
@@ -124,7 +124,7 @@ class CustomTextField extends StatelessWidget {
                 disabledBorder: OutlineInputBorder(
                   borderRadius: borderRadius,
                   borderSide: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.4),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.4),
                     width: 1,
                   ),
                 ),
@@ -151,8 +151,8 @@ class CustomTextField extends StatelessWidget {
               child: Icon(
                 leftIcon,
                 size: iconSize,
-                color: theme.colorScheme.onSurface.withOpacity(
-                  isReadOnly ? 0.7 : 0.6,
+                color: theme.colorScheme.onSurface.withValues(
+                  alpha: isReadOnly ? 0.7 : 0.6,
                 ),
               ),
             ),

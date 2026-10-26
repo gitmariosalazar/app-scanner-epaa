@@ -171,7 +171,9 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: cs.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
                       suffixIcon: MicSuffixButton(
                         controller: _descriptionController,
                       ),
@@ -204,7 +206,9 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: cs.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -217,7 +221,7 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
 
                   // Charge to User Switch
                   Material(
-                    color: cs.surfaceContainerHighest.withOpacity(0.3),
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: cs.outlineVariant),
@@ -271,7 +275,9 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest.withOpacity(0.2),
+                        color: cs.surfaceContainerHighest.withValues(
+                          alpha: 0.2,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: cs.outlineVariant,
@@ -283,7 +289,7 @@ class _SolveIncidentScreenState extends State<SolveIncidentScreen> {
                           Icon(
                             Icons.photo_library_outlined,
                             size: 48,
-                            color: cs.onSurfaceVariant.withOpacity(0.5),
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 12),
                           Text(

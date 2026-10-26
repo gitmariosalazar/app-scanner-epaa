@@ -275,10 +275,8 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                   _buildInfoTile(
                     context,
                     icon: Icons.category_rounded,
-                    title: widget.incident.categoryName ?? 'Sin categoría',
-                    subtitle:
-                        widget.incident.incidentTypeName ??
-                        'Sin tipo de incidente',
+                    title: widget.incident.categoryName,
+                    subtitle: widget.incident.incidentTypeName,
                   ),
                   const SizedBox(height: 16),
 
@@ -744,10 +742,10 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                                         if (history
                                                 .managedBy
                                                 ?.correo
-                                                ?.isNotEmpty ??
+                                                .isNotEmpty ??
                                             false) ...[
                                           ColorChip(
-                                            label: history.managedBy!.correo!,
+                                            label: history.managedBy!.correo,
                                             color: Colors.indigo,
                                             variant: ColorChipVariant.ghost,
                                             size: ColorChipSize.sm,
@@ -760,10 +758,10 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                                         if (history
                                                 .managedBy
                                                 ?.celular
-                                                ?.isNotEmpty ??
+                                                .isNotEmpty ??
                                             false) ...[
                                           ColorChip(
-                                            label: history.managedBy!.celular!,
+                                            label: history.managedBy!.celular,
                                             color: Colors.indigo,
                                             variant: ColorChipVariant.ghost,
                                             size: ColorChipSize.sm,

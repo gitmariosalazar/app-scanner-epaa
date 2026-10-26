@@ -5,8 +5,6 @@ import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/utils/screen_type_layout.dart';
 import 'package:flutter_application/utils/date_utils.dart';
 
-
-
 class ConsumptionRow extends StatelessWidget {
   final TextEditingController previousConsumptionController;
   final TextEditingController currentConsumptionController;
@@ -44,7 +42,7 @@ class ConsumptionRow extends StatelessWidget {
         : consumptionVisuals.textColor;
     final dateTextColor = isPrevious
         ? cs.onSurfaceVariant
-        : consumptionVisuals.textColor.withOpacity(0.8);
+        : consumptionVisuals.textColor.withValues(alpha: 0.8);
 
     return Column(
       children: [
@@ -56,7 +54,7 @@ class ConsumptionRow extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),

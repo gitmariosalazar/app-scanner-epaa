@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'package:flutter_application/config/environments/environment.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_request.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_basic_request.dart';
@@ -108,7 +107,9 @@ class ConnectionRemoteDataSource {
     }
   }
 
-  Future<void> updateConnectionBasic(UpdateConnectionBasicRequest request) async {
+  Future<void> updateConnectionBasic(
+    UpdateConnectionBasicRequest request,
+  ) async {
     final token = await authLocalDataSource.getToken();
     final url = Uri.parse(
       '$baseUrl/connections/update-connection-basic/${request.connectionId}',

@@ -4,7 +4,6 @@ import 'package:flutter_application/components/common/dynamic_field_list.dart';
 import 'package:flutter_application/components/common/form_card.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/utils/validators.dart';
 
 class NaturalPersonForm extends StatefulWidget {
   final TextEditingController firstNameCtrl;

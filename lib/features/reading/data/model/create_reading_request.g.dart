@@ -14,7 +14,7 @@ LocationCapture _$LocationCaptureFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$LocationCaptureToJson(LocationCapture instance) =>
     <String, dynamic>{'lat': instance.lat, 'lng': instance.lng};
-
+/*
 CreateReadingRequest _$CreateReadingRequestFromJson(
   Map<String, dynamic> json,
 ) => CreateReadingRequest(
@@ -39,6 +39,7 @@ CreateReadingRequest _$CreateReadingRequestFromJson(
           json['locationCapture'] as Map<String, dynamic>,
         ),
 );
+*/
 
 Map<String, dynamic> _$CreateReadingRequestToJson(
   CreateReadingRequest instance,

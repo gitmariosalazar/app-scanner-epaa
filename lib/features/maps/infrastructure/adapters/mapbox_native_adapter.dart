@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../domain/entities/app_map_marker.dart';
@@ -32,16 +31,19 @@ class MapboxNativeAdapter implements IMapAdapter {
       key: const ValueKey("mapbox_map"),
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(initialLng, initialLat)),
-        zoom: initialZoom - 1, // Mapbox zoom is usually ~1 unit off compared to Leaflet
+        zoom:
+            initialZoom -
+            1, // Mapbox zoom is usually ~1 unit off compared to Leaflet
       ),
       styleUri: _getMapboxStyleUri(mapStyleUrl),
       onMapCreated: (MapboxMap mapboxMap) async {
         _mapboxMap = mapboxMap;
-        
+
         // Disable logo and attribution if needed, or adjust compass
         mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-        
-        _pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
+
+        _pointAnnotationManager = await mapboxMap.annotations
+            .createPointAnnotationManager();
         _isMapReady = true;
 
         _syncMarkers(markers);
@@ -89,22 +91,24 @@ class MapboxNativeAdapter implements IMapAdapter {
   }
 
   /// Sync markers.
-  /// NOTE: `mapbox_maps_flutter` version 2.x does NOT support native `ViewAnnotations` (Flutter Widgets) 
+  /// NOTE: `mapbox_maps_flutter` version 2.x does NOT support native `ViewAnnotations` (Flutter Widgets)
   /// directly on the `MapboxMap` controller.
   /// To render `AppMapMarker`s (which use `Widget`), you must either:
   /// 1. Use the `FlutterMapAdapter` instead.
   /// 2. Convert the `Widget`s to images (ByteData) and use `_pointAnnotationManager?.create(PointAnnotationOptions(...))`
   void _syncMarkers(List<AppMapMarker> markers) async {
     if (!_isMapReady || _mapboxMap == null) return;
-    
+
     // TODO: Implement PointAnnotations using _pointAnnotationManager
     // Flutter widgets cannot be directly added to mapbox_maps_flutter v2 natively.
-    debugPrint("MapboxNativeAdapter: Syncing markers is currently unsupported for Widget markers.");
+    debugPrint(
+      "MapboxNativeAdapter: Syncing markers is currently unsupported for Widget markers.",
+    );
   }
 
   String _getMapboxStyleUri(String? url) {
     if (url == null || url.isEmpty) return MapboxStyles.STANDARD;
-    
+
     // Mapbox Native uses mapbox://styles/... instead of http urls.
     // Try to extract the style id if it's a mapbox url
     if (url.contains('api.mapbox.com/styles/v1/mapbox/')) {
@@ -115,7 +119,7 @@ class MapboxNativeAdapter implements IMapAdapter {
         return 'mapbox://styles/mapbox/$styleId';
       }
     }
-    
+
     return MapboxStyles.STANDARD;
   }
 }

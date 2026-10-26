@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+
 /*
 class ReadingBasicInfo extends Equatable {
   final int? readingId;

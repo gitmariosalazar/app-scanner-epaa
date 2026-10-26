@@ -1,6 +1,8 @@
 // lib/features/form/presentation/pages/form_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/messages/app_alert.dart';
+import 'package:flutter_application/components/widgets/images_section.dart';
 import 'package:flutter_application/utils/validators.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/components/card/title_card.dart';
@@ -13,7 +15,6 @@ import 'package:flutter_application/features/form/presentation/widgets/date_peri
 import 'package:flutter_application/features/form/presentation/widgets/description_field.dart';
 import 'package:flutter_application/features/form/presentation/widgets/header_row.dart';
 import 'package:flutter_application/features/form/presentation/widgets/id_fields_row.dart';
-import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
 import 'package:flutter_application/features/properties/form/update/presentation/widgets/basic_update_connection_modal.dart';
 import 'package:flutter_application/features/form/presentation/widgets/owner_address_fields.dart';
 import 'package:flutter_application/features/form/presentation/widgets/reading_current_row.dart';
@@ -21,16 +22,13 @@ import 'package:flutter_application/features/form/presentation/widgets/reading_f
 import 'package:flutter_application/features/properties/search/domain/usecases/get_connection_with_properties.dart'
     as search_get_conn;
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/change_meter_request.dart';
-import 'package:flutter_application/features/incidents/presentation/cubit/incident_cubit.dart';
-import 'package:flutter_application/features/incidents/presentation/cubit/incident_state.dart';
-import 'package:flutter_application/features/incidents/domain/entities/incident-category.model.dart';
 import 'package:flutter_application/features/incidents/domain/dto/request/create_incident_request.dart';
 import 'package:flutter_application/features/reading/data/model/create_reading_request.dart';
 import 'package:flutter_application/features/reading/domain/entities/reading.dart';
 import 'package:flutter_application/utils/consumption_utils.dart';
-import 'package:flutter_application/utils/dialog_utils.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
     as form_bloc;
 import 'package:flutter_application/components/button/epaa_extended_fab.dart';
@@ -130,8 +128,8 @@ class _FormScreenState extends State<FormScreen>
     _setupListeners();
     _setupAnimations();
 
-    // Cargar categorías de incidentes (novedades de ruta)
-    context.read<IncidentCubit>().loadIncidentCategories();
+    // [OCULTO] Cargar categorías de incidentes deshabilitado porque la novedad ya no la elige el usuario.
+    // context.read<IncidentCubit>().loadIncidentCategories();
   }
 
   void _initializeData() {
@@ -324,7 +322,7 @@ class _FormScreenState extends State<FormScreen>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                 Theme.of(context).colorScheme.surface,
               ],
               begin: Alignment.topCenter,
@@ -342,14 +340,16 @@ class _FormScreenState extends State<FormScreen>
                 if (state is form_bloc.FormSuccess) {
                   _handleSuccess(context, state);
                 } else if (state is form_bloc.ChangeMeterSuccess) {
-                  DialogUtils.showResultDialog(
-                    context,
-                    '¡Medidor cambiado con éxito!',
-                    Icons.check_circle,
-                    Theme.of(context).colorScheme.secondary,
-                  );
+                  // [VERSIÓN ANTERIOR] Diálogo de resultado.
+                  // DialogUtils.showResultDialog(
+                  //   context,
+                  //   '¡Medidor cambiado con éxito!',
+                  //   Icons.check_circle,
+                  //   Theme.of(context).colorScheme.secondary,
+                  // );
+                  _showFloatingSuccess('¡Guardado con éxito!');
                   Future.delayed(const Duration(seconds: 2), () {
-                    if (mounted) Navigator.of(context).pop(true);
+                    if (mounted) _popToPreviousScreen();
                   });
                 } else if (state is form_bloc.MeterConflictState) {
                   _showMeterConflictDialog(state);
@@ -384,8 +384,9 @@ class _FormScreenState extends State<FormScreen>
                           if (hasCurrentReading == true) ...[
                             _buildMeterInspectionSection(context),
                             ResponsiveUtils.vSpace(context, 0.015),
-                            _buildRouteIncidentSection(context),
-                            ResponsiveUtils.vSpace(context, 0.015),
+                            // [OCULTO] Incidentes / Novedades de Ruta. Descomentar para restaurar.
+                            // _buildRouteIncidentSection(context),
+                            // ResponsiveUtils.vSpace(context, 0.015),
                             ReadingFieldsRow(
                               currentReadingController:
                                   _currentReadingController,
@@ -406,6 +407,7 @@ class _FormScreenState extends State<FormScreen>
                             ImagesSection(
                               attachedImages: _attachedImages,
                               mode: widget.mode,
+                              allowGallery: true,
                               onImageAdded: (file) {
                                 if (mounted) {
                                   setState(() {
@@ -422,6 +424,7 @@ class _FormScreenState extends State<FormScreen>
                                 }
                               },
                             ),
+
                             if (_errorMessage != null ||
                                 _successMessage != null)
                               Padding(
@@ -454,6 +457,13 @@ class _FormScreenState extends State<FormScreen>
                                       ),
                                 ),
                               ),
+                            ResponsiveUtils.vSpace(context, 0.02),
+                            AppAlert(
+                              title: 'Atención',
+                              message:
+                                  'Antes de enviar la lectura, asegúrate de haber registrado correctamente los datos.',
+                              type: AlertType.info,
+                            ),
                             ResponsiveUtils.vSpace(context, 0.02),
                             ActionButtonsRow(
                               state: state,
@@ -1020,6 +1030,7 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
+  /*
   Widget _buildRouteIncidentSection(BuildContext context) {
     return BlocBuilder<IncidentCubit, IncidentState>(
       builder: (context, state) {
@@ -1101,7 +1112,7 @@ class _FormScreenState extends State<FormScreen>
       },
     );
   }
-
+*/
   Widget _buildMeterInspectionSection(BuildContext context) {
     return Card(
       elevation: 2,
@@ -1132,9 +1143,10 @@ class _FormScreenState extends State<FormScreen>
                         borderRadius: BorderRadius.circular(5),
                       ),
                       filled: true,
-                      fillColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                     ),
                     value: _condicionMedidor,
                     items: const [
@@ -1159,12 +1171,13 @@ class _FormScreenState extends State<FormScreen>
                         setState(() {
                           _condicionMedidor = val;
                           if (val == 'NO_IDENTIFICADO') {
-                            _nuevoMedidorController.text = 'S/N';
+                            // [OCULTO] Número de medidor físico deshabilitado.
+                            // _nuevoMedidorController.text = 'S/N';
                             _estadoFisico = 'NO_IDENTIFICADO';
                           } else {
-                            if (_nuevoMedidorController.text == 'S/N') {
-                              _nuevoMedidorController.clear();
-                            }
+                            // if (_nuevoMedidorController.text == 'S/N') {
+                            //   _nuevoMedidorController.clear();
+                            // }
                             if (_estadoFisico == 'NO_IDENTIFICADO') {
                               _estadoFisico = null;
                             }
@@ -1184,9 +1197,10 @@ class _FormScreenState extends State<FormScreen>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       filled: true,
-                      fillColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                     ),
                     value: _estadoFisico,
                     items: const [
@@ -1228,6 +1242,9 @@ class _FormScreenState extends State<FormScreen>
                 ),
               ],
             ),
+            // [OCULTO] Número Registrado en Sistema / Número de Medidor Físico.
+            // Descomentar este bloque para restaurar la versión anterior.
+            /*
             const SizedBox(height: 5),
             TitledCard(
               title: 'Número Registrado en Sistema',
@@ -1272,7 +1289,7 @@ class _FormScreenState extends State<FormScreen>
                 filled: true,
                 fillColor: Theme.of(
                   context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ).colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -1281,6 +1298,7 @@ class _FormScreenState extends State<FormScreen>
                 return null;
               },
             ),
+            */
           ],
         ),
       ),
@@ -1346,13 +1364,48 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
-  void _handleSuccess(BuildContext context, form_bloc.FormSuccess state) async {
-    DialogUtils.showResultDialog(
-      context,
-      '¡Formulario enviado con éxito!',
-      Icons.check_circle,
-      AppColors.secondary,
+  /// Mensaje flotante de éxito que desaparece automáticamente.
+  void _showFloatingSuccess(String message) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppColors.secondary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  void _popToPreviousScreen() {
+    if (!mounted) return;
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+    } else {
+      context.go('/lecturas');
+    }
+  }
+
+  void _handleSuccess(BuildContext context, form_bloc.FormSuccess state) async {
+    // [VERSIÓN ANTERIOR] Diálogo de resultado.
+    // DialogUtils.showResultDialog(
+    //   context,
+    //   '¡Formulario enviado con éxito!',
+    //   Icons.check_circle,
+    //   AppColors.secondary,
+    // );
+    _showFloatingSuccess('¡Lectura guardada con éxito!');
 
     if (mounted) {
       setState(() {
@@ -1360,7 +1413,8 @@ class _FormScreenState extends State<FormScreen>
       });
     }
 
-    if (_attachedImages.isNotEmpty) {
+    final hadImages = _attachedImages.isNotEmpty;
+    if (hadImages) {
       try {
         await submitPhotoReading(
           context: context,
@@ -1373,9 +1427,11 @@ class _FormScreenState extends State<FormScreen>
         if (mounted) {
           setState(() {
             _attachedImages.clear();
-            _successMessage = 'Imágenes subidas con éxito.';
+            // [VERSIÓN ANTERIOR] Mensaje fijo en pantalla.
+            // _successMessage = 'Imágenes subidas con éxito.';
             _errorMessage = null;
           });
+          _showFloatingSuccess('Imágenes subidas con éxito.');
         }
       } catch (e) {
         if (mounted) {
@@ -1383,6 +1439,33 @@ class _FormScreenState extends State<FormScreen>
         }
       }
     }
+
+    if (mounted) {
+      final delay = hadImages
+          ? const Duration(milliseconds: 1000)
+          : const Duration(milliseconds: 1500);
+      await Future.delayed(delay);
+      if (mounted) {
+        _popToPreviousScreen();
+      }
+    }
+  }
+
+  /// Id por defecto del tipo de incidencia de ruta.
+  /// El backend decide si realmente crea la incidencia.
+  static const int kDefaultRouteIncidentTypeId = 32;
+
+  int? _resolveDefaultRouteIncidentId(BuildContext context) {
+    return kDefaultRouteIncidentTypeId;
+    // [VERSIÓN ANTERIOR] Primer tipo de la categoría 8 del catálogo cargado.
+    // final state = context.read<IncidentCubit>().state;
+    // if (state is! IncidentCategoriesLoaded) return null;
+    // for (final c in state.categories) {
+    //   if (c.id == 8 && c.incidentTypes.isNotEmpty) {
+    //     return c.incidentTypes.first.typeCode;
+    //   }
+    // }
+    // return null;
   }
 
   void _showGpsSubmissionError(String message) {
@@ -1494,7 +1577,11 @@ class _FormScreenState extends State<FormScreen>
             : '$currentDesc | $extraDesc';
       }
 
-      if (inputNumeroMedidor.isNotEmpty &&
+      // [OCULTO] Cambio de medidor deshabilitado (campo de número físico oculto).
+      // Para restaurar, cambiar `kMeterChangeEnabled` a `true`.
+      // (Se usa `final` en lugar de `const` para evitar el aviso de "dead code").
+      final bool kMeterChangeEnabled = false;
+      if (kMeterChangeEnabled & inputNumeroMedidor.isNotEmpty &&
           numeroMedidorFinal != numeroSistema &&
           inputNumeroMedidor != numeroSistema) {
         final meterDetail = MeterChangeDetail(
@@ -1531,9 +1618,11 @@ class _FormScreenState extends State<FormScreen>
       final enteredReadingStr = _newCurrentReadingController.text;
       final previousReadingStr = _currentReadingController.text;
 
-      final isSameMeter =
-          _nuevoMedidorController.text.trim() ==
-          _meterNumberController.text.trim();
+      // [VERSIÓN ANTERIOR] Se comparaba con el número de medidor físico.
+      // final isSameMeter =
+      //     _nuevoMedidorController.text.trim() ==
+      //     _meterNumberController.text.trim();
+      const isSameMeter = true;
 
       if (enteredReadingStr.isNotEmpty && isSameMeter) {
         if (enteredReadingStr.isNotEmpty && previousReadingStr.isNotEmpty) {
@@ -1589,10 +1678,14 @@ class _FormScreenState extends State<FormScreen>
 
       if (!mounted) return;
 
-      if (_selectedRouteIncidentId != null) {
+      // [VERSIÓN ANTERIOR] Solo si el lecturista elegía la novedad en el dropdown.
+      // if (_selectedRouteIncidentId != null) {
+      final routeIncidentTypeId =
+          _selectedRouteIncidentId ?? _resolveDefaultRouteIncidentId(context);
+      if (routeIncidentTypeId != null) {
         incidentReq = CreateIncidentRequest(
           connectionId: _connectionIdController.text,
-          incidentTypeId: _selectedRouteIncidentId!,
+          incidentTypeId: routeIncidentTypeId,
           reportDescription: _descriptionController.text.trim().isNotEmpty
               ? _descriptionController.text.trim()
               : 'Incidente reportado en ruta de lectura',
@@ -1653,6 +1746,17 @@ class _FormScreenState extends State<FormScreen>
         return;
       }
 
+      // Guardado directo, sin diálogo de confirmación.
+      context.read<form_bloc.FormBloc>().add(
+        form_bloc.SaveCompleteFormEvent(
+          readingRequest: readingReq,
+          changeMeterRequest: changeMeterReq,
+          incidentRequest: incidentReq,
+        ),
+      );
+
+      // [VERSIÓN ANTERIOR] Diálogo "Confirmar Guardado". Descomentar para restaurar.
+      /*
       await DialogUtils.showConfirmationDialog(
         context,
         onConfirm: () async {
@@ -1707,6 +1811,7 @@ class _FormScreenState extends State<FormScreen>
           },
         ],
       );
+      */
     } finally {
       if (mounted) {
         setState(() => _isProcessingSave = false);

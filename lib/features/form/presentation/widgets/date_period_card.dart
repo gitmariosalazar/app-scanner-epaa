@@ -24,16 +24,15 @@ class DatePeriodCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: accentColor.withOpacity(0.15),
+            color: accentColor.withValues(alpha: 0.15),
             border: Border.all(color: accentColor, width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             date,
-            style: ResponsiveUtils.titleSmall(context).copyWith(
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface,
-            ),
+            style: ResponsiveUtils.titleSmall(
+              context,
+            ).copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
           ),
         ),
         const SizedBox(height: 6),
@@ -60,11 +59,7 @@ class DatePeriodCard extends StatelessWidget {
         color: cs.secondaryContainer,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
         ],
       ),
       child: Column(

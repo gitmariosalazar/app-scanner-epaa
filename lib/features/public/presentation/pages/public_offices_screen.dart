@@ -43,9 +43,9 @@ class PublicOfficesScreen extends StatelessWidget {
   Widget _buildOfficeCard(BuildContext context, ColorScheme colors) {
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest.withOpacity(0.3),
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,10 +246,10 @@ class PublicOfficesScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -302,7 +302,7 @@ class PublicOfficesScreen extends StatelessWidget {
         border: Border.all(color: colors.surfaceContainerHighest),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -314,7 +314,7 @@ class PublicOfficesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colors.primaryContainer.withOpacity(0.3),
+              color: colors.primaryContainer.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: colors.primary, size: 28),
@@ -450,7 +450,7 @@ class _MapPreviewSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),

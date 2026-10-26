@@ -337,7 +337,7 @@ class _PropertyScanPageState extends State<PropertyScanPage>
       child: Container(
         padding: ResponsiveUtils.cardPadding(context),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
+          color: Colors.black.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.cardBorderRadius(context),
           ),
@@ -373,7 +373,7 @@ class _PropertyScanPageState extends State<PropertyScanPage>
             ),
             padding: ResponsiveUtils.cardPadding(context),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(
                 ResponsiveUtils.cardBorderRadius(context),
               ),
@@ -428,7 +428,7 @@ class _PropertyScanPageState extends State<PropertyScanPage>
       child: Container(
         padding: ResponsiveUtils.cardPadding(context),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
+          color: Colors.black.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(
             ResponsiveUtils.cardBorderRadius(context),
           ),
@@ -460,7 +460,7 @@ class _PropertyScanPageState extends State<PropertyScanPage>
           children: [
             ColorFiltered(
               colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.6),
+                Colors.black.withValues(alpha: 0.6),
                 BlendMode.srcOut,
               ),
               child: Stack(

@@ -118,7 +118,9 @@ class _LoginViewState extends State<LoginView> {
                     Text(
                       'Inicie sesión para continuar',
                       style: context.bodyLarge.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -271,7 +273,7 @@ class _LoginInputField extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
           borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

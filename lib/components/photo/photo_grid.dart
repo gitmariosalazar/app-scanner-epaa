@@ -76,7 +76,7 @@ class _PhotoGalleryState extends ConsumerState<PhotoGallery> {
                 decoration: BoxDecoration(
                   color: _currentIndex == index
                       ? cs.primary
-                      : cs.outline.withOpacity(0.4),
+                      : cs.outline.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -200,7 +200,7 @@ class _FullScreenPhotoGalleryState
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.9),
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
         title: Text('${_currentIndex + 1} / ${widget.imagePaths.length}'),
         actions: [
           IconButton(

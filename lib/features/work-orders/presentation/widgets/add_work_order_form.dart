@@ -149,7 +149,7 @@ class _AddWorkOrderResponsiveDialogState
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 25),
                   ),
@@ -181,7 +181,9 @@ class _AddWorkOrderResponsiveDialogState
 
                       MinimalSectionDivider(
                         title: 'Información de la Conexión',
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.25),
                         isExpanded: false,
                         children: [
                           ResponsiveUtils.vSpace(context, 0.015),
@@ -217,7 +219,7 @@ class _AddWorkOrderResponsiveDialogState
 
                       // Tipo de orden
                       DropdownButtonFormField<int>(
-                        value: _workOrderTypeId,
+                        initialValue: _workOrderTypeId,
                         decoration: InputDecoration(
                           labelText: "Tipo de orden *",
                           border: OutlineInputBorder(

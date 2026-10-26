@@ -35,7 +35,7 @@ class DialogUtils {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.11),
+                  color: color.withValues(alpha: 0.11),
                   shape: BoxShape.circle,
                 ),
                 padding: EdgeInsets.all(iconSize * 0.21),

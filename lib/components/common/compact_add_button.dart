@@ -26,7 +26,7 @@ class CompactAddButton extends StatelessWidget {
         ),
       ),
       style: TextButton.styleFrom(
-        backgroundColor: AppColors.secondary.withOpacity(0.1),
+        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
         padding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing * 0.9,
           vertical: context.extraSmallSpacing * 0.7,

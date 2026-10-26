@@ -27,7 +27,7 @@ class TitledCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? theme.cardColor,
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.3),
+          color: theme.dividerColor.withValues(alpha: 0.3),
           width: 1,
         ),
         borderRadius: BorderRadius.circular(
@@ -35,7 +35,7 @@ class TitledCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.25),
+            color: theme.shadowColor.withValues(alpha: 0.25),
             blurRadius: elevation,
             offset: const Offset(0, 3),
           ),
@@ -47,7 +47,7 @@ class TitledCard extends StatelessWidget {
           Container(
             padding: ResponsiveUtils.cardPadding(context),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(
                   ResponsiveUtils.cardBorderRadius(context),

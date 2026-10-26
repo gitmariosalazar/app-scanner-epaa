@@ -8,6 +8,7 @@ class ImagesSection extends StatelessWidget {
   final String mode;
   final Function(File) onImageAdded;
   final Function(int) onImageRemoved;
+  final bool allowGallery;
 
   const ImagesSection({
     super.key,
@@ -15,9 +16,10 @@ class ImagesSection extends StatelessWidget {
     required this.mode,
     required this.onImageAdded,
     required this.onImageRemoved,
+    this.allowGallery = false,
   });
 
-  Future<void> _pickImage() async {
+  Future<void> _pickFromCamera() async {
     final picker = ImagePicker();
     final XFile? pickedImage = await picker.pickImage(
       source: ImageSource.camera,
@@ -30,25 +32,83 @@ class ImagesSection extends StatelessWidget {
     }
   }
 
+  Future<void> _pickFromGallery() async {
+    final picker = ImagePicker();
+    final List<XFile> pickedImages = await picker.pickMultiImage(
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    for (final XFile image in pickedImages) {
+      onImageAdded(File(image.path));
+    }
+  }
+
+  Future<void> _pickImage(BuildContext context) async {
+    if (!allowGallery) {
+      // Comportamiento original: solo cámara
+      await _pickFromCamera();
+      return;
+    }
+
+    // Cuando allowGallery es true → mostrar opciones
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text('Tomar foto'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text('Elegir de galería'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromGallery();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAddImageButton(
     BuildContext context,
     ColorScheme colors,
     double size,
   ) {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: () => _pickImage(context),
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: colors.primaryContainer.withOpacity(0.15),
-          border: Border.all(color: colors.primary.withOpacity(0.45), width: 2),
+          color: colors.primaryContainer.withValues(alpha: 0.15),
+          border: Border.all(
+            color: colors.primary.withValues(alpha: 0.45),
+            width: 2,
+          ),
         ),
         child: Icon(
           Icons.add_a_photo_rounded,
           size: size * 0.48,
-          color: colors.primary.withOpacity(0.82),
+          color: colors.primary.withValues(alpha: 0.82),
         ),
       ),
     );
@@ -94,7 +154,7 @@ class ImagesSection extends StatelessWidget {
                           return Container(
                             width: imageSize,
                             height: imageSize,
-                            color: colors.error.withOpacity(0.3),
+                            color: colors.error.withValues(alpha: 0.3),
                             child: Center(
                               child: Text(
                                 'Error',
@@ -114,7 +174,7 @@ class ImagesSection extends StatelessWidget {
                         onTap: () => onImageRemoved(index),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(

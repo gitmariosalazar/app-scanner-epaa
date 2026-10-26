@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/features/form/presentation/widgets/images_section.dart';
+import 'package:flutter_application/components/widgets/images_section.dart';
 import 'package:flutter_application/features/properties/form/update/data/models/dto/request/update_connection_basic_request.dart';
 import 'package:flutter_application/features/properties/form/update/domain/usecases/update_connection_basic_usecase.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
@@ -131,7 +131,7 @@ class _BasicUpdateConnectionModalState
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -151,7 +151,7 @@ class _BasicUpdateConnectionModalState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: colorScheme.onSurface.withOpacity(0.15),
+                    color: colorScheme.onSurface.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -171,7 +171,7 @@ class _BasicUpdateConnectionModalState
               Text(
                 'Todos los campos son obligatorios',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.55),
+                  color: colorScheme.onSurface.withValues(alpha: 0.55),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -194,8 +194,8 @@ class _BasicUpdateConnectionModalState
                 decoration: InputDecoration(
                   hintText: 'Ej: 12345678',
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest.withOpacity(
-                    0.4,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.4,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -204,7 +204,7 @@ class _BasicUpdateConnectionModalState
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -220,7 +220,7 @@ class _BasicUpdateConnectionModalState
                   ),
                   prefixIcon: Icon(
                     Icons.speed_rounded,
-                    color: colorScheme.primary.withOpacity(0.8),
+                    color: colorScheme.primary.withValues(alpha: 0.8),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -249,6 +249,7 @@ class _BasicUpdateConnectionModalState
                 child: ImagesSection(
                   attachedImages: _photosFacade,
                   mode: 'facade',
+                  allowGallery: true,
                   onImageAdded: (file) {
                     if (_photosFacade.length < 10) {
                       setState(() => _photosFacade.add(file));
@@ -287,6 +288,7 @@ class _BasicUpdateConnectionModalState
                 child: ImagesSection(
                   attachedImages: _photosMeter,
                   mode: 'meter',
+                  allowGallery: true,
                   onImageAdded: (file) {
                     if (_photosMeter.length < 10) {
                       setState(() => _photosMeter.add(file));
@@ -329,12 +331,14 @@ class _BasicUpdateConnectionModalState
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.4),
+                          color: colorScheme.outline.withValues(alpha: 0.4),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        foregroundColor: colorScheme.onSurface.withOpacity(0.8),
+                        foregroundColor: colorScheme.onSurface.withValues(
+                          alpha: 0.8,
+                        ),
                       ),
                       child: const Text(
                         'Cancelar',
@@ -358,10 +362,12 @@ class _BasicUpdateConnectionModalState
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isFormValid
                               ? colorScheme.primary
-                              : colorScheme.primary.withOpacity(0.45),
+                              : colorScheme.primary.withValues(alpha: 0.45),
                           foregroundColor: colorScheme.onPrimary,
                           elevation: _isFormValid ? 2 : 0,
-                          shadowColor: colorScheme.primary.withOpacity(0.4),
+                          shadowColor: colorScheme.primary.withValues(
+                            alpha: 0.4,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -428,7 +434,7 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.12),
+            color: theme.colorScheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 20, color: theme.colorScheme.primary),
@@ -463,7 +469,7 @@ class _SectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
             ],
@@ -484,9 +490,9 @@ class _PhotoCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.25),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
       ),
       padding: const EdgeInsets.all(12),
       child: child,

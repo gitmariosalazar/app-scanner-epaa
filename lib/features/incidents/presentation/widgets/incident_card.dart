@@ -55,7 +55,7 @@ class IncidentCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           IconIncidentType(
-                            categoryCode: incident.categoryCode ?? 'OTRO',
+                            categoryCode: incident.categoryCode,
                             incidentType: incident.incidentTypeId.toString(),
                             color: cs.primary,
                             size: 14,
@@ -63,7 +63,7 @@ class IncidentCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              incident.categoryName ?? 'Incidencia',
+                              incident.categoryName,
                               style: TextStyle(
                                 color: cs.primary,
                                 fontSize: 11,
@@ -138,7 +138,7 @@ class IncidentCard extends StatelessWidget {
 
                 // Incident Title/Type
                 Text(
-                  incident.incidentTypeName ?? 'Sin tipo especificado',
+                  incident.incidentTypeName,
                   style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 15,

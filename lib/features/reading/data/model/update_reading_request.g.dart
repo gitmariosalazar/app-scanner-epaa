@@ -5,7 +5,7 @@ part of 'update_reading_request.dart';
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
-
+/*
 UpdateReadingRequest _$UpdateReadingRequestFromJson(
   Map<String, dynamic> json,
 ) => UpdateReadingRequest(
@@ -20,7 +20,7 @@ UpdateReadingRequest _$UpdateReadingRequestFromJson(
   account: (json['account'] as num?)?.toInt(),
   connectionId: json['connectionId'] as String?,
 );
-
+*/
 Map<String, dynamic> _$UpdateReadingRequestToJson(
   UpdateReadingRequest instance,
 ) => <String, dynamic>{

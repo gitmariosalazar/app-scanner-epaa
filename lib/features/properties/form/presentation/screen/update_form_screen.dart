@@ -764,7 +764,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
 
   Widget _buildCustomStepper(int currentStep) {
     return Container(
-      color: AppColors.shadow.withOpacity(0.8),
+      color: AppColors.shadow.withValues(alpha: 0.8),
       padding: EdgeInsets.symmetric(vertical: context.smallSpacing * 1.2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -799,7 +799,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
       bg = AppColors.accent;
     } else {
       icon = baseIcon;
-      bg = AppColors.primary.withOpacity(0.3);
+      bg = AppColors.primary.withValues(alpha: 0.3);
       color = Colors.white70;
     }
 
@@ -813,7 +813,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: bg.withOpacity(0.4),
+                  color: bg.withValues(alpha: 0.4),
                   blurRadius: 16,
                   spreadRadius: 2,
                 ),
@@ -832,7 +832,9 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
         height: 3,
         margin: EdgeInsets.symmetric(horizontal: context.smallSpacing),
         decoration: BoxDecoration(
-          color: isCompleted ? Colors.white : Colors.white.withOpacity(0.3),
+          color: isCompleted
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -859,14 +861,14 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
                       style: TextStyle(
                         color: _isNaturalPerson
                             ? Colors.white
-                            : AppColors.textPrimary.withOpacity(0.6),
+                            : AppColors.textPrimary.withValues(alpha: 0.6),
                       ),
                     ),
                     icon: Icon(
                       Icons.verified_user,
                       color: _isNaturalPerson
                           ? Colors.white
-                          : AppColors.textPrimary.withOpacity(0.6),
+                          : AppColors.textPrimary.withValues(alpha: 0.6),
                     ),
                   ),
                   ButtonSegment(
@@ -876,14 +878,14 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
                       style: TextStyle(
                         color: _isCompany
                             ? Colors.white
-                            : AppColors.textPrimary.withOpacity(0.6),
+                            : AppColors.textPrimary.withValues(alpha: 0.6),
                       ),
                     ),
                     icon: Icon(
                       Icons.business,
                       color: _isCompany
                           ? Colors.white
-                          : AppColors.textPrimary.withOpacity(0.6),
+                          : AppColors.textPrimary.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -898,7 +900,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
                   backgroundColor: WidgetStateProperty.resolveWith(
                     (s) => s.contains(WidgetState.selected)
                         ? AppColors.primary
-                        : AppColors.surface.withOpacity(0.6),
+                        : AppColors.surface.withValues(alpha: 0.6),
                   ),
                   shape: WidgetStateProperty.all(
                     RoundedRectangleBorder(
@@ -946,7 +948,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             child: Icon(
               _isCompany ? Icons.business : Icons.person,
               color: AppColors.primary,
@@ -1146,7 +1148,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
       fontWeight: FontWeight.w400,
     ),
     filled: true,
-    fillColor: AppColors.surface.withOpacity(0.3),
+    fillColor: AppColors.surface.withValues(alpha: 0.3),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -1154,7 +1156,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+      borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -1173,7 +1175,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
       color: AppColors.card,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
           blurRadius: 12,
           offset: const Offset(0, -3),
         ),
@@ -1186,7 +1188,7 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
             child: ActionButton(
               label: 'Anterior',
               icon: Icons.arrow_back,
-              color: AppColors.textSecondary.withOpacity(0.8),
+              color: AppColors.textSecondary.withValues(alpha: 0.8),
               onPressed: _prevStep,
             ),
           ),
@@ -1212,11 +1214,11 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
     child: Container(
       margin: EdgeInsets.symmetric(horizontal: context.smallSpacing * 0.5),
       child: Material(
-        color: AppColors.surface.withOpacity(0.4),
+        color: AppColors.surface.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
           side: BorderSide(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             width: 0.5,
           ),
         ),
@@ -1229,7 +1231,9 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
           value: value,
           onChanged: onChanged,
           activeColor: AppColors.primary,
-          contentPadding: EdgeInsets.symmetric(horizontal: context.smallSpacing),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: context.smallSpacing,
+          ),
           dense: true,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(context.smallBorderRadiusValue),
@@ -1239,4 +1243,3 @@ class _UpdateConnectionFormScreenState extends State<UpdateConnectionFormScreen>
     ),
   );
 }
-

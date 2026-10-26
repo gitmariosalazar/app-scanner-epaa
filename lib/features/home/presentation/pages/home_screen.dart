@@ -51,7 +51,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.08),
+              theme.colorScheme.primary.withValues(alpha: 0.08),
               theme.colorScheme.background,
             ],
             begin: Alignment.topCenter,
@@ -76,7 +76,9 @@ class HomeScreen extends StatelessWidget {
                       elevation: 5,
                       shape: const CircleBorder(),
                       color: Colors.white,
-                      shadowColor: theme.colorScheme.primary.withOpacity(0.12),
+                      shadowColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.12,
+                      ),
                       child: Container(
                         alignment: Alignment.center,
                         padding: EdgeInsets.all(isTablet ? 28 : 18),
@@ -97,19 +99,21 @@ class HomeScreen extends StatelessWidget {
                   // Glassmorphic welcome card
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(
                         context.largeBorderRadiusValue,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 16,
                           offset: const Offset(0, 2),
                         ),
                       ],
                       border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.04),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.04,
+                        ),
                         width: 1.5,
                       ),
                     ),
@@ -132,7 +136,9 @@ class HomeScreen extends StatelessWidget {
                         Text(
                           'Realiza escaneos de códigos QR o ingreso de Lecturas de medidores manualmente.',
                           style: context.bodyLarge.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -142,13 +148,13 @@ class HomeScreen extends StatelessWidget {
                   // Menu Buttons in a Card with some separation
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.93),
+                      color: Colors.white.withValues(alpha: 0.93),
                       borderRadius: BorderRadius.circular(
                         context.largeBorderRadiusValue,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 14,
                           offset: const Offset(0, 3),
                         ),
@@ -166,8 +172,8 @@ class HomeScreen extends StatelessWidget {
                           color: theme.colorScheme.primary,
                           gradient: LinearGradient(
                             colors: [
-                              theme.colorScheme.primary.withOpacity(0.92),
-                              theme.colorScheme.primary.withOpacity(0.78),
+                              theme.colorScheme.primary.withValues(alpha: 0.92),
+                              theme.colorScheme.primary.withValues(alpha: 0.78),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -193,8 +199,10 @@ class HomeScreen extends StatelessWidget {
                           color: theme.colorScheme.secondary,
                           gradient: LinearGradient(
                             colors: [
-                              theme.colorScheme.secondary.withOpacity(0.95),
-                              Colors.orangeAccent.withOpacity(0.8),
+                              theme.colorScheme.secondary.withValues(
+                                alpha: 0.95,
+                              ),
+                              Colors.orangeAccent.withValues(alpha: 0.8),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -299,7 +307,7 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
             borderRadius: BorderRadius.circular(borderRadius),
             boxShadow: [
               BoxShadow(
-                color: widget.color.withOpacity(0.18),
+                color: widget.color.withValues(alpha: 0.18),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),
