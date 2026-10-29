@@ -28,9 +28,6 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   @override
   Future<void> cacheToken(String token) async {
     await sharedPreferences.setString(CACHED_AUTH_TOKEN, token);
-    print(
-      '💾 TOKEN GUARDADO CORRECTAMENTE: ${token.substring(0, 30)}...',
-    ); // ← Agrega esto
   }
 
   @override

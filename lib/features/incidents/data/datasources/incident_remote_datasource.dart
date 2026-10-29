@@ -110,14 +110,14 @@ class IncidentRemoteDataSourceImpl implements IncidentRemoteDataSource {
       requestMultipart.fields['incidentTypeId'] = request.incidentTypeId
           .toString();
       requestMultipart.fields['reportDescription'] = request.reportDescription;
-      if (request.referenceAddress != null) {
-        requestMultipart.fields['referenceAddress'] = request.referenceAddress!;
+      if (request.referenceAddress.isNotEmpty) {
+        requestMultipart.fields['referenceAddress'] = request.referenceAddress;
       }
-      if (request.reportOrigin != null) {
-        requestMultipart.fields['reportOrigin'] = request.reportOrigin!;
+      if (request.reportOrigin.isNotEmpty) {
+        requestMultipart.fields['reportOrigin'] = request.reportOrigin;
       }
-      if (request.priority != null) {
-        requestMultipart.fields['priority'] = request.priority!;
+      if (request.priority.isNotEmpty) {
+        requestMultipart.fields['priority'] = request.priority;
       }
       if (request.reportClient != null) {
         requestMultipart.fields['reportClient'] = jsonEncode({

@@ -115,6 +115,45 @@ class ConnectionEntity extends Equatable {
     property,
     lastReadings,
   ];
+
+  ConnectionWithPropertiesEntity toConnectionWithProperties() {
+    return ConnectionWithPropertiesEntity(
+      connectionId: connectionId,
+      clientId: clientId,
+      connectionRateId: connectionRateId,
+      connectionRateName: connectionRateName,
+      connectionMeterNumber: connectionMeterNumber,
+      connectionMeterNumberPreview: connectionMeterNumberPreview,
+      connectionMeterNumberCurrent: connectionMeterNumberCurrent,
+      connectionSector: connectionSector,
+      connectionAccount: connectionAccount,
+      connectionCadastralKey: connectionCadastralKey,
+      connectionContractNumber: connectionContractNumber,
+      connectionSewerage: connectionSewerage,
+      connectionStatus: connectionStatus,
+      connectionStateId: connectionStateId,
+      connectionIsReadable: connectionIsReadable,
+      connectionAddress: connectionAddress,
+      connectionInstallationDate: connectionInstallationDate,
+      connectionPeopleNumber: connectionPeopleNumber,
+      connectionZone: connectionZone,
+      connectionCoordinates: connectionCoordinates,
+      connectionReference: connectionReference,
+      connectionMetadata: connectionMetadata,
+      connectionAltitude: connectionAltitude,
+      connectionPrecision: connectionPrecision,
+      connectionGeolocationDate: connectionGeolocationDate,
+      connectionGeometricZone: connectionGeometricZone,
+      propertyCadastralKey: propertyCadastralKey,
+      zoneId: zoneId,
+      zoneCode: zoneCode,
+      zoneName: zoneName,
+      person: person,
+      company: company,
+      properties: property != null ? [property!] : null,
+      lastReading: lastReadings,
+    );
+  }
 }
 
 class ConnectionWithPropertiesEntity extends Equatable {

@@ -18,16 +18,6 @@ const _kOrange = Color(0xFFFF9800);
 const _kRed = Color(0xFFFF5252);
 const _kPurple = Colors.deepPurpleAccent;
 
-class _C {
-  // Brand colors — unchanged across themes
-  static const accent = Color(0xFF1565C0);
-  static const green = Color(0xFF2E7D32);
-  static const greenBg = Color(0xFFE8F5E9);
-  static const orange = Color(0xFFE65100);
-  static const orangeBg = Color(0xFFFFF3E0);
-  static const red = Color(0xFFC62828);
-}
-
 // ── Convenience extension ──────────────────────────────────────────────────
 extension _T on BuildContext {
   ColorScheme get _cs => Theme.of(this).colorScheme;
@@ -187,7 +177,9 @@ class _DashboardViewState extends State<_DashboardView> {
                               child: Text(
                                 'GPS: ${state.status.name}',
                                 style: TextStyle(
-                                  color: state.status == LocationStatus.granted ? Colors.greenAccent : Colors.redAccent,
+                                  color: state.status == LocationStatus.granted
+                                      ? Colors.greenAccent
+                                      : Colors.redAccent,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
                                 ),
@@ -341,15 +333,6 @@ class _DashboardViewState extends State<_DashboardView> {
     ColorScheme cs,
     DashboardStats s,
   ) {
-    final progress = s.overallProgress; // already a 0.0–1.0 ratio
-
-    final progressColor = progress >= 1.0
-        ? _C.green
-        : progress >= 0.7
-        ? _C.accent
-        : progress >= 0.3
-        ? _C.orange
-        : _C.red;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
       child: Column(

@@ -27,15 +27,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required this.authLocalDataSource,
   });
 
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await authLocalDataSource.getToken();
-    final headers = <String, String>{'Content-Type': 'application/json'};
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-    return headers;
-  }
-
   @override
   Future<AuthResponseModel> login(
     String username_or_email,

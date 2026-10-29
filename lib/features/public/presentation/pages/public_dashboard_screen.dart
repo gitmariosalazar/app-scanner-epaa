@@ -12,7 +12,6 @@ class PublicDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final size = MediaQuery.of(context).size;
     final isDark = context.watch<ThemeCubit>().state == ThemeMode.dark;
 
     return Scaffold(

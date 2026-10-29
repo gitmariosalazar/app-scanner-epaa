@@ -2,6 +2,7 @@ import 'package:flutter_application/components/badge/custom_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/utils/responsive_utils.dart';
 import 'package:flutter_application/features/properties/search/domain/entities/connection.dart';
+import 'package:flutter_application/features/properties/form/update/presentation/widgets/basic_update_connection_modal.dart';
 import 'package:go_router/go_router.dart';
 import 'connection_details_sheet.dart';
 
@@ -290,11 +291,39 @@ class ConnectionResultCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => _handleFacadeTap(context),
+                      icon: const Icon(Icons.house_rounded, size: 16),
+                      label: const Text('Fachada'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.tertiaryContainer,
+                        foregroundColor: cs.onTertiaryContainer,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _handleFacadeTap(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) => BasicUpdateConnectionModal(
+        connection: connection.toConnectionWithProperties(),
       ),
     );
   }
