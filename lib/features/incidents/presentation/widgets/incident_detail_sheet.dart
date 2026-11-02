@@ -199,13 +199,28 @@ class _IncidentDetailSheetState extends ConsumerState<IncidentDetailSheet> {
                   label: 'Resolver',
                   color: AppColors.primary,
                   size: ActionButtonSize.small,
-                  disabled: widget.incident.status == 'RESUELTO',
-                  hideElevation: widget.incident.status == 'RESUELTO',
+                  disabled: true, //widget.incident.status == 'RESUELTO',
+                  hideElevation: true, //widget.incident.status == 'RESUELTO',
                 ),
                 const SizedBox(width: 6),
-                IconButton.filledTonal(
-                  icon: const Icon(Icons.close_rounded),
+                FilledButton(
                   onPressed: () => context.pop(),
+                  style: FilledButton.styleFrom(
+                    shape: const CircleBorder(),
+                    padding: const EdgeInsets.all(
+                      12,
+                    ), // Ajusta el tamaño del padding según el diámetro deseado
+                    minimumSize: Size
+                        .zero, // Elimina las dimensiones rectangulares por defecto
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.errorContainer,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onErrorContainer,
+                  ),
+                  child: const Icon(Icons.close_rounded),
                 ),
               ],
             ),

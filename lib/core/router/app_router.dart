@@ -35,6 +35,8 @@ import 'package:flutter_application/core/router/go_router_refresh_stream.dart';
 import 'package:flutter_application/features/auth/presentation/pages/login_screen.dart';
 import 'package:flutter_application/features/reading/presentation/scan/pages/scan_screen.dart';
 import 'package:flutter_application/features/reading/presentation/manually/pages/manually_screen.dart';
+import 'package:flutter_application/features/reading/presentation/pending/cubit/pending_readings_cubit.dart';
+import 'package:flutter_application/features/reading/presentation/pending/pages/pending_readings_screen.dart';
 import 'package:flutter_application/features/form/presentation/pages/form_screen.dart'
     as form;
 import 'package:flutter_application/features/form/presentation/blocs/readings/form_bloc.dart'
@@ -155,6 +157,26 @@ class AppRouter {
           create: (_) => di.sl<ReadingManuallyBloc>(),
           child: const ManualEntryScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/pending-readings',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final initialMonth = extra?['month'] as String?;
+          final initialSector = extra?['sector'] as int?;
+
+          return BlocProvider(
+            create: (_) => di.sl<PendingReadingsCubit>()
+              ..loadPendingReadings(
+                month: initialMonth,
+                sector: initialSector,
+              ),
+            child: PendingReadingsScreen(
+              initialMonth: initialMonth,
+              initialSector: initialSector,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/observations',

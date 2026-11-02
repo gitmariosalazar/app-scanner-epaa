@@ -18,6 +18,8 @@ class ObservationEntity extends Equatable {
   final String observations;
   final String clientId;
   final String clientName;
+  final String readingMonth;
+  final String readingDate;
   final String? actionRecommended;
 
   const ObservationEntity({
@@ -38,6 +40,8 @@ class ObservationEntity extends Equatable {
     required this.observations,
     required this.clientId,
     required this.clientName,
+    required this.readingMonth,
+    required this.readingDate,
     this.actionRecommended,
   });
 
@@ -60,5 +64,7 @@ class ObservationEntity extends Equatable {
     observations,
     clientId,
     clientName,
+    readingMonth,
+    readingDate,
   ];
 }

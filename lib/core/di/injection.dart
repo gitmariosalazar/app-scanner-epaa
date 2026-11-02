@@ -88,11 +88,17 @@ import 'package:flutter_application/features/properties/form/update/domain/useca
 import 'package:flutter_application/features/properties/form/update/domain/usecases/update_customer.dart';
 
 import 'package:flutter_application/features/reading/data/datasources/remote_reading_data_source.dart';
+import 'package:flutter_application/features/reading/data/datasources/pending_reading_remote_datasource.dart';
 import 'package:flutter_application/features/reading/data/repositories/reading_repository_impl.dart';
+import 'package:flutter_application/features/reading/data/repositories/pending_reading_repository_impl.dart';
 import 'package:flutter_application/features/reading/domain/repositories/reading_repository.dart';
+import 'package:flutter_application/features/reading/domain/repositories/pending_reading_repository.dart';
 import 'package:flutter_application/features/reading/domain/usecases/get_reading_info.dart';
+import 'package:flutter_application/features/reading/domain/usecases/get_pending_readings_usecase.dart';
+import 'package:flutter_application/features/reading/domain/usecases/filter_pending_readings_usecase.dart';
 import 'package:flutter_application/features/reading/presentation/scan/bloc/reading_scan_bloc.dart';
 import 'package:flutter_application/features/reading/presentation/manually/blocs/reading_manually_bloc.dart';
+import 'package:flutter_application/features/reading/presentation/pending/cubit/pending_readings_cubit.dart';
 
 import 'package:flutter_application/features/work-orders/data/datasources/work_order_remote_datasource.dart';
 import 'package:flutter_application/features/work-orders/data/repositories/work_order_repository_impl.dart';
@@ -254,6 +260,29 @@ Future<void> init() async {
   sl.registerLazySingleton<GetReadingInfo>(() => GetReadingInfo(sl()));
   sl.registerFactory(() => ReadingScanBloc(sl()));
   sl.registerFactory(() => ReadingManuallyBloc(sl()));
+
+  // Pending Readings
+  sl.registerLazySingleton<PendingReadingRemoteDataSource>(
+    () => PendingReadingRemoteDataSourceImpl(
+      client: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton<PendingReadingRepository>(
+    () => PendingReadingRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<GetPendingReadingsUseCase>(
+    () => GetPendingReadingsUseCase(sl()),
+  );
+  sl.registerLazySingleton<FilterPendingReadingsUseCase>(
+    () => FilterPendingReadingsUseCase(),
+  );
+  sl.registerFactory<PendingReadingsCubit>(
+    () => PendingReadingsCubit(
+      getPendingReadingsUseCase: sl(),
+      filterPendingReadingsUseCase: sl(),
+    ),
+  );
 
   // ==========================
   // FORM FEATURE

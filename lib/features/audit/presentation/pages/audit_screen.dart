@@ -1,11 +1,13 @@
 // lib/features/audit/presentation/pages/audit_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/widgets/StatItem.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
 import 'package:flutter_application/features/audit/domain/entities/audit_sector.dart';
 import 'package:flutter_application/features/audit/presentation/cubit/audit_cubit.dart';
 import 'package:flutter_application/features/audit/presentation/cubit/audit_state.dart';
 import 'package:flutter_application/features/audit/presentation/pages/sector_browser_sheet.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application/features/auth/data/datasources/auth_local_datasource.dart';
 
@@ -776,22 +778,28 @@ class _SectorAuditCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
             child: Row(
               children: [
-                _StatItem(
+                StatItem(
                   label: 'Esperadas',
                   value: sector.expectedTotal.toString(),
                   color: context._muted,
                 ),
-                _StatItem(
+                StatItem(
                   label: 'Completadas',
                   value: sector.completedTotal.toString(),
                   color: _C.green,
                 ),
-                _StatItem(
+                StatItem(
                   label: 'Pendientes',
                   value: sector.pendingTotal.toString(),
                   color: _C.orange,
+                  onTap: () {
+                    context.push(
+                      '/pending-readings',
+                      extra: {'sector': sector.sectorId},
+                    );
+                  },
                 ),
-                _StatItem(
+                StatItem(
                   label: 'Avance',
                   value: '${sector.progressPercentage.toStringAsFixed(2)}%',
                   color: progressColor,
@@ -1259,39 +1267,6 @@ class _StatusBadge extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final bool bold;
-
-  const _StatItem({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.bold = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: bold ? 14 : 13,
-              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-            ),
-          ),
-          Text(label, style: TextStyle(color: context._muted, fontSize: 9)),
         ],
       ),
     );

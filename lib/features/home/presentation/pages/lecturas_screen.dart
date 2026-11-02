@@ -21,7 +21,7 @@ class LecturasScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded),
-            tooltip: 'Historial',
+            tooltip: 'Historial de Observaciones',
             onPressed: () => context.push('/observations'),
           ),
         ],
@@ -121,6 +121,19 @@ class LecturasScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               onTap: () => context.push('/manually-entry'),
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.pending_actions_rounded,
+              title: 'Acometidas Pendientes',
+              subtitle:
+                  'Consulta acometidas sin lectura registrada por mes y sector',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00695C), Color(0xFF00897B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/pending-readings'),
             ),
             const SizedBox(height: 12),
             _ActionCard(

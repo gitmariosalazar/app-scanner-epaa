@@ -18,7 +18,12 @@ class ObservationBloc extends Bloc<ObservationEvent, ObservationState> {
   ) : super(ObservationInitial()) {
     on<FindAllObservationsEvent>((event, emit) async {
       emit(ObservationLoading());
-      final result = await findAllObservationsUseCase(NoParams());
+      // month example: 2026-02
+      final month = DateTime.now().month.toString().padLeft(2, '0');
+      final year = DateTime.now().year.toString();
+      final result = await findAllObservationsUseCase(
+        Params(month: "$year-$month"),
+      );
 
       result.fold(
         (failure) => emit(ObservationError(failure.toString())),

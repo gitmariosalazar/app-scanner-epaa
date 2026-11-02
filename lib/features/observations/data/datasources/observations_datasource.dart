@@ -10,7 +10,7 @@ abstract class ObservationsDataSource {
   Future<List<ObservationModel>> fetchObservationsByCadastralKey(
     String connectionId,
   );
-  Future<List<ObservationModel>> fetchAllObservations();
+  Future<List<ObservationModel>> fetchAllObservations({required String month});
 }
 
 class ObservationsDataSourceImpl implements ObservationsDataSource {
@@ -61,10 +61,12 @@ class ObservationsDataSourceImpl implements ObservationsDataSource {
   }
 
   @override
-  Future<List<ObservationModel>> fetchAllObservations() async {
+  Future<List<ObservationModel>> fetchAllObservations({
+    required String month,
+  }) async {
     final headers = await _getHeaders();
     final response = await client.get(
-      Uri.parse('$apiUrl/observations/get-observations'),
+      Uri.parse('$apiUrl/observations/get-observations?month=$month'),
       headers: headers,
     );
 

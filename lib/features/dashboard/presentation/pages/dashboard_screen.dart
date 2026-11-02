@@ -1,5 +1,6 @@
 // lib/features/dashboard/presentation/pages/dashboard_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/widgets/StatItem.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
@@ -273,6 +274,7 @@ class _DashboardViewState extends State<_DashboardView> {
                   subtitle: 'asignadas período',
                   trendLabel: '${s.remaining} restantes',
                   trendUp: null,
+                  onTap: () => context.push('/pending-readings'),
                 ),
               ),
             ],
@@ -439,39 +441,6 @@ class _AvatarButton extends StatelessWidget {
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final bool bold;
-
-  const _StatItem({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.bold = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: bold ? 14 : 13,
-              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-            ),
-          ),
-          Text(label, style: TextStyle(color: context._muted, fontSize: 9)),
-        ],
-      ),
-    );
-  }
-}
-
 class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel(this.text);
@@ -498,6 +467,7 @@ class _KpiCard extends StatelessWidget {
   final String subtitle;
   final String trendLabel;
   final bool? trendUp;
+  final VoidCallback? onTap;
 
   const _KpiCard({
     required this.icon,
@@ -507,6 +477,7 @@ class _KpiCard extends StatelessWidget {
     required this.subtitle,
     required this.trendLabel,
     this.trendUp,
+    this.onTap,
   });
 
   @override
@@ -521,7 +492,7 @@ class _KpiCard extends StatelessWidget {
               ? Icons.arrow_upward_rounded
               : Icons.arrow_downward_rounded);
 
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHigh,
@@ -585,6 +556,17 @@ class _KpiCard extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) return card;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: card,
       ),
     );
   }
@@ -686,22 +668,28 @@ class _SectorProgressCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              _StatItem(
+              StatItem(
                 label: 'Esperadas',
                 value: sector.assigned.toString(),
                 color: context._muted,
               ),
-              _StatItem(
+              StatItem(
                 label: 'Completadas',
                 value: sector.completed.toString(),
                 color: _kGreen,
               ),
-              _StatItem(
+              StatItem(
                 label: 'Pendientes',
                 value: pending.toString(),
                 color: _kOrange,
+                onTap: () {
+                  context.push(
+                    '/pending-readings',
+                    extra: {'sector': sector.sectorId},
+                  );
+                },
               ),
-              _StatItem(
+              StatItem(
                 label: 'Avance',
                 value: '${(pct * 100).toStringAsFixed(2)}%',
                 color: color,

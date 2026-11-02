@@ -20,11 +20,58 @@ class ObservationModel extends ObservationEntity {
     required super.observations,
     required super.clientId,
     required super.clientName,
+    required super.readingMonth,
+    required super.readingDate,
+    super.actionRecommended,
   });
 
   factory ObservationModel.fromJson(Map<String, dynamic> json) {
-    final firstName = json['citizenFirstName'] ?? '';
-    final lastName = json['citizenLastName'] ?? '';
+    String cleanString(dynamic val) {
+      if (val == null) return '';
+      final str = val.toString().trim();
+      return str
+          .replaceAll('Ã¡', 'á')
+          .replaceAll('Ã©', 'é')
+          .replaceAll('Ã­', 'í')
+          .replaceAll('Ã³', 'ó')
+          .replaceAll('Ãº', 'ú')
+          .replaceAll('Ã±', 'ñ')
+          .replaceAll('Ã\x81', 'Á')
+          .replaceAll('Ã\x89', 'É')
+          .replaceAll('Ã\x8D', 'Í')
+          .replaceAll('Ã\x93', 'Ó')
+          .replaceAll('Ã\x9A', 'Ú')
+          .replaceAll('Ã\x91', 'Ñ')
+          .replaceAll('Ã', 'Í');
+    }
+
+    final firstName = cleanString(json['citizenFirstName']);
+    final lastName = cleanString(json['citizenLastName']);
+    final citizenName = '$firstName $lastName'.trim();
+    final rawClientName = cleanString(json['clientName']);
+    final clientName = rawClientName.isNotEmpty ? rawClientName : citizenName;
+
+    final regDate = (json['registrationDate'] ??
+            json['observationDate'] ??
+            json['readingDate'] ??
+            '')
+        .toString()
+        .trim();
+
+    final detail = cleanString(
+      json['observationDetail'] ?? json['observationDetails'] ?? '',
+    );
+
+    String? actionRecommended = json['actionRecommended'] != null
+        ? cleanString(json['actionRecommended'])
+        : null;
+    if ((actionRecommended == null || actionRecommended.isEmpty) &&
+        detail.contains('Acción recomendada:')) {
+      final parts = detail.split('Acción recomendada:');
+      if (parts.length > 1) {
+        actionRecommended = parts[1].trim();
+      }
+    }
 
     double parseDouble(dynamic value) {
       if (value is int) return value.toDouble();
@@ -35,22 +82,25 @@ class ObservationModel extends ObservationEntity {
 
     return ObservationModel(
       readingId: json['readingId'] ?? 0,
-      observationTitle: json['observationTitle'] ?? '',
-      observationDetail: json['observationDetail'] ?? '',
-      registrationDate: json['registrationDate'] ?? '',
-      connectionId: json['connectionId'] ?? '',
+      observationTitle: cleanString(json['observationTitle']),
+      observationDetail: detail,
+      registrationDate: regDate,
+      connectionId: json['connectionId']?.toString().trim() ?? '',
       previousReading: parseDouble(json['previousReading']),
       currentReading: parseDouble(json['currentReading']),
       sector: json['sector'] ?? 0,
       account: json['account'] ?? 0,
       readingValue: parseDouble(json['readingValue']),
       noveltyReadingTypeId: json['noveltyReadingTypeId'] ?? 0,
-      noveltyTypeName: json['noveltyTypeName'] ?? '',
-      noveltyTypeDescription: json['noveltyTypeDescription'] ?? '',
-      address: json['address'] ?? '',
-      observations: json['observations'] ?? '',
-      clientId: json['clientId'] ?? '',
-      clientName: '$firstName $lastName'.trim(),
+      noveltyTypeName: cleanString(json['noveltyTypeName']),
+      noveltyTypeDescription: cleanString(json['noveltyTypeDescription']),
+      address: cleanString(json['address']),
+      observations: cleanString(json['observations']),
+      clientId: json['clientId']?.toString().trim() ?? '',
+      clientName: clientName,
+      readingMonth: json['readingMonth']?.toString().trim() ?? '',
+      readingDate: json['readingDate']?.toString().trim() ?? '',
+      actionRecommended: actionRecommended,
     );
   }
 
@@ -73,6 +123,9 @@ class ObservationModel extends ObservationEntity {
       'observations': observations,
       'clientId': clientId,
       'clientName': clientName,
+      'readingMonth': readingMonth,
+      'readingDate': readingDate,
+      if (actionRecommended != null) 'actionRecommended': actionRecommended,
     };
   }
 }

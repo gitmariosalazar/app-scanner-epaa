@@ -10,9 +10,11 @@ class ObservationRepositoryImpl implements ObservationRepository {
   ObservationRepositoryImpl({required this.dataSource});
 
   @override
-  Future<Either<Failure, List<ObservationModel>>> findAllObservations() async {
+  Future<Either<Failure, List<ObservationModel>>> findAllObservations({
+    String month = "",
+  }) async {
     try {
-      final observations = await dataSource.fetchAllObservations();
+      final observations = await dataSource.fetchAllObservations(month: month);
       return Right(observations);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

@@ -7,6 +7,7 @@
 // DIP: receives [List<AuditSector>] from the parent — no direct cubit dependency.
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application/features/audit/domain/entities/audit_sector.dart';
 
@@ -549,6 +550,12 @@ class _SectorDetailSheet extends StatelessWidget {
                         label: 'Pendientes',
                         value: '${audit!.pendingTotal}',
                         color: const Color(0xFFFF9800),
+                        onTap: () {
+                          context.push(
+                            '/pending-readings',
+                            extra: {'sector': audit!.sectorId},
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -737,12 +744,14 @@ class _DetailKpi extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap; // ← opcional
 
   const _DetailKpi({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
+    this.onTap,
   });
 
   @override
@@ -750,39 +759,51 @@ class _DetailKpi extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: isDark
-              ? color.withValues(alpha: 0.15)
-              : color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: TextStyle(
+            color: cs.onSurfaceVariant,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: color.withValues(alpha: 0.18),
+          highlightColor: color.withValues(alpha: 0.10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? color.withValues(alpha: 0.15)
+                  : color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: color.withValues(alpha: 0.25)),
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: cs.onSurfaceVariant,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            child: content,
+          ),
         ),
       ),
     );
