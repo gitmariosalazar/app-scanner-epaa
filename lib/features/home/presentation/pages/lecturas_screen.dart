@@ -95,6 +95,19 @@ class LecturasScreen extends StatelessWidget {
 
             // ── Primary actions ───────────────────────────────────
             _ActionCard(
+              icon: Icons.alt_route_rounded,
+              title: 'Rutas de Lectura',
+              subtitle:
+                  'Mis rutas asignadas, avance secuencial, lecturas offline y mapa de rutas',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0288D1), Color(0xFF00ACC1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onTap: () => context.push('/reading-routes'),
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
               icon: Icons.qr_code_scanner_rounded,
               title: 'Escanear QR',
               subtitle:

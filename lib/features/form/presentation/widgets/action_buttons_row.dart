@@ -15,6 +15,7 @@ class AppColors {
 class ActionButtonsRow extends StatelessWidget {
   final form_bloc.FormState state;
   final VoidCallback onSavePressed;
+  final VoidCallback? onCancelPressed;
   final Map<String, String> prefillData;
   final AnimationController animationController;
   final Animation<double> scaleAnimation;
@@ -24,6 +25,7 @@ class ActionButtonsRow extends StatelessWidget {
     super.key,
     required this.state,
     required this.onSavePressed,
+    this.onCancelPressed,
     required this.prefillData,
     required this.animationController,
     required this.scaleAnimation,
@@ -55,7 +57,14 @@ class ActionButtonsRow extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: ResponsiveButton(
-                  onPressed: () => context.go('/lecturas'),
+                  onPressed: onCancelPressed ??
+                      () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop(false);
+                        } else {
+                          context.go('/lecturas');
+                        }
+                      },
                   icon: Icons.cancel,
                   label: 'Cancelar',
                   color: AppColors.error,
@@ -127,7 +136,14 @@ class ActionButtonsRow extends StatelessWidget {
           scaleAnimation: scaleAnimation,
         ),
         ResponsiveButton(
-          onPressed: () => context.go('/lecturas'),
+          onPressed: onCancelPressed ??
+              () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop(false);
+                } else {
+                  context.go('/lecturas');
+                }
+              },
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,

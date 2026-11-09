@@ -1,5 +1,7 @@
 // lib/features/audit/presentation/pages/audit_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/card/KpiChip.dart';
+import 'package:flutter_application/components/date/date_picker.dart';
 import 'package:flutter_application/components/widgets/StatItem.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
@@ -100,7 +102,26 @@ class _AuditViewState extends State<_AuditView> {
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             tooltip: 'Cambiar período',
-            onPressed: () => _pickMonth(context),
+            onPressed: () {
+              final currentMonth =
+                  _monthFrom(context.read<AuditCubit>().state) ??
+                  _selectedMonth;
+
+              ProfessionalDatePicker.show(
+                context: context,
+                mode: ProfessionalDatePickerMode.monthYear,
+                initialDate: _parseMonth(currentMonth),
+                firstDate: DateTime(2024, 1),
+                lastDate: DateTime.now(),
+                onFormattedSelected: (newMonth) {
+                  setState(() => _selectedMonth = newMonth);
+                  context.read<AuditCubit>().startWatching(
+                    month: newMonth,
+                    force: true,
+                  );
+                },
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -211,27 +232,14 @@ class _AuditViewState extends State<_AuditView> {
     );
   }
 
-  Future<void> _pickMonth(BuildContext context) async {
-    final cubit = context.read<AuditCubit>();
-    final now = DateTime.now();
-    // Parse current selected year/month for the picker initial state
-    final parts = _selectedMonth.split('-');
-    final initialYear = int.tryParse(parts[0]) ?? now.year;
-    final initialMonth = int.tryParse(parts[1]) ?? now.month;
-
-    final picked = await showDialog<String>(
-      context: context,
-      builder: (_) => _MonthPickerDialog(
-        initialYear: initialYear,
-        initialMonth: initialMonth,
-        maxYear: now.year,
-        maxMonth: now.month,
-      ),
-    );
-    if (picked != null && mounted) {
-      setState(() => _selectedMonth = picked);
-      // Cambia el mes observado: cancela el stream anterior e inicia uno nuevo.
-      cubit.startWatching(month: picked);
+  DateTime _parseMonth(String month) {
+    try {
+      final parts = month.split('-');
+      final year = int.parse(parts[0]);
+      final m = parts.length > 1 ? int.parse(parts[1]) : 1;
+      return DateTime(year, m);
+    } catch (_) {
+      return DateTime.now();
     }
   }
 
@@ -254,180 +262,6 @@ class _AuditViewState extends State<_AuditView> {
   }
 
   String _formatMonthLabel(String month) => _formatMonth(month);
-}
-
-// ── Custom Month Picker Dialog ────────────────────────────────────────────────
-
-class _MonthPickerDialog extends StatefulWidget {
-  final int initialYear;
-  final int initialMonth;
-  final int maxYear;
-  final int maxMonth;
-
-  const _MonthPickerDialog({
-    required this.initialYear,
-    required this.initialMonth,
-    required this.maxYear,
-    required this.maxMonth,
-  });
-
-  @override
-  State<_MonthPickerDialog> createState() => _MonthPickerDialogState();
-}
-
-class _MonthPickerDialogState extends State<_MonthPickerDialog> {
-  late int _year;
-  late int _selectedMonth;
-
-  static const _monthNames = [
-    'Ene',
-    'Feb',
-    'Mar',
-    'Abr',
-    'May',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dic',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _year = widget.initialYear;
-    _selectedMonth = widget.initialMonth;
-  }
-
-  bool _isDisabled(int month) {
-    return _year > widget.maxYear ||
-        (_year == widget.maxYear && month > widget.maxMonth);
-  }
-
-  void _confirm(int month) {
-    if (_isDisabled(month)) return;
-    final result =
-        '${_year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}';
-    Navigator.pop(context, result);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Title
-            Text(
-              'Seleccionar período',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: context._onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Year navigation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left_rounded),
-                  onPressed: _year > 2024
-                      ? () => setState(() {
-                          _year--;
-                          if (_year != widget.initialYear) _selectedMonth = 0;
-                        })
-                      : null,
-                  color: _C.accent,
-                ),
-                Text(
-                  _year.toString(),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: context._onSurface,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded),
-                  onPressed: _year < widget.maxYear
-                      ? () => setState(() {
-                          _year++;
-                          if (_year != widget.initialYear) _selectedMonth = 0;
-                        })
-                      : null,
-                  color: _C.accent,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Month grid
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 1.4,
-              physics: const NeverScrollableScrollPhysics(),
-              children: List.generate(12, (i) {
-                final month = i + 1;
-                final isSelected = _selectedMonth == month;
-                final disabled = _isDisabled(month);
-                return GestureDetector(
-                  onTap: disabled ? null : () => _confirm(month),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      color: disabled
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest
-                          : isSelected
-                          ? _C.accent
-                          : _C.accent.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? _C.accent : Colors.transparent,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _monthNames[i],
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: disabled
-                              ? Theme.of(context).colorScheme.onSurfaceVariant
-                              : isSelected
-                              ? Colors.white
-                              : _C.accent,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.cancel_rounded, size: 18),
-              style: TextButton.styleFrom(foregroundColor: _C.accent),
-              label: const Text('Cancelar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -503,7 +337,6 @@ class _LoadedView extends StatelessWidget {
                       Text(
                         'Período: $displayMonth',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -518,7 +351,7 @@ class _LoadedView extends StatelessWidget {
                     tween: Tween(begin: 0, end: _globalProgress),
                     duration: const Duration(milliseconds: 900),
                     curve: Curves.easeOutCubic,
-                    builder: (_, v, __) => LinearProgressIndicator(
+                    builder: (_, v, _) => LinearProgressIndicator(
                       value: v,
                       backgroundColor: Theme.of(
                         context,
@@ -554,26 +387,33 @@ class _LoadedView extends StatelessWidget {
                 const SizedBox(height: 14),
                 // KPI row
                 Row(
+                  spacing: 0,
                   children: [
-                    _KpiChip(
-                      label: 'Sectores',
-                      value: '$_completed/${sectors.length}',
-                      chipColor: const Color(0xFF1EB980),
-                      icon: Icons.location_city_rounded,
+                    Expanded(
+                      child: KpiChip(
+                        label: 'Sectores',
+                        value: '$_completed/${sectors.length}',
+                        color: const Color(0xFF1EB980),
+                        icon: Icons.location_city_rounded,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    _KpiChip(
-                      label: 'Completadas',
-                      value: _totalCompleted.toString(),
-                      chipColor: null, // uses colorScheme.primary
-                      icon: Icons.check_circle_rounded,
+                    Expanded(
+                      child: KpiChip(
+                        label: 'Completadas',
+                        value: _totalCompleted.toString(),
+                        color: null, // uses colorScheme.primary
+                        icon: Icons.check_circle_rounded,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    _KpiChip(
-                      label: 'Pendientes',
-                      value: _totalPending.toString(),
-                      chipColor: const Color(0xFFFF9800),
-                      icon: Icons.pending_actions_rounded,
+                    Expanded(
+                      child: KpiChip(
+                        label: 'Pendientes',
+                        value: _totalPending.toString(),
+                        color: const Color(0xFFFF9800),
+                        icon: Icons.pending_actions_rounded,
+                      ),
                     ),
                   ],
                 ),
@@ -763,7 +603,7 @@ class _SectorAuditCard extends StatelessWidget {
                 tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
                 duration: const Duration(milliseconds: 800),
                 curve: Curves.easeOutCubic,
-                builder: (_, v, __) => LinearProgressIndicator(
+                builder: (_, v, _) => LinearProgressIndicator(
                   value: v,
                   backgroundColor: context._cardBorder,
                   valueColor: AlwaysStoppedAnimation<Color>(progressColor),
@@ -1166,71 +1006,6 @@ class _CloseSectorDialogState extends State<_CloseSectorDialog> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Small widgets ─────────────────────────────────────────────────────────────
-
-class _KpiChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  /// Solid background color for the chip.
-  /// Pass null to use colorScheme.primary (for "Completadas").
-  final Color? chipColor;
-
-  const _KpiChip({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.chipColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final bg = chipColor ?? cs.primary;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: bg.withValues(alpha: 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 16),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

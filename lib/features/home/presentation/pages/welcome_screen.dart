@@ -136,6 +136,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   List<Widget> _features(BuildContext context) => [
     _FeatureCard(
+      icon: Icons.alt_route_rounded,
+      title: 'Rutas de Lectura',
+      subtitle: 'Mis rutas asignadas\ny mapa de rutas',
+      color: const Color(0xFF0288D1),
+      onTap: () => context.push('/reading-routes'),
+    ),
+    _FeatureCard(
       icon: Icons.qr_code_scanner_rounded,
       title: 'Escanear QR',
       subtitle: 'Captura lecturas\ncon la cámara',

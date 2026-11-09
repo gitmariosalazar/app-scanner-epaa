@@ -33,6 +33,10 @@ import 'package:flutter_application/features/form/presentation/blocs/readings/fo
     as form_bloc;
 import 'package:flutter_application/components/button/epaa_extended_fab.dart';
 import 'package:flutter_application/core/di/injection.dart' as di;
+import 'package:flutter_application/core/network/network_info.dart';
+import 'package:flutter_application/features/reading-routes/domain/entities/route_connection_item.dart';
+import 'package:flutter_application/features/reading-routes/domain/entities/offline_reading.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/save_offline_reading_usecase.dart';
 
 class AppColors {
   static const primary = Color(0xFF0288D1);
@@ -48,8 +52,16 @@ class AppColors {
 class FormScreen extends StatefulWidget {
   final List<Reading> reading;
   final String mode;
+  final RouteConnectionItem? routeConnectionItem;
+  final int? assignmentId;
 
-  const FormScreen({super.key, required this.reading, required this.mode});
+  const FormScreen({
+    super.key,
+    required this.reading,
+    required this.mode,
+    this.routeConnectionItem,
+    this.assignmentId,
+  });
 
   @override
   State<FormScreen> createState() => _FormScreenState();
@@ -88,9 +100,12 @@ class _FormScreenState extends State<FormScreen>
   String? _successMessage;
   bool _isProcessingSave = false;
 
+  // Campo para indicar si el predio tiene fachada
+  bool? hasFacade;
+
   // Nuevos campos para actualización de medidor
   String? _condicionMedidor;
-  String? _estadoFisico;
+  String _estadoFisico = 'BUENO';
   final _nuevoMedidorController = TextEditingController();
   bool hasCurrentReading = false;
   String? connectionStateDescription;
@@ -134,31 +149,57 @@ class _FormScreenState extends State<FormScreen>
 
   void _initializeData() {
     final r = widget.reading;
-    hasCurrentReading = r[0].hasCurrentReading!;
-    _connectionIdController.text = r[0].cadastralKey!;
-    _connectionOwnerController.text = r[0].clientName!;
-    _readingIdController.text = r[0].readingId.toString();
-    _cardIdController.text = r[0].cardId.toString();
-    _currentReadingController.text = r[0].currentReading!.toString();
-    _previousReadingController.text = r[0].previousReading.toString();
-    _sectorConnectionController.text = r[0].sector.toString();
-    _addressConnectionController.text = r[0].address.toString();
-    _accountConnectionController.text = r[0].account.toString();
-    _cadastralKeyConnectionController.text = r[0].cadastralKey.toString();
-    _descriptionController.text = '';
-    _averageConsumptionController.text = r[0].averageConsumption.toString();
-    _readingValueController.text = r[0].readingValue.toString();
-    _meterNumberController.text = r[0].meterNumber.toString();
-    _nuevoMedidorController.text = r[0].meterNumber.toString();
-    _previousReadingDate.text = r[0].previousReadingDate!.toString();
-    _monthReadingController.text = r[0].monthReading.toString();
-    _startDatePeriodController.text = r[0].startDatePeriod!.toIso8601String();
-    _endDatePeriodController.text = r[0].endDatePeriod!.toIso8601String();
-    connectionStateDescription = r[0].connectionStateDescription;
-    connectionStateName = r[0].connectionStateName;
-    permitReading = r[0].permitReading;
-    connectionStateId = r[0].connectionStateId;
-    _newCurrentReadingController.text = '';
+    if (r.isEmpty) return;
+    final item = r[0];
+    // En modo 'route', el lecturista siempre tiene potestad para tomar o modificar la lectura
+    hasCurrentReading = widget.mode == 'route'
+        ? true
+        : (item.hasCurrentReading ?? true);
+    permitReading = widget.mode == 'route'
+        ? true
+        : (item.permitReading ?? true);
+    _connectionIdController.text = item.cadastralKey ?? '';
+    _connectionOwnerController.text = item.clientName ?? '';
+    _readingIdController.text = item.readingId?.toString() ?? '0';
+    _cardIdController.text = item.cardId?.toString() ?? '';
+    _currentReadingController.text = item.currentReading?.toString() ?? '0';
+    _previousReadingController.text = item.previousReading?.toString() ?? '0';
+    _sectorConnectionController.text = item.sector?.toString() ?? '0';
+    _addressConnectionController.text = item.address ?? '';
+    _accountConnectionController.text = item.account?.toString() ?? '';
+    _cadastralKeyConnectionController.text =
+        item.cadastralKey?.toString() ?? '';
+    _descriptionController.text =
+        widget.routeConnectionItem?.observaciones ?? '';
+    _averageConsumptionController.text =
+        item.averageConsumption?.toString() ?? '0';
+    _readingValueController.text = item.readingValue?.toString() ?? '0';
+    _meterNumberController.text = item.meterNumber?.toString() ?? '';
+    _nuevoMedidorController.text = item.meterNumber?.toString() ?? '';
+    _previousReadingDate.text =
+        item.previousReadingDate?.toString() ?? DateTime.now().toString();
+    _monthReadingController.text = item.monthReading?.toString() ?? '';
+    _startDatePeriodController.text =
+        (item.startDatePeriod ??
+                DateTime.now().subtract(const Duration(days: 30)))
+            .toIso8601String();
+    _endDatePeriodController.text = (item.endDatePeriod ?? DateTime.now())
+        .toIso8601String();
+    connectionStateDescription = item.connectionStateDescription;
+    connectionStateName = item.connectionStateName;
+    connectionStateId = item.connectionStateId ?? 1;
+    hasFacade = item.hasFacade;
+
+    // Si viene de una ruta y ya tenía lectura registrada, prellenar para permitir su modificación directa
+    final currentRouteReading = widget.routeConnectionItem?.lecturaActual;
+    if (currentRouteReading != null && currentRouteReading > 0) {
+      _newCurrentReadingController.text = currentRouteReading % 1 == 0
+          ? currentRouteReading.toInt().toString()
+          : currentRouteReading.toString();
+    } else {
+      _newCurrentReadingController.text = '';
+    }
+
     _currentConsumptionController.text = ConsumptionUtils.calculateConsumption(
       _newCurrentReadingController.text,
       _currentReadingController.text,
@@ -317,6 +358,13 @@ class _FormScreenState extends State<FormScreen>
           foregroundColor: Colors.white,
           centerTitle: true,
           automaticallyImplyLeading: false,
+          leading: Navigator.of(context).canPop()
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => _popToPreviousScreen(false),
+                  tooltip: 'Regresar',
+                )
+              : null,
         ),
         body: Container(
           decoration: BoxDecoration(
@@ -349,12 +397,28 @@ class _FormScreenState extends State<FormScreen>
                   // );
                   _showFloatingSuccess('¡Guardado con éxito!');
                   Future.delayed(const Duration(seconds: 2), () {
-                    if (mounted) _popToPreviousScreen();
+                    if (mounted) _popToPreviousScreen(true);
                   });
                 } else if (state is form_bloc.MeterConflictState) {
                   _showMeterConflictDialog(state);
                 } else if (state is form_bloc.FormFailure) {
-                  setState(() => _errorMessage = state.message);
+                  if (widget.mode == 'route' &&
+                      widget.routeConnectionItem != null &&
+                      widget.assignmentId != null) {
+                    _saveRouteReadingOffline(
+                      readingVal:
+                          double.tryParse(_newCurrentReadingController.text) ??
+                          0.0,
+                      images: _attachedImages
+                          .where((f) => f.existsSync())
+                          .toList(),
+                    );
+                  } else {
+                    setState(() {
+                      _isProcessingSave = false;
+                      _errorMessage = state.message;
+                    });
+                  }
                 }
               },
               builder: (context, state) {
@@ -469,6 +533,8 @@ class _FormScreenState extends State<FormScreen>
                               state: state,
                               onSavePressed: () =>
                                   _onSavePressed(context, state),
+                              onCancelPressed: () =>
+                                  _popToPreviousScreen(false),
                               prefillData: {
                                 "connectionId": _connectionIdController.text
                                     .trim(),
@@ -504,6 +570,8 @@ class _FormScreenState extends State<FormScreen>
                                 ReadingCurrentRow(reading: widget.reading),
                                 ResponsiveUtils.vSpace(context, 0.03),
                                 ActionButtonExitRow(
+                                  onCancelPressed: () =>
+                                      _popToPreviousScreen(false),
                                   prefillData: {
                                     "connectionId": _connectionIdController.text
                                         .trim(),
@@ -860,6 +928,7 @@ class _FormScreenState extends State<FormScreen>
                           ),
                           ResponsiveUtils.vSpace(context, 0.02),
                           ActionButtonExitRow(
+                            onCancelPressed: () => _popToPreviousScreen(false),
                             prefillData: {
                               "connectionId": _connectionIdController.text
                                   .trim(),
@@ -969,7 +1038,7 @@ class _FormScreenState extends State<FormScreen>
         ),
         */
         floatingActionButton: EpaaExtendedFab(
-          enable: true,
+          enable: hasFacade == false,
           disabledTooltip: 'Conexión bloqueada — no disponible',
           icon: const Icon(Icons.edit_note_rounded),
           label: const Text(
@@ -1114,191 +1183,197 @@ class _FormScreenState extends State<FormScreen>
   }
 */
   Widget _buildMeterInspectionSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final isDestruido = _estadoFisico == 'DESTRUIDO';
+
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Inspección del Medidor',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 8),
+            // Encabezado de la sección con indicador del estado actual
             Row(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    validator: (value) => value == null ? 'Obligatorio' : null,
-                    decoration: InputDecoration(
-                      labelText: 'Condición del Medidor *',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                    ),
-                    value: _condicionMedidor,
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'NUEVO',
-                        child: Text('NUEVO', style: TextStyle(fontSize: 12)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'ANTIGUO',
-                        child: Text('ANTIGUO', style: TextStyle(fontSize: 12)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'NO_IDENTIFICADO',
-                        child: Text(
-                          'NO IDENTIFICADO',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (mounted) {
-                        setState(() {
-                          _condicionMedidor = val;
-                          if (val == 'NO_IDENTIFICADO') {
-                            // [OCULTO] Número de medidor físico deshabilitado.
-                            // _nuevoMedidorController.text = 'S/N';
-                            _estadoFisico = 'NO_IDENTIFICADO';
-                          } else {
-                            // if (_nuevoMedidorController.text == 'S/N') {
-                            //   _nuevoMedidorController.clear();
-                            // }
-                            if (_estadoFisico == 'NO_IDENTIFICADO') {
-                              _estadoFisico = null;
-                            }
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    validator: (value) => value == null ? 'Obligatorio' : null,
-                    decoration: InputDecoration(
-                      labelText: 'Estado Físico *',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                    ),
-                    value: _estadoFisico,
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'BUENO',
-                        child: Text('BUENO', style: TextStyle(fontSize: 12)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'REGULAR',
-                        child: Text('REGULAR', style: TextStyle(fontSize: 12)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'MALO',
-                        child: Text('MALO', style: TextStyle(fontSize: 12)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'DESTRUIDO',
-                        child: Text(
-                          'DESTRUIDO',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'NO_IDENTIFICADO',
-                        child: Text(
-                          'NO IDENTIFICADO',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (mounted) {
-                        setState(() {
-                          _estadoFisico = val;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            // [OCULTO] Número Registrado en Sistema / Número de Medidor Físico.
-            // Descomentar este bloque para restaurar la versión anterior.
-            /*
-            const SizedBox(height: 5),
-            TitledCard(
-              title: 'Número Registrado en Sistema',
-              elevation: ResponsiveUtils.cardElevation(context),
-              bottomRightIcon: Icon(
-                Icons.water_drop,
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.7),
-                size: ResponsiveUtils.iconSmall(context),
-              ),
-              titleStyle: ResponsiveUtils.titleSmall(context),
-              children: [
+                Icon(Icons.speed_rounded, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
                 Text(
-                  _meterNumberController.text.isEmpty
-                      ? 'S/N'
-                      : '${_meterNumberController.text}',
-                  style: ResponsiveUtils.titleMedium(context).copyWith(
+                  'Inspección del Medidor',
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.7),
+                    color: cs.primary,
+                    fontSize: 13,
                   ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDestruido
+                        ? cs.error.withValues(alpha: 0.12)
+                        : Colors.green.shade600.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDestruido
+                          ? cs.error.withValues(alpha: 0.5)
+                          : Colors.green.shade600.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isDestruido
+                            ? Icons.error_outline_rounded
+                            : Icons.check_circle_outline_rounded,
+                        size: 12,
+                        color: isDestruido ? cs.error : Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _estadoFisico,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isDestruido ? cs.error : Colors.green.shade700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
 
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _nuevoMedidorController,
-              decoration: InputDecoration(
-                labelText: 'Número de Medidor Físico *',
-                hintText: 'Ej. 123456789 (o S/N)',
-                prefixIcon: const Icon(
-                  Icons.speed,
-                ), // Icono de medidor/velocímetro
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
+            // Check interactivo profesional
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _estadoFisico = isDestruido ? 'BUENO' : 'DESTRUIDO';
+                  });
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDestruido
+                        ? cs.errorContainer.withValues(
+                            alpha: isDark ? 0.35 : 0.18,
+                          )
+                        : (isDark
+                              ? cs.surfaceContainerHighest.withValues(
+                                  alpha: 0.35,
+                                )
+                              : cs.surfaceContainerHighest.withValues(
+                                  alpha: 0.2,
+                                )),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDestruido
+                          ? cs.error.withValues(alpha: 0.8)
+                          : cs.outlineVariant.withValues(alpha: 0.5),
+                      width: isDestruido ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: isDestruido
+                              ? cs.error.withValues(alpha: 0.15)
+                              : Colors.green.shade600.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isDestruido
+                              ? Icons.broken_image_rounded
+                              : Icons.verified_rounded,
+                          size: 20,
+                          color: isDestruido ? cs.error : Colors.green.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isDestruido
+                                  ? 'Medidor Destruido / Dañado'
+                                  : '¿Medidor destruido/dañado?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isDestruido ? cs.error : cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isDestruido
+                                  ? 'Se enviará como DESTRUIDO a la central'
+                                  : 'Marcar sólo si el medidor está destruido/dañado y requiere atención técnica (por defecto BUENO)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDestruido
+                                    ? cs.error.withValues(alpha: 0.85)
+                                    : cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: isDestruido ? cs.error : Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isDestruido ? cs.error : cs.outline,
+                            width: 2,
+                          ),
+                          boxShadow: isDestruido
+                              ? [
+                                  BoxShadow(
+                                    color: cs.error.withValues(alpha: 0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: isDestruido
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Obligatorio. Ingrese el número o S/N';
-                }
-                return null;
-              },
             ),
-            */
           ],
         ),
       ),
@@ -1388,12 +1463,68 @@ class _FormScreenState extends State<FormScreen>
     );
   }
 
-  void _popToPreviousScreen() {
+  void _popToPreviousScreen([bool saved = false]) {
     if (!mounted) return;
     if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(saved);
     } else {
       context.go('/lecturas');
+    }
+  }
+
+  Future<void> _saveRouteReadingOffline({
+    required double readingVal,
+    LocationCapture? capture,
+    List<File> images = const [],
+  }) async {
+    if (widget.routeConnectionItem == null || widget.assignmentId == null) {
+      return;
+    }
+
+    try {
+      final offlineReading = OfflineReading(
+        idDetalleAvance: widget.routeConnectionItem!.idDetalle,
+        acometidaId: widget.routeConnectionItem!.acometidaId,
+        lecturaActual: readingVal,
+        fechaHoraCaptura: DateTime.now(),
+        latitudGps: capture?.lat ?? widget.routeConnectionItem!.latitud,
+        longitudGps: capture?.lng ?? widget.routeConnectionItem!.longitud,
+        novedadId:
+            _selectedRouteIncidentId?.toString() ??
+            _selectedLowConsumptionReason,
+        observaciones: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
+        fotoEvidenciaUrl: images.isNotEmpty ? images.first.path : null,
+        asignacionId: widget.assignmentId!,
+      );
+
+      final saveUseCase = di.sl<SaveOfflineReadingUseCase>();
+      final result = await saveUseCase(offlineReading);
+
+      result.fold(
+        (failure) {
+          if (mounted) {
+            setState(() {
+              _isProcessingSave = false;
+              _errorMessage = 'Error al guardar offline: ${failure.message}';
+            });
+          }
+        },
+        (pack) {
+          _showFloatingSuccess('¡Lectura guardada localmente (Modo Offline)!');
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) _popToPreviousScreen(true);
+          });
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProcessingSave = false;
+          _errorMessage = 'Error guardando offline: $e';
+        });
+      }
     }
   }
 
@@ -1411,6 +1542,35 @@ class _FormScreenState extends State<FormScreen>
       setState(() {
         _selectedRouteIncidentId = null;
       });
+    }
+
+    // Si viene de una ruta de lectura, actualizar también el estado local
+    if (widget.mode == 'route' &&
+        widget.routeConnectionItem != null &&
+        widget.assignmentId != null) {
+      try {
+        final readingVal =
+            double.tryParse(_newCurrentReadingController.text) ?? 0.0;
+        final offlineReading = OfflineReading(
+          idDetalleAvance: widget.routeConnectionItem!.idDetalle,
+          acometidaId: widget.routeConnectionItem!.acometidaId,
+          lecturaActual: readingVal,
+          fechaHoraCaptura: DateTime.now(),
+          latitudGps: widget.routeConnectionItem!.latitud,
+          longitudGps: widget.routeConnectionItem!.longitud,
+          novedadId:
+              _selectedRouteIncidentId?.toString() ??
+              _selectedLowConsumptionReason,
+          observaciones: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : null,
+          fotoEvidenciaUrl: _attachedImages.isNotEmpty
+              ? _attachedImages.first.path
+              : null,
+          asignacionId: widget.assignmentId!,
+        );
+        await di.sl<SaveOfflineReadingUseCase>()(offlineReading);
+      } catch (_) {}
     }
 
     final hadImages = _attachedImages.isNotEmpty;
@@ -1446,7 +1606,7 @@ class _FormScreenState extends State<FormScreen>
           : const Duration(milliseconds: 1500);
       await Future.delayed(delay);
       if (mounted) {
-        _popToPreviousScreen();
+        _popToPreviousScreen(true);
       }
     }
   }
@@ -1525,7 +1685,10 @@ class _FormScreenState extends State<FormScreen>
     setState(() => _isProcessingSave = true);
 
     try {
-      if (!_formKey.currentState!.validate()) return;
+      if (!_formKey.currentState!.validate()) {
+        setState(() => _isProcessingSave = false);
+        return;
+      }
 
       setState(() => _errorMessage = null);
 
@@ -1538,10 +1701,11 @@ class _FormScreenState extends State<FormScreen>
           .toList();
 
       if (validImages.isEmpty) {
-        setState(
-          () => _errorMessage =
-              'Debe adjuntar al menos una foto obligatoriamente para continuar.',
-        );
+        setState(() {
+          _isProcessingSave = false;
+          _errorMessage =
+              'Debe adjuntar al menos una foto obligatoriamente para continuar.';
+        });
         return;
       }
 
@@ -1631,26 +1795,29 @@ class _FormScreenState extends State<FormScreen>
 
           if (enteredReading <= previousReading) {
             if (_selectedLowConsumptionReason == null) {
-              setState(
-                () => _errorMessage =
-                    'Consumo detectado de cero o negativo. Debe seleccionar la novedad obligatoriamente.',
-              );
+              setState(() {
+                _isProcessingSave = false;
+                _errorMessage =
+                    'Consumo detectado de cero o negativo. Debe seleccionar la novedad obligatoriamente.';
+              });
               return;
             }
             if (_selectedLowConsumptionReason ==
                     'Otro (especificar en descripción)' &&
                 _descriptionController.text.trim().isEmpty) {
-              setState(
-                () => _errorMessage =
-                    'Consumo de cero o negativo: Debe especificar la novedad en la descripción.',
-              );
+              setState(() {
+                _isProcessingSave = false;
+                _errorMessage =
+                    'Consumo de cero o negativo: Debe especificar la novedad en la descripción.';
+              });
               return;
             }
             if (_attachedImages.isEmpty) {
-              setState(
-                () => _errorMessage =
-                    'Consumo de cero o negativo: Debe adjuntar al menos una foto como evidencia obligatoriamente.',
-              );
+              setState(() {
+                _isProcessingSave = false;
+                _errorMessage =
+                    'Consumo de cero o negativo: Debe adjuntar al menos una foto como evidencia obligatoriamente.';
+              });
               return;
             }
           }
@@ -1658,22 +1825,42 @@ class _FormScreenState extends State<FormScreen>
       }
 
       final canSubmitWithGps = await _ensureGpsEnabledForSubmission();
-      if (!canSubmitWithGps) return;
+      if (!canSubmitWithGps) {
+        setState(() => _isProcessingSave = false);
+        return;
+      }
 
       LocationCapture? capture;
       try {
         final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 4),
         );
         capture = LocationCapture(
           lat: position.latitude,
           lng: position.longitude,
         );
       } catch (e) {
-        _showGpsSubmissionError(
-          'No se pudo obtener la ubicación actual. Verifica el GPS e inténtalo de nuevo.',
-        );
-        return;
+        // Fallback a última ubicación conocida o a coordenadas de acometida
+        try {
+          final last = await Geolocator.getLastKnownPosition();
+          if (last != null) {
+            capture = LocationCapture(lat: last.latitude, lng: last.longitude);
+          } else if (widget.routeConnectionItem?.latitud != null) {
+            capture = LocationCapture(
+              lat: widget.routeConnectionItem!.latitud!,
+              lng: widget.routeConnectionItem!.longitud!,
+            );
+          }
+        } catch (_) {}
+
+        if (capture == null && widget.mode != 'route') {
+          _showGpsSubmissionError(
+            'No se pudo obtener la ubicación actual. Verifica el GPS e inténtalo de nuevo.',
+          );
+          setState(() => _isProcessingSave = false);
+          return;
+        }
       }
 
       if (!mounted) return;
@@ -1692,8 +1879,8 @@ class _FormScreenState extends State<FormScreen>
           referenceAddress: _addressConnectionController.text,
           reportOrigin: 'LECTURISTA',
           priority: 'MEDIA',
-          latitude: capture.lat,
-          longitude: capture.lng,
+          latitude: capture?.lat ?? 0.0,
+          longitude: capture?.lng ?? 0.0,
           images: validImages,
           condicionMedidor: _condicionMedidor,
           estadoFisico: _estadoFisico,
@@ -1708,8 +1895,9 @@ class _FormScreenState extends State<FormScreen>
 
         readingReq = CreateReadingRequest(
           novelty: _descriptionController.text,
-          meterStatus:
-              'Estado Fisico_Condicion: $_estadoFisico - $_condicionMedidor, Motivo: $_selectedLowConsumptionReason',
+          meterStatus: _condicionMedidor != null
+              ? 'Estado Fisico_Condicion: $_estadoFisico - $_condicionMedidor, Motivo: $_selectedLowConsumptionReason'
+              : 'Estado Fisico_Condicion: $_estadoFisico, Motivo: $_selectedLowConsumptionReason',
           currentReading: double.parse(enteredReadingStr),
           previousReading: double.parse(
             previousReadingStr.isEmpty ? '0' : previousReadingStr,
@@ -1739,9 +1927,30 @@ class _FormScreenState extends State<FormScreen>
       }
 
       if (changeMeterReq == null && incidentReq == null && readingReq == null) {
-        setState(
-          () => _errorMessage =
-              'Debe ingresar una lectura, un cambio de medidor o un incidente para guardar.',
+        setState(() {
+          _isProcessingSave = false;
+          _errorMessage =
+              'Debe ingresar una lectura, un cambio de medidor o un incidente para guardar.';
+        });
+        return;
+      }
+
+      // Si estamos en modo ruta y no hay conectividad a internet, guardar directamente offline
+      bool isConnected = true;
+      try {
+        isConnected = await di.sl<NetworkInfo>().isConnected;
+      } catch (_) {
+        isConnected = false;
+      }
+
+      if (!isConnected &&
+          widget.mode == 'route' &&
+          widget.routeConnectionItem != null &&
+          widget.assignmentId != null) {
+        await _saveRouteReadingOffline(
+          readingVal: double.tryParse(enteredReadingStr) ?? 0.0,
+          capture: capture,
+          images: validImages,
         );
         return;
       }

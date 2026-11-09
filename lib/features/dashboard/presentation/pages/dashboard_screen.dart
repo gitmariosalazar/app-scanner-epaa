@@ -1,5 +1,6 @@
 // lib/features/dashboard/presentation/pages/dashboard_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application/components/card/KpiChip.dart';
 import 'package:flutter_application/components/widgets/StatItem.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -234,6 +235,45 @@ class _DashboardViewState extends State<_DashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Acciones Rapidas
+          const _SectionLabel('ACCIONES RÁPIDAS'),
+          const SizedBox(height: 8),
+          Row(
+            spacing: 0,
+            children: [
+              Expanded(
+                child: KpiChip(
+                  label: 'Ver rutas asignadas',
+                  value: 'Mis Rutas',
+                  color: const Color(0xFF1EB980),
+                  onTap: () => context.push('/reading-routes'),
+                  icon: Icons.alt_route_rounded,
+                ),
+              ),
+
+              const SizedBox(width: 8),
+              Expanded(
+                child: KpiChip(
+                  label: 'Ingreso Manual de Lecturas',
+                  value: 'Lecturas',
+                  color: null, // uses colorScheme.primary
+                  icon: Icons.add_business_rounded,
+                  onTap: () => context.push('/manually-entry'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: KpiChip(
+                  label: 'Búsqueda de Acometidas',
+                  value: 'Acometidas',
+                  color: const Color(0xFFFF9800),
+                  icon: Icons.search_rounded,
+                  onTap: () => context.push('/search-connection'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

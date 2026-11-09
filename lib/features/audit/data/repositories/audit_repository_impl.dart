@@ -85,59 +85,60 @@ class AuditRepositoryImpl implements AuditRepository {
     // Siempre operar con 'yyyy-MM' — evita cache duplicado por formato diferente
     final normalizedMonth = _normalizeMonth(month);
 
-    if (_hybridControllers.containsKey(normalizedMonth)) {
-      return _hybridControllers[normalizedMonth]!.stream;
+    final StreamController<List<AuditSector>> ctrl;
+    final bool isNew = !_hybridControllers.containsKey(normalizedMonth);
+
+    if (isNew) {
+      ctrl = StreamController<List<AuditSector>>.broadcast();
+      _hybridControllers[normalizedMonth] = ctrl;
+
+      // ── 1. WebSocket: refresco al instante en reading:updated y audit:updated
+      webSocketService.onReadingUpdated.listen(
+        (_) async {
+          try {
+            final sectors = await _fetchAudit(normalizedMonth);
+            if (!ctrl.isClosed) ctrl.add(sectors);
+          } catch (_) {}
+        },
+        onError: (e) => debugPrint('[Audit] WS reading error: $e'),
+        cancelOnError: false,
+      );
+
+      webSocketService.onAuditUpdated.listen(
+        (payload) async {
+          final payloadMonth = payload.month.length > 7
+              ? payload.month.substring(0, 7)
+              : payload.month;
+          if (payloadMonth != normalizedMonth) return;
+          try {
+            final sectors = await _fetchAudit(normalizedMonth);
+            if (!ctrl.isClosed) ctrl.add(sectors);
+          } catch (_) {}
+        },
+        onError: (e) => debugPrint('[Audit] WS audit error: $e'),
+        cancelOnError: false,
+      );
+
+      // ── 2. Polling de respaldo (60 s) ───────────────────────────────────────
+      final polling = PeriodicPollingService<List<AuditSector>>(
+        fetcher: () => _fetchAudit(normalizedMonth),
+        interval: pollingFallbackInterval,
+      );
+      polling.start();
+      _pollingServices[normalizedMonth] = polling;
+
+      polling.stream.listen((sectors) {
+        if (!ctrl.isClosed) ctrl.add(sectors);
+      });
+    } else {
+      ctrl = _hybridControllers[normalizedMonth]!;
     }
 
-    final ctrl = StreamController<List<AuditSector>>.broadcast();
-    _hybridControllers[normalizedMonth] = ctrl;
-
-    // ── 1. Carga inicial ────────────────────────────────────────────────────
+    // ── 3. Carga inmediata para el suscriptor (nuevo o re-suscrito) ──────────
     _fetchAudit(normalizedMonth).then((sectors) {
       if (!ctrl.isClosed) ctrl.add(sectors);
-    });
-
-    // ── 2. WebSocket: refresco al instante en reading:updated y audit:updated
-    //
-    // reading:updated: NO filtramos por mes porque el backend envía
-    // 'previousMonthReading' (mes anterior) en el payload, no el mes actual.
-    // Refrescar siempre es seguro: _fetchAudit() siempre pide el mes observado.
-    webSocketService.onReadingUpdated.listen(
-      (_) async {
-        try {
-          final sectors = await _fetchAudit(normalizedMonth);
-          if (!ctrl.isClosed) ctrl.add(sectors);
-        } catch (_) {}
-      },
-      onError: (e) => debugPrint('[Audit] WS reading error: $e'),
-      cancelOnError: false,
-    );
-
-    webSocketService.onAuditUpdated.listen(
-      (payload) async {
-        final payloadMonth = payload.month.length > 7
-            ? payload.month.substring(0, 7)
-            : payload.month;
-        if (payloadMonth != normalizedMonth) return;
-        try {
-          final sectors = await _fetchAudit(normalizedMonth);
-          if (!ctrl.isClosed) ctrl.add(sectors);
-        } catch (_) {}
-      },
-      onError: (e) => debugPrint('[Audit] WS audit error: $e'),
-      cancelOnError: false,
-    );
-
-    // ── 3. Polling de respaldo (60 s) ───────────────────────────────────────
-    final polling = PeriodicPollingService<List<AuditSector>>(
-      fetcher: () => _fetchAudit(normalizedMonth),
-      interval: pollingFallbackInterval,
-    );
-    polling.start();
-    _pollingServices[month] = polling;
-
-    polling.stream.listen((sectors) {
-      if (!ctrl.isClosed) ctrl.add(sectors);
+    }).catchError((e) {
+      if (!ctrl.isClosed) ctrl.addError(e);
     });
 
     return ctrl.stream;

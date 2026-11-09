@@ -54,6 +54,7 @@ extension ReadingInfoResponseX on dto.ReadingInfoResponse {
         lat: connectionLocation?.lat,
         lng: connectionLocation?.lng,
       ),
+      hasFacade: hasFacade,
     );
   }
 

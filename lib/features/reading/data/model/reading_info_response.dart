@@ -128,6 +128,8 @@ class ReadingInfoResponse {
 
   @JsonKey(name: 'connectionLocation', defaultValue: null)
   final ConnectionLocationDto? connectionLocation;
+  @JsonKey(name: 'hasFacade', defaultValue: null)
+  final bool? hasFacade;
 
   ReadingInfoResponse({
     this.readingId,
@@ -157,6 +159,7 @@ class ReadingInfoResponse {
     this.connectionStateDescription,
     this.permitReading,
     this.connectionLocation,
+    this.hasFacade,
   });
 
   factory ReadingInfoResponse.fromJson(Map<String, dynamic> json) =>

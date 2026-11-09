@@ -16,12 +16,14 @@ class ActionButtonExitRow extends StatelessWidget {
   final Map<String, String> prefillData;
   final AnimationController animationController;
   final Animation<double> scaleAnimation;
+  final VoidCallback? onCancelPressed;
 
   const ActionButtonExitRow({
     super.key,
     required this.prefillData,
     required this.animationController,
     required this.scaleAnimation,
+    this.onCancelPressed,
   });
 
   @override
@@ -87,7 +89,14 @@ class ActionButtonExitRow extends StatelessWidget {
             children: [
               Expanded(
                 child: ResponsiveButton(
-                  onPressed: () => context.go('/lecturas'),
+                  onPressed: onCancelPressed ??
+                      () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop(false);
+                        } else {
+                          context.go('/lecturas');
+                        }
+                      },
                   icon: Icons.cancel,
                   label: 'Cancelar',
                   color: AppColors.error,
@@ -108,7 +117,14 @@ class ActionButtonExitRow extends StatelessWidget {
       rowSpacing: ResponsiveUtils.largeSpacing(context),
       children: [
         ResponsiveButton(
-          onPressed: () => context.go('/lecturas'),
+          onPressed: onCancelPressed ??
+              () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop(false);
+                } else {
+                  context.go('/lecturas');
+                }
+              },
           icon: Icons.cancel,
           label: 'Cancelar',
           color: AppColors.error,

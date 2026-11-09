@@ -17,7 +17,30 @@ class ReadingCurrentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (reading.isEmpty) return const SizedBox.shrink();
+
     final cs = Theme.of(context).colorScheme;
+    final r0 = reading[0];
+    final r1 = reading.length > 1 ? reading[1] : null;
+
+    final String previousReadingValue =
+        (r0.previousReading?.toString().trim().isNotEmpty ?? false)
+            ? r0.previousReading.toString()
+            : 'Sin lectura anterior';
+
+    final String previousReadingDateStr = () {
+      final date = r1?.previousReadingDate ?? r0.previousReadingDate;
+      if (date == null) return 'N/A';
+      return formatFromIsoDate(date.toString());
+    }();
+
+    final String currentReadingValue = r0.currentReading == null
+        ? 'Sin lectura actual'
+        : r0.currentReading.toString();
+
+    final String currentReadingDateStr =
+        formatDate(r0.previousReadingDate ?? DateTime.now());
+
     return ResponsiveRow(
       rowSpacing: ResponsiveUtils.mediumSpacing(context),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,9 +58,7 @@ class ReadingCurrentRow extends StatelessWidget {
           backgroundColor: cs.secondaryContainer,
           children: [
             Text(
-              reading[0].previousReading.toString().isEmpty
-                  ? 'Sin lectura anterior'
-                  : reading[0].previousReading.toString(),
+              previousReadingValue,
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
                 color: cs.onSecondaryContainer,
@@ -47,7 +68,7 @@ class ReadingCurrentRow extends StatelessWidget {
             ),
             ResponsiveUtils.vSpace(context, 0.015),
             Text(
-              'Fecha: ${reading[1].previousReadingDate == null ? 'N/A' : formatFromIsoDate(reading[1].previousReadingDate.toString())}',
+              'Fecha: $previousReadingDateStr',
               style: ResponsiveUtils.bodySmall(
                 context,
               ).copyWith(color: cs.onSurfaceVariant),
@@ -71,12 +92,10 @@ class ReadingCurrentRow extends StatelessWidget {
           backgroundColor: cs.secondaryContainer,
           children: [
             Text(
-              reading[0].currentReading == null
-                  ? 'Sin lectura actual'
-                  : reading[0].currentReading.toString(),
+              currentReadingValue,
               style: ResponsiveUtils.titleMedium(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: reading[0].currentReading == null
+                color: r0.currentReading == null
                     ? cs.onSurfaceVariant
                     : cs.onSecondaryContainer,
               ),
@@ -85,7 +104,7 @@ class ReadingCurrentRow extends StatelessWidget {
             ),
             ResponsiveUtils.vSpace(context, 0.015),
             Text(
-              'Fecha: ${formatDate(reading[0].previousReadingDate ?? DateTime.now())}',
+              'Fecha: $currentReadingDateStr',
               style: ResponsiveUtils.bodySmall(
                 context,
               ).copyWith(color: cs.onSurfaceVariant),

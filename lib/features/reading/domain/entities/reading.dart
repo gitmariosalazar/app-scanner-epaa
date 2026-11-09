@@ -54,6 +54,7 @@ class Reading extends Equatable {
   final String? connectionStateDescription;
   final bool? permitReading;
   final ConnectionLocation? connectionLocation;
+  final bool? hasFacade;
 
   const Reading({
     this.readingId,
@@ -83,6 +84,7 @@ class Reading extends Equatable {
     this.connectionStateDescription,
     this.permitReading,
     this.connectionLocation,
+    this.hasFacade,
   });
 
   @override
@@ -114,5 +116,6 @@ class Reading extends Equatable {
     connectionStateDescription,
     permitReading,
     connectionLocation,
+    hasFacade,
   ];
 }

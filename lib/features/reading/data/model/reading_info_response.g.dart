@@ -78,6 +78,7 @@ ReadingInfoResponse _$ReadingInfoResponseFromJson(Map<String, dynamic> json) =>
           : ConnectionLocationDto.fromJson(
               json['connectionLocation'] as Map<String, dynamic>,
             ),
+      hasFacade: json['hasFacade'] as bool?,
     );
 
 Map<String, dynamic> _$ReadingInfoResponseToJson(
@@ -110,4 +111,5 @@ Map<String, dynamic> _$ReadingInfoResponseToJson(
   'connectionStateDescription': instance.connectionStateDescription,
   'permitReading': instance.permitReading,
   'connectionLocation': instance.connectionLocation?.toJson(),
+  'hasFacade': instance.hasFacade,
 };

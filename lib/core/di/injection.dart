@@ -1,4 +1,17 @@
 import 'package:flutter_application/core/services/speech_service.dart';
+import 'package:flutter_application/features/reading-routes/data/datasources/reading_routes_local_datasource.dart';
+import 'package:flutter_application/features/reading-routes/data/datasources/reading_routes_remote_datasource.dart';
+import 'package:flutter_application/features/reading-routes/data/repositories/reading_routes_repository_impl.dart';
+import 'package:flutter_application/features/reading-routes/domain/repositories/reading_routes_repository.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/get_lecturist_kpi_usecase.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/get_pending_sync_count_usecase.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/get_route_work_pack_usecase.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/get_user_route_assignments_usecase.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/save_offline_reading_usecase.dart';
+import 'package:flutter_application/features/reading-routes/domain/usecases/sync_pending_readings_usecase.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/route_detail_cubit.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/route_map_cubit.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/user_routes_cubit.dart';
 import 'package:flutter_application/features/audit/data/datasources/audit_remote_datasource.dart';
 import 'package:flutter_application/features/audit/data/repositories/audit_repository_impl.dart';
 import 'package:flutter_application/features/audit/domain/repositories/audit_repository.dart';
@@ -644,5 +657,60 @@ Future<void> init() async {
       requestLocationPermissionUseCase: sl(),
       openLocationSettingsUseCase: sl(),
     ),
+  );
+
+  // ==========================
+  // READING ROUTES FEATURE
+  // ==========================
+  sl.registerLazySingleton<ReadingRoutesRemoteDataSource>(
+    () => ReadingRoutesRemoteDataSourceImpl(
+      client: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<ReadingRoutesLocalDataSource>(
+    () => ReadingRoutesLocalDataSourceImpl(
+      sharedPreferences: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<ReadingRoutesRepository>(
+    () => ReadingRoutesRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetUserRouteAssignmentsUseCase(sl()));
+  sl.registerLazySingleton(() => GetRouteWorkPackUseCase(sl()));
+  sl.registerLazySingleton(() => SaveOfflineReadingUseCase(sl()));
+  sl.registerLazySingleton(() => SyncPendingReadingsUseCase(sl()));
+  sl.registerLazySingleton(() => GetLecturistKpiUseCase(sl()));
+  sl.registerLazySingleton(() => GetPendingSyncCountUseCase(sl()));
+
+  sl.registerFactory(
+    () => UserRoutesCubit(
+      getUserRouteAssignmentsUseCase: sl(),
+      getLecturistKpiUseCase: sl(),
+      getRouteWorkPackUseCase: sl(),
+      networkInfo: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => RouteDetailCubit(
+      getRouteWorkPackUseCase: sl(),
+      saveOfflineReadingUseCase: sl(),
+      syncPendingReadingsUseCase: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => RouteMapCubit(),
   );
 }

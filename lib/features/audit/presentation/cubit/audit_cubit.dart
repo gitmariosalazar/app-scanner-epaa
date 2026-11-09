@@ -51,23 +51,20 @@ class AuditCubit extends Cubit<AuditState> with WidgetsBindingObserver {
 
   /// Inicia (o cambia) el stream reactivo para [month].
   /// Si [month] es nulo se usa el mes actual.
-  void startWatching({String? month}) {
+  void startWatching({String? month, bool force = false}) {
     final targetMonth = month ?? _currentMonth;
 
-    // Si ya observamos ese mes no hacemos nada (idempotente).
-    if (_watchedMonth == targetMonth && _subscription != null) return;
+    // Si ya observamos ese mes y no se fuerza recarga, salimos (idempotente).
+    if (!force && _watchedMonth == targetMonth && _subscription != null) return;
 
     _cancelSubscription(); // cancelar el mes anterior si existe
     _watchedMonth = targetMonth;
+    emit(AuditLoading()); // Feedback visual inmediato al cambiar de período
     _subscribeToStream(targetMonth);
   }
 
   void _subscribeToStream(String month) {
     if (isClosed) return;
-
-    if (state is AuditInitial) {
-      emit(AuditLoading());
-    }
 
     _subscription = _watchAuditByMonth(month).listen(
       (sectors) {

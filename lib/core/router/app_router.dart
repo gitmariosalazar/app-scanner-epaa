@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/features/reading-routes/domain/entities/route_assignment.dart';
+import 'package:flutter_application/features/reading-routes/domain/entities/route_connection_item.dart';
+import 'package:flutter_application/features/reading-routes/domain/entities/route_work_pack.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/route_detail_cubit.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/route_map_cubit.dart';
+import 'package:flutter_application/features/reading-routes/presentation/cubit/user_routes_cubit.dart';
+import 'package:flutter_application/features/reading-routes/presentation/pages/route_detail_screen.dart';
+import 'package:flutter_application/features/reading-routes/presentation/pages/route_map_screen.dart';
+import 'package:flutter_application/features/reading-routes/presentation/pages/user_routes_screen.dart';
 import 'package:flutter_application/features/audit/presentation/pages/audit_screen.dart';
 import 'package:flutter_application/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:flutter_application/features/form/presentation/pages/location_screen.dart';
@@ -138,6 +147,8 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final reading = extra['reading'] as List<Reading>? ?? [];
           final mode = extra['mode'] as String? ?? 'manual';
+          final routeItem = extra['routeItem'] as RouteConnectionItem?;
+          final assignmentId = extra['assignmentId'] as int?;
 
           return MultiBlocProvider(
             providers: [
@@ -147,7 +158,12 @@ class AppRouter {
               ),
               BlocProvider(create: (_) => di.sl<IncidentCubit>()),
             ],
-            child: form.FormScreen(reading: reading, mode: mode),
+            child: form.FormScreen(
+              reading: reading,
+              mode: mode,
+              routeConnectionItem: routeItem,
+              assignmentId: assignmentId,
+            ),
           );
         },
       ),
@@ -382,6 +398,50 @@ class AppRouter {
           create: (_) => di.sl<PublicIncidentsMapCubit>()..loadMapIncidents(),
           child: const PublicIncidentsMapScreen(),
         ),
+      ),
+
+      // READING ROUTES FEATURE
+      GoRoute(
+        path: '/reading-routes',
+        builder: (context, state) => BlocProvider(
+          create: (_) => di.sl<UserRoutesCubit>(),
+          child: const UserRoutesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/reading-routes/detail',
+        builder: (context, state) {
+          final routeAssignment = state.extra as RouteAssignment;
+          return BlocProvider(
+            create: (_) => di.sl<RouteDetailCubit>(),
+            child: RouteDetailScreen(routeAssignment: routeAssignment),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/reading-routes/map',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final pack = extra['pack'] as RouteWorkPack?;
+          final assignment = extra['assignment'] as RouteAssignment;
+          final initialSelected = extra['initialSelected'] as RouteConnectionItem?;
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => di.sl<RouteDetailCubit>()..loadRoutePack(assignment.idAsignacion),
+              ),
+              BlocProvider(
+                create: (_) => di.sl<RouteMapCubit>(),
+              ),
+            ],
+            child: RouteMapScreen(
+              pack: pack,
+              routeAssignment: assignment,
+              initialSelected: initialSelected,
+            ),
+          );
+        },
       ),
     ],
   );
