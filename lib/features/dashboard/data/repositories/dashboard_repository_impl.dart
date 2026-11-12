@@ -108,6 +108,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
       if (_hybridController?.isClosed == false) {
         _hybridController!.add(stats);
       }
+    }).catchError((Object error, StackTrace stackTrace) {
+      if (_hybridController?.isClosed == false) {
+        _hybridController!.addError(error, stackTrace);
+      }
     });
 
     // ── 2. WebSocket: notificación instantánea cuando se crea/actualiza ─────

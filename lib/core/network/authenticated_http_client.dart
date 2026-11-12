@@ -50,8 +50,9 @@ class AuthenticatedHttpClient extends http.BaseClient {
       return response;
     }
 
-    // Drain the 401 body so the connection can be reused for the retry.
-    await response.stream.drain();
+    // Consume the 401 body so the underlying connection can be reused for the retry.
+    // Keep the bytes so we can safely reconstruct the StreamedResponse if refresh fails.
+    final responseBytes = await response.stream.toBytes();
 
     try {
       final session = await _coordinator.refresh();
@@ -64,10 +65,28 @@ class AuthenticatedHttpClient extends http.BaseClient {
       return await _inner.send(retryRequest);
     } on AuthSessionExpiredException {
       _sessionEventBus.emitExpired();
-      return response;
+      return _recreateStreamedResponse(response, responseBytes);
     } on NetworkRefreshException {
-      return response;
+      return _recreateStreamedResponse(response, responseBytes);
+    } catch (_) {
+      return _recreateStreamedResponse(response, responseBytes);
     }
+  }
+
+  http.StreamedResponse _recreateStreamedResponse(
+    http.StreamedResponse response,
+    List<int> bytes,
+  ) {
+    return http.StreamedResponse(
+      http.ByteStream.fromBytes(bytes),
+      response.statusCode,
+      contentLength: response.contentLength ?? bytes.length,
+      request: response.request,
+      headers: response.headers,
+      isRedirect: response.isRedirect,
+      persistentConnection: response.persistentConnection,
+      reasonPhrase: response.reasonPhrase,
+    );
   }
 
   http.BaseRequest _cloneRequest(
